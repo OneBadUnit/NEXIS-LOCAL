@@ -38,3 +38,7 @@ backend/*.mp3
 # --- OS JUNK ---
 .DS_Store
 Thumbs.db
+
+# --- ALLOW SOURCE CODE ---
+!backend/
+!frontend/
