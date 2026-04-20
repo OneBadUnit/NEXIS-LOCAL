@@ -1,3 +1,25 @@
+/* ARC‑NEXUS GLOBAL THEME */
+:root {
+  --arc-green: #00ff88;
+  --arc-green-soft: #66ffb3;
+  --arc-green-dark: #00cc66;
+
+  --arc-bg: #0a0a0a;
+  --arc-panel: #111111;
+  --arc-text: #e0ffe8;
+
+  --arc-border-soft: rgba(255, 255, 255, 0.08);
+  --arc-border-strong: rgba(255, 255, 255, 0.15);
+
+  --arc-glow: 0 0 12px var(--arc-green);
+}
+
+body {
+  background: var(--arc-bg);
+  color: var(--arc-text);
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 /* ROOT APP LAYOUT: sidebar + main content */
 .layout {
   display: flex;
@@ -5,6 +27,7 @@
   width: 100%;
   transition: background 0.3s ease;
   overflow: visible !important; /* allow dashboard grid to expand */
+  background: var(--arc-bg);
 }
 
 /* SIDEBAR */
@@ -12,8 +35,10 @@
   width: 220px;
   padding: 15px;
   transition: width 0.3s ease;
-  border-right: 1px solid rgba(255,255,255,0.1);
+  border-right: 1px solid var(--arc-border-soft);
   flex-shrink: 0 !important; /* prevents squeezing dashboard */
+  background: #050505;
+  color: var(--arc-text);
 }
 
 .sidebar.collapsed {
@@ -26,6 +51,7 @@
   font-size: 22px;
   cursor: pointer;
   margin-bottom: 20px;
+  color: var(--arc-text);
 }
 
 /* Sidebar Logo */
@@ -34,6 +60,8 @@
   font-weight: bold;
   margin-bottom: 20px;
   letter-spacing: 1px;
+  color: var(--arc-green);
+  text-shadow: var(--arc-glow);
 }
 
 /* Sidebar Items */
@@ -42,16 +70,17 @@
   margin: 6px 0;
   cursor: pointer;
   border-radius: 6px;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-item:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar-item.active {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   font-weight: bold;
+  color: var(--arc-green);
 }
 
 /* Section Headers */
@@ -76,14 +105,15 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--arc-border-soft);
   flex-shrink: 0;
+  background: #080808;
 }
 
 /* Thin divider under topbar */
 .topbar-divider {
   height: 1px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
 
@@ -94,6 +124,7 @@
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  background: var(--arc-bg);
 }
 
 /* SCROLLABLE MAIN AREA WHERE PAGES RENDER */
@@ -135,6 +166,7 @@
   cursor: pointer;
   background: none;
   border: none;
+  color: var(--arc-text);
 }
 
 /* CRITICAL: Stop layout flex rules from breaking NexusDashboard grid */
@@ -145,18 +177,22 @@
   margin: 0 !important;
   box-sizing: border-box !important;
 }
+
 .arcn-main {
   padding: 0 !important;
   display: block !important;
   overflow: visible !important;
 }
+
 .arcn-content {
   overflow: visible !important;
 }
+
 .layout {
   overflow: visible !important;
 }
-          /* Fix layout interference */
+
+/* Fix layout interference (deduped) */
 .arcn-main {
   display: block !important;
   overflow: visible !important;

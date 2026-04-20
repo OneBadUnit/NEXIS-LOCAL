@@ -4,7 +4,8 @@ import subprocess
 
 from app.assimilation import router as assimilation_router
 from app.api.vision import router as vision_router
-from app.api.routes.system import router as system_router  # NEW
+from app.api.routes.system import router as system_router
+from app.api.routes.reconstruction import router as reconstruction_router  # NEW
 
 app = FastAPI()
 
@@ -38,7 +39,8 @@ app.add_middleware(
 # No prefixes — frontend expects exact paths
 app.include_router(assimilation_router)
 app.include_router(vision_router)
-app.include_router(system_router, prefix="/system")  # NEW
+app.include_router(system_router, prefix="/system")
+app.include_router(reconstruction_router)  # NEW
 
 
 @app.get("/")

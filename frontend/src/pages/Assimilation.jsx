@@ -1,8 +1,8 @@
-// frontend/src/pages/Assimilation.jsx
-
 import React, { useContext, useState } from "react";
 import { ArcNContext } from "../context/ArcNContext";
 import TranscriptOutput from "../components/TranscriptOutput";
+import CopyButton from "../components/CopyButton";
+import ScrollTopButton from "../components/ScrollTopButton";
 import "./assimilation.css";
 
 export default function Assimilation() {
@@ -11,7 +11,7 @@ export default function Assimilation() {
     setAssimilationState,
     savedAssimilations,
     setSavedAssimilations,
-    saveAssimilation
+    saveAssimilation,
   } = useContext(ArcNContext);
 
   const { inputType, url, file, loading, result } = assimilationState;
@@ -20,7 +20,7 @@ export default function Assimilation() {
     setAssimilationState((prev) => ({ ...prev, ...patch }));
 
   const switchMode = (mode) => {
-    if (loading) return; // prevent switching during assimilation
+    if (loading) return;
 
     if (mode === "url") {
       update({ inputType: "url", file: null });
@@ -76,9 +76,7 @@ export default function Assimilation() {
       }
 
       const thumbnail =
-        inputType === "picture" && data?.thumbnail
-          ? data.thumbnail
-          : null;
+        inputType === "picture" && data?.thumbnail ? data.thumbnail : null;
 
       const normalizedResult = {
         ...data,
@@ -91,9 +89,7 @@ export default function Assimilation() {
       update({ result: normalizedResult });
 
       const assimilationName =
-        inputType === "url"
-          ? url
-          : file?.name || "Untitled Assimilation";
+        inputType === "url" ? url : file?.name || "Untitled Assimilation";
 
       saveAssimilation({
         id: crypto.randomUUID(),
@@ -105,7 +101,6 @@ export default function Assimilation() {
         timestamp: Date.now(),
         thumbnail,
       });
-
     } catch (err) {
       console.error("Assimilation error:", err);
     } finally {
@@ -113,16 +108,27 @@ export default function Assimilation() {
     }
   };
 
+  const clearForm = () => {
+    if (!window.confirm("Really?")) return;
+    if (!window.confirm("Really really?")) return;
+
+    update({
+      url: "",
+      file: null,
+      result: null,
+    });
+  };
+
   const rename = (id, newName) => {
-    setSavedAssimilations(prev =>
-      prev.map(item =>
+    setSavedAssimilations((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, name: newName } : item
       )
     );
   };
 
   const deleteAssimilation = (id) => {
-    setSavedAssimilations(prev => prev.filter(item => item.id !== id));
+    setSavedAssimilations((prev) => prev.filter((item) => item.id !== id));
   };
 
   const currentTranscriptText =
@@ -133,9 +139,11 @@ export default function Assimilation() {
   return (
     <div className="assimilation-wrapper">
 
-      <div className="assimilation-center-box">
-        <h2>Assimilation</h2>
+      {/* TITLE */}
+      <h2 className="assimilation-title">Assimilation</h2>
 
+      {/* TOP BUTTONS OUTSIDE CARD */}
+      <div className="assimilation-top-controls">
         <div className="input-type-toggle">
           <button
             className={`assim-btn ${inputType === "url" ? "active" : ""} ${loading ? "disabled" : ""}`}
@@ -161,8 +169,12 @@ export default function Assimilation() {
             Picture
           </button>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="assimilation-form">
+      {/* CARD HOLDS INPUT + ASSIMILATE BUTTON */}
+      <div className="assimilation-center-box">
+        <form id="assim-form" onSubmit={handleSubmit} className="assimilation-form">
+
           {inputType === "url" && (
             <input
               type="text"
@@ -190,6 +202,7 @@ export default function Assimilation() {
             />
           )}
 
+          {/* ASSIMILATE BUTTON INSIDE CARD */}
           <button
             type="submit"
             className={`assim-submit-btn ${loading ? "disabled" : ""}`}
@@ -204,9 +217,11 @@ export default function Assimilation() {
               "Assimilate"
             )}
           </button>
+
         </form>
       </div>
 
+      {/* SAVED ASSIMILATIONS */}
       <div className="saved-assimilations-panel">
         <h3>Saved Assimilations</h3>
 
@@ -226,8 +241,18 @@ export default function Assimilation() {
         </div>
       </div>
 
+      {/* OUTPUT */}
       <div className="assimilation-output">
         <TranscriptOutput transcript={currentTranscriptText} />
+
+        {currentTranscriptText && (
+          <div className="output-actions">
+            <CopyButton text={currentTranscriptText} />
+            <button className="clear-button" onClick={clearForm}>
+              Clear Form
+            </button>
+          </div>
+        )}
 
         {result?.transcript && (
           <details style={{ marginTop: "20px" }}>
@@ -250,6 +275,7 @@ export default function Assimilation() {
         )}
       </div>
 
+      <ScrollTopButton />
     </div>
   );
 }
@@ -266,7 +292,6 @@ function SavedCard({ item, rename, deleteAssimilation }) {
 
   return (
     <div className="saved-card">
-
       {item.thumbnail && (
         <div className="saved-card-thumbnail-container">
           <img
@@ -278,7 +303,6 @@ function SavedCard({ item, rename, deleteAssimilation }) {
       )}
 
       <div className="saved-card-header">
-
         {editing ? (
           <input
             className="rename-input"

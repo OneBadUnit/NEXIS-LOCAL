@@ -1,45 +1,244 @@
-.recon-root {
-  padding: 30px;
-  color: #e6e6e6;
+.reconstruction-container {
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  color: #d4ffd4;
+  font-family: "Segoe UI", sans-serif;
 }
 
-.recon-title {
-  font-size: 32px;
-  color: #4da3ff;
-  margin-bottom: 5px;
+.reconstruction-title {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  color: #7aff7a;
+  text-shadow: 0 0 10px #00ff00;
 }
 
-.recon-subtitle {
-  opacity: 0.7;
-  margin-bottom: 30px;
-}
-
-.recon-grid {
+/* TOOLBOX */
+.toolbox {
   display: flex;
-  gap: 20px;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.recon-card {
+.tool-button {
   flex: 1;
-  background: #1a1a1d;
-  border: 1px solid #333;
-  padding: 25px;
-  border-radius: 10px;
+  padding: 12px;
+  background: #0f260f;
+  border: 1px solid #00ff00;
+  color: #7aff7a;
   cursor: pointer;
-  transition: 0.2s ease;
+  border-radius: 6px;
+  transition: 0.2s;
 }
 
-.recon-card:hover {
-  border-color: #4da3ff;
-  box-shadow: 0 0 12px rgba(77, 163, 255, 0.4);
-  transform: translateY(-3px);
+.tool-button:hover,
+.tool-button.active {
+  background: #003300;
+  box-shadow: 0 0 10px #00ff00;
 }
 
-.recon-card h2 {
-  color: #4da3ff;
+/* OPTIONS */
+.options-panel {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.option-button {
+  padding: 10px;
+  background: #0f260f;
+  border: 1px solid #00ff00;
+  color: #7aff7a;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.option-button.active {
+  background: #003300;
+  box-shadow: 0 0 10px #00ff00;
+}
+
+/* INPUT */
+.input-card {
+  margin-bottom: 20px;
+}
+
+.input-textarea {
+  width: 97%;
+  height: 180px;
+  background: #0a1a0a;
+  border: 1px solid #00ff00;
+  color: #d4ffd4;
+  padding: 12px;
+  border-radius: 6px;
+  resize: none;
+}
+
+/* RECONSTRUCT BUTTON */
+.reconstruct-button {
+  width: 100%;
+  padding: 14px;
+  background: #003300;
+  border: 1px solid #00ff00;
+  color: #7aff7a;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  transition: 0.2s;
+}
+
+.reconstruct-button.loading {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* OUTPUT */
+.output-card {
+  background: #0a1a0a;
+  border: 1px solid #00ff00;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.output-card pre {
+  white-space: pre-wrap;
+  color: #d4ffd4;
+}
+
+.output-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.save-button {
+  padding: 10px;
+  background: #003300;
+  border: 1px solid #00ff00;
+  color: #7aff7a;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+/* SAVED PANEL */
+.saved-panel {
+  margin-top: 20px;
+}
+
+/* CRITICAL FIX — prevents layout collapse */
+.saved-list {
+  height: 250px;        /* FIXED HEIGHT */
+  overflow-y: auto;
+  border: 1px solid #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  position: relative;   /* prevents glow overflow collapse */
+}
+
+/* INDIVIDUAL SAVED CARD — Assimilation geometry */
+.saved-list {
+  height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;     /* FIX horizontal scroll */
+  border: 1px solid #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.saved-item {
+  background: #0f260f;
+  border: 1px solid #00ff00;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  width: 100%;
+  box-sizing: border-box;  /* Prevent width overflow */
+  overflow-x: hidden;      /* Contain glow shadows */
+  position: relative;
+}
+
+
+/* HEADER */
+.saved-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* NAME DISPLAY */
+.saved-name-display {
+  font-weight: bold;
+  color: #7aff7a;
+  cursor: pointer;
+  padding: 2px 0;
+  width: 80%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* NAME INPUT */
+.saved-name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #00ff00;
+  color: #7aff7a;
+  font-weight: bold;
+  width: 80%;
+  outline: none;
+}
+
+/* DELETE BUTTON */
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #ff7777;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* TIMESTAMP */
+.saved-timestamp {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 4px;
   margin-bottom: 10px;
 }
 
-.recon-card p {
-  opacity: 0.8;
+/* VIEW OUTPUT BUTTON — full-width neon glow */
+.view-output-btn {
+  width: 100%;
+  padding: 10px;
+  background: #00ff88;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 0 15px #00ff88, 0 0 25px #00ff88;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.view-output-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px #00ff88, 0 0 35px #00ff88;
+}
+
+/* SAVED OUTPUT */
+.saved-output {
+  margin-top: 12px;
+  background: #000;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #003300;
+  color: #d4ffd4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
