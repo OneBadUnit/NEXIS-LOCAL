@@ -18,7 +18,6 @@
   margin-top: 40px;
 }
 
-
 .nexus-header h1 {
   margin: 0;
   font-size: 40px;
@@ -119,6 +118,7 @@
   color: #000;
 }
 
+/* TRANSCRIPT CARD */
 .nexus-transcript-card {
   min-height: 400px;
   max-height: 85vh;
@@ -127,4 +127,41 @@
 
 .nexus-transcript-card h2 {
   margin-bottom: 12px;
+}
+
+/* -------------------------------------------------- */
+/* NEW BUTTON STYLES (Documents, Extraction, Synthesis) */
+/* -------------------------------------------------- */
+
+.nexus-big-button {
+  padding: 14px 22px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  background: #4a90e2;
+  color: white;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.nexus-big-button:hover {
+  background: #357ac9;
+}
+
+.nexus-small-button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  background: #666;
+  color: white;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.nexus-small-button:hover {
+  background: #444;
 }

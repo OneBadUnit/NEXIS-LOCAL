@@ -4,27 +4,31 @@ uvicorn==0.29.0
 python-multipart==0.0.9
 requests==2.31.0
 
-# --- PDF Extraction (digital + scanned) ---
+# --- PDF Extraction ---
 pymupdf==1.23.26
 
-# --- OCR (images + scanned PDFs) ---
+# --- OCR ---
 pytesseract==0.3.10
 Pillow==10.2.0
 
 # --- DOCX / TXT ---
 docx2txt==0.8
 
-# --- HTML / Webpage Extraction ---
+# --- HTML Parsing ---
 beautifulsoup4==4.12.3
 
-# --- Audio / Video Transcription ---
-openai-whisper==20231117
-
-# --- YouTube Downloading (audio extraction) ---
+# --- YouTube Downloading ---
 yt-dlp==2024.03.10
 
-# --- YouTube Transcript API (correct version!) ---
+# --- YouTube Transcript API ---
 youtube-transcript-api==0.6.1
 
-# --- Optional: if you want async HTTP for future upgrades ---
+# --- Async HTTP ---
 aiohttp==3.9.3
+
+# --- Local GPU Whisper (installed manually, NOT via requirements) ---
+# faster-whisper is installed separately to avoid PyAV dependency
+ctranslate2==4.7.1
+huggingface-hub==0.36.2
+tokenizers==0.15.2
+onnxruntime==1.24.4

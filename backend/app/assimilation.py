@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form
 from ingestion.file_router import process_uploaded_file
 from ingestion.url_utils import process_url_or_youtube
 
+
 router = APIRouter()
 
 @router.post("/assimilate")

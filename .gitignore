@@ -42,3 +42,4 @@ Thumbs.db
 # --- ALLOW SOURCE CODE ---
 !backend/
 !frontend/
+tmp/ 

@@ -1,23 +1,38 @@
+print(">>> VIDEO_UTILS LOADED FROM ingestion/video_utils.py")
+
 import asyncio
 import os
 import tempfile
 from .audio_utils import transcribe_audio_file
 
-FFMPEG_PATH = "ffmpeg"  # update if needed
+FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+
+SAFE_TMP = r"D:\arc-nexus\tmp"
+os.makedirs(SAFE_TMP, exist_ok=True)
+
 
 async def transcribe_video_file(path: str) -> str:
-    tmp_dir = tempfile.mkdtemp(prefix="arc_vid_")
-    audio_path = os.path.join(tmp_dir, "audio.m4a")
+    tmp_dir = tempfile.mkdtemp(prefix="arc_vid_", dir=SAFE_TMP)
+    audio_path = os.path.join(tmp_dir, "audio.wav")
 
     try:
+        try:
+            print(">>> DEBUG: Input video file size:", os.path.getsize(path))
+        except Exception as e:
+            print(">>> DEBUG: Could not stat input file:", str(e))
+
         cmd = [
             FFMPEG_PATH,
             "-y",
             "-i", path,
             "-vn",
-            "-acodec", "aac",
+            "-acodec", "pcm_s16le",
+            "-ar", "16000",
+            "-ac", "1",
             audio_path,
         ]
+
+        print(">>> FFMPEG CMD:", " ".join(cmd))
 
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -25,15 +40,35 @@ async def transcribe_video_file(path: str) -> str:
             stderr=asyncio.subprocess.PIPE,
         )
 
-        _, err = await proc.communicate()
+        out, err = await proc.communicate()
+
+        err_text = err.decode(errors="ignore")
+        print(">>> FFMPEG STDERR (first 400 chars):", err_text[:400], "…")
+        print(">>> FFMPEG RETURN CODE:", proc.returncode)
 
         if proc.returncode != 0:
-            return f"[FFMPEG ERROR] {err.decode(errors='ignore')}"
+            return f"[FFMPEG ERROR] {err_text}"
+
+        if not os.path.exists(audio_path):
+            print(">>> ERROR: ffmpeg did not create audio file")
+            return "[Video ERROR] ffmpeg produced no audio file."
+
+        audio_size = os.path.getsize(audio_path)
+        print(">>> DEBUG: Extracted audio file size:", audio_size)
+
+        if audio_size == 0:
+            print(">>> ERROR: Extracted audio is empty")
+            return "[Video ERROR] Extracted audio is empty."
+
+        print(">>> FFMPEG SUCCESS, calling Whisper…")
 
         text = await transcribe_audio_file(audio_path)
+        print(">>> WHISPER RESULT (first 200 chars):", repr(text[:200]), "…")
+
         return text
 
     except Exception as e:
+        print(">>> VIDEO PIPELINE EXCEPTION:", repr(str(e)))
         return f"[Video ERROR] {str(e)}"
 
     finally:

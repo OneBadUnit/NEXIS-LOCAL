@@ -20,6 +20,8 @@ export default function Assimilation() {
     setAssimilationState((prev) => ({ ...prev, ...patch }));
 
   const switchMode = (mode) => {
+    if (loading) return; // prevent switching during assimilation
+
     if (mode === "url") {
       update({ inputType: "url", file: null });
     } else if (mode === "file") {
@@ -57,18 +59,15 @@ export default function Assimilation() {
 
       const data = await res.json();
 
-      // Normalize transcript text based on inputType / endpoint
       let transcriptText = "";
 
       if (inputType === "picture") {
-        // Vision endpoint
         if (typeof data?.ocr_text === "string" && data.ocr_text.trim() !== "") {
           transcriptText = data.ocr_text;
         } else if (typeof data?.description === "string") {
           transcriptText = data.description;
         }
       } else {
-        // Assimilation endpoint (url/file/text)
         if (typeof data?.content === "string") {
           transcriptText = data.content;
         } else if (typeof data?.description === "string") {
@@ -81,7 +80,6 @@ export default function Assimilation() {
           ? data.thumbnail
           : null;
 
-      // Store raw result plus normalized transcript for UI
       const normalizedResult = {
         ...data,
         transcript: {
@@ -140,22 +138,25 @@ export default function Assimilation() {
 
         <div className="input-type-toggle">
           <button
-            className={inputType === "url" ? "active" : ""}
+            className={`assim-btn ${inputType === "url" ? "active" : ""} ${loading ? "disabled" : ""}`}
             onClick={() => switchMode("url")}
+            disabled={loading}
           >
             URL
           </button>
 
           <button
-            className={inputType === "file" ? "active" : ""}
+            className={`assim-btn ${inputType === "file" ? "active" : ""} ${loading ? "disabled" : ""}`}
             onClick={() => switchMode("file")}
+            disabled={loading}
           >
-            File
+            Documents
           </button>
 
           <button
-            className={inputType === "picture" ? "active" : ""}
+            className={`assim-btn ${inputType === "picture" ? "active" : ""} ${loading ? "disabled" : ""}`}
             onClick={() => switchMode("picture")}
+            disabled={loading}
           >
             Picture
           </button>
@@ -168,6 +169,7 @@ export default function Assimilation() {
               placeholder="Enter URL…"
               value={url}
               onChange={(e) => update({ url: e.target.value })}
+              disabled={loading}
             />
           )}
 
@@ -175,6 +177,7 @@ export default function Assimilation() {
             <input
               type="file"
               onChange={(e) => update({ file: e.target.files[0] })}
+              disabled={loading}
             />
           )}
 
@@ -183,16 +186,27 @@ export default function Assimilation() {
               type="file"
               accept="image/*"
               onChange={(e) => update({ file: e.target.files[0] })}
+              disabled={loading}
             />
           )}
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Resistance is futile…" : "Assimilate"}
+          <button
+            type="submit"
+            className={`assim-submit-btn ${loading ? "disabled" : ""}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                <span style={{ marginLeft: "10px" }}>Resistance is futile…</span>
+              </>
+            ) : (
+              "Assimilate"
+            )}
           </button>
         </form>
       </div>
 
-      {/* SAVED PANEL */}
       <div className="saved-assimilations-panel">
         <h3>Saved Assimilations</h3>
 
@@ -212,7 +226,6 @@ export default function Assimilation() {
         </div>
       </div>
 
-      {/* OUTPUT SECTION */}
       <div className="assimilation-output">
         <TranscriptOutput transcript={currentTranscriptText} />
 
