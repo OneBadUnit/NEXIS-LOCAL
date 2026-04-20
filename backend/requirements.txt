@@ -1,0 +1,30 @@
+# --- Core Server ---
+fastapi==0.110.0
+uvicorn==0.29.0
+python-multipart==0.0.9
+requests==2.31.0
+
+# --- PDF Extraction (digital + scanned) ---
+pymupdf==1.23.26
+
+# --- OCR (images + scanned PDFs) ---
+pytesseract==0.3.10
+Pillow==10.2.0
+
+# --- DOCX / TXT ---
+docx2txt==0.8
+
+# --- HTML / Webpage Extraction ---
+beautifulsoup4==4.12.3
+
+# --- Audio / Video Transcription ---
+openai-whisper==20231117
+
+# --- YouTube Downloading (audio extraction) ---
+yt-dlp==2024.03.10
+
+# --- YouTube Transcript API (correct version!) ---
+youtube-transcript-api==0.6.1
+
+# --- Optional: if you want async HTTP for future upgrades ---
+aiohttp==3.9.3

@@ -1,0 +1,167 @@
+.assimilation-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.assimilation-center-box {
+  background: #111;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* THREE BUTTON SELECTOR */
+.input-type-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.input-type-buttons button {
+  flex: 1;
+  padding: 10px;
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.input-type-buttons button.active {
+  background: #0a84ff;
+  border-color: #0a84ff;
+}
+
+.assimilation-form input[type="text"],
+.assimilation-form input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 6px;
+}
+
+.assimilation-form button {
+  width: 100%;
+  padding: 12px;
+  background: #0a84ff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.assimilation-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.saved-assimilations-panel {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.saved-assimilations-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.empty-saved {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.saved-card {
+  background: #1b1b1b;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #333;
+}
+
+.saved-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.saved-card-name {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.rename-input {
+  background: #222;
+  border: 1px solid #444;
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  width: 70%;
+}
+
+.saved-card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.saved-card-time {
+  opacity: 0.6;
+  font-size: 0.85rem;
+}
+
+.delete-btn {
+  background: #550000;
+  border: 1px solid #aa0000;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toggle-transcript-btn {
+  margin-top: 10px;
+  background: #333;
+  border: 1px solid #555;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+}
+
+.saved-card-transcript {
+  margin-top: 12px;
+  background: #000;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.saved-card-transcript pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #ccc;
+}
+
+.assimilation-output {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}

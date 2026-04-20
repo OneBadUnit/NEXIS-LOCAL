@@ -1,0 +1,162 @@
+/* ------------------------------
+   APP LAYOUT WRAPPER
+------------------------------ */
+
+.app-shell {
+  background-color: #020617;   /* full dark background */
+  min-height: 100vh;           /* fill entire screen */
+  display: flex;
+  flex-direction: column;
+  color: #e2e8f0;
+}
+
+/* ------------------------------
+   MAIN CONTENT AREA
+------------------------------ */
+
+.main-content {
+  flex: 1;
+  padding: 24px 32px;
+}
+/* ------------------------------
+   TOP BAR — NEW UI
+------------------------------ */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background-color: #020617;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-center {
+  flex: 1;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background-color: #020617;
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-center {
+  flex: 1;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+.navbar {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.nav-item {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.nav-item:hover {
+  opacity: 1;
+}
+
+.nav-item.active {
+  opacity: 1;
+  font-weight: 700;
+}
+.topbar-left {
+  min-width: 120px; /* keeps ARC fully left */
+}
+/* TOP BAR — CENTERED ARC OVER NEXUS */
+
+.topbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background-color: #020617;
+}
+
+.topbar-title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+
+  text-shadow:
+    0 0 8px rgba(34, 197, 94, 0.55),
+    0 0 16px rgba(34, 197, 94, 0.35),
+    0 0 24px rgba(34, 197, 94, 0.25);
+}
+
+
+
+.topbar-arc {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  font-family: "Orbitron", sans-serif;
+
+}
+
+.topbar-nexus {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-family: "Orbitron", sans-serif;
+
+}
+
+/* ACTIVE NAV ITEM — GREEN GLOW */
+.nav-item.active {
+  color: rgb(34, 197, 94) !important; /* emerald green */
+  font-weight: 700;
+  opacity: 1 !important;
+
+  text-shadow:
+    0 0 8px rgba(34, 197, 94, 0.75),
+    0 0 16px rgba(34, 197, 94, 0.55),
+    0 0 24px rgba(34, 197, 94, 0.35);
+}

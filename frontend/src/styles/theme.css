@@ -1,0 +1,172 @@
+/* ROOT APP LAYOUT: sidebar + main content */
+.layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  transition: background 0.3s ease;
+  overflow: visible !important; /* allow dashboard grid to expand */
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px;
+  padding: 15px;
+  transition: width 0.3s ease;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0 !important; /* prevents squeezing dashboard */
+}
+
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+/* Sidebar Logo */
+.sidebar-logo {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+/* Sidebar Items */
+.sidebar-item {
+  padding: 10px 12px;
+  margin: 6px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.sidebar-item.active {
+  background: rgba(255,255,255,0.15);
+  font-weight: bold;
+}
+
+/* Section Headers */
+.sidebar-section-header {
+  margin-top: 20px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
+/* Section Wrapper */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP BAR */
+.topbar {
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+/* Thin divider under topbar */
+.topbar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+/* MAIN CONTENT COLUMN (everything to the right of sidebar) */
+.arcn-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* SCROLLABLE MAIN AREA WHERE PAGES RENDER */
+.arcn-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 !important; /* critical: prevents grid squeeze */
+  box-sizing: border-box;
+}
+
+/* LEGACY / OTHER AREAS */
+.content-area {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.output-panel {
+  margin-top: 20px;
+}
+
+.output-box {
+  padding: 20px;
+  border-radius: 8px;
+  min-height: 120px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.status-indicator {
+  margin-right: auto;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.mic-btn,
+.theme-toggle {
+  margin-left: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* CRITICAL: Stop layout flex rules from breaking NexusDashboard grid */
+.arcn-main > .nexus-dashboard {
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+.arcn-main {
+  padding: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+}
+.arcn-content {
+  overflow: visible !important;
+}
+.layout {
+  overflow: visible !important;
+}
+          /* Fix layout interference */
+.arcn-main {
+  display: block !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.arcn-content {
+  overflow: visible !important;
+}
+
+.layout {
+  overflow: visible !important;
+}

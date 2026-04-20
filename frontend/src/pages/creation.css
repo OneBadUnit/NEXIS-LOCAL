@@ -1,0 +1,45 @@
+.create-root {
+  padding: 30px;
+  color: #e6e6e6;
+}
+
+.create-title {
+  font-size: 32px;
+  color: #4da3ff;
+  margin-bottom: 5px;
+}
+
+.create-subtitle {
+  opacity: 0.7;
+  margin-bottom: 30px;
+}
+
+.create-grid {
+  display: flex;
+  gap: 20px;
+}
+
+.create-card {
+  flex: 1;
+  background: #1a1a1d;
+  border: 1px solid #333;
+  padding: 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.create-card:hover {
+  border-color: #4da3ff;
+  box-shadow: 0 0 12px rgba(77, 163, 255, 0.4);
+  transform: translateY(-3px);
+}
+
+.create-card h2 {
+  color: #4da3ff;
+  margin-bottom: 10px;
+}
+
+.create-card p {
+  opacity: 0.8;
+}
