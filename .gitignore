@@ -1,0 +1,40 @@
+# --- PYTHON ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+.venv/
+
+# --- NODE / REACT ---
+node_modules/
+dist/
+build/
+
+# --- MODELS & AI WEIGHTS ---
+*.bin
+*.pt
+*.safetensors
+*.onnx
+
+# --- TESSERACT INSTALLATION ---
+Tesseract-OCR/
+
+# --- FFMPEG BINARIES ---
+bin/
+
+# --- TEMP FILES ---
+*.log
+*.tmp
+*.cache
+backend/temp_vision_image.jpg
+
+# --- VIDEO / AUDIO DOWNLOADS ---
+backend/*.webm
+backend/*.mp4
+backend/*.mp3
+
+# --- OS JUNK ---
+.DS_Store
+Thumbs.db
