@@ -80,13 +80,13 @@
 .navbar {
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 96px;
   padding: 16px 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .nav-item {
-  font-size: 16px;
+  font-size: 18px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   cursor: pointer;

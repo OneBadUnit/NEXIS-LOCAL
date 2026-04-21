@@ -1,4 +1,6 @@
 import requests
+import asyncio
+from functools import partial
 
 # ---------------------------------------------------------
 # ARC‑NEXUS LLM Service (Ollama)
@@ -15,9 +17,13 @@ LLM_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "llama3.1:8b"   # <-- You can change this anytime
 
 
-def run_llm(prompt: str, model: str = DEFAULT_MODEL) -> str:
+# ---------------------------------------------------------
+# SYNC FUNCTION (actual HTTP call to Ollama)
+# ---------------------------------------------------------
+def _run_llm_sync(prompt: str, model: str = DEFAULT_MODEL) -> str:
     """
-    Send a prompt to the local Ollama model and return the response text.
+    Perform the synchronous HTTP request to Ollama.
+    This function runs inside a thread when called from FastAPI.
     """
 
     payload = {
@@ -36,3 +42,15 @@ def run_llm(prompt: str, model: str = DEFAULT_MODEL) -> str:
 
     except Exception as e:
         return f"[LLM ERROR] {str(e)}"
+
+
+# ---------------------------------------------------------
+# ASYNC WRAPPER (FastAPI can await this)
+# ---------------------------------------------------------
+async def run_llm(prompt: str, model: str = DEFAULT_MODEL) -> str:
+    """
+    Async wrapper so FastAPI can await the LLM call.
+    This prevents blocking the event loop.
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, partial(_run_llm_sync, prompt, model))

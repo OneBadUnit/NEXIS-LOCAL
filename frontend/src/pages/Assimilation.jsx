@@ -142,7 +142,7 @@ export default function Assimilation() {
       {/* TITLE */}
       <h2 className="assimilation-title">Assimilation</h2>
 
-      {/* TOP BUTTONS OUTSIDE CARD */}
+      {/* TOP BUTTONS */}
       <div className="assimilation-top-controls">
         <div className="input-type-toggle">
           <button
@@ -171,7 +171,7 @@ export default function Assimilation() {
         </div>
       </div>
 
-      {/* CARD HOLDS INPUT + ASSIMILATE BUTTON */}
+      {/* INPUT CARD */}
       <div className="assimilation-center-box">
         <form id="assim-form" onSubmit={handleSubmit} className="assimilation-form">
 
@@ -202,7 +202,6 @@ export default function Assimilation() {
             />
           )}
 
-          {/* ASSIMILATE BUTTON INSIDE CARD */}
           <button
             type="submit"
             className={`assim-submit-btn ${loading ? "disabled" : ""}`}
@@ -340,10 +339,12 @@ function SavedCard({ item, rename, deleteAssimilation }) {
       </button>
 
       {expanded && (
-        <div className="saved-card-transcript">
-          <pre>{item.transcript || ""}</pre>
-        </div>
-      )}
+  <div className="saved-card-transcript">
+    <pre>{item.transcript || ""}</pre>
+    <CopyButton text={item.transcript || ""} />
+  </div>
+)}
+
     </div>
   );
 }

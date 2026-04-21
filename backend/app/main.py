@@ -5,9 +5,11 @@ import subprocess
 from app.assimilation import router as assimilation_router
 from app.api.vision import router as vision_router
 from app.api.routes.system import router as system_router
-from app.api.routes.reconstruction import router as reconstruction_router  # NEW
+from app.api.routes.reconstruction import router as reconstruction_router
+from app.api.routes.creation import router as creation_router  # <-- correct import
 
-app = FastAPI()
+app = FastAPI()  # <-- MUST be before include_router()
+
 
 # -------------------------------
 # AUTO-UPDATE YT-DLP ON STARTUP
@@ -40,7 +42,8 @@ app.add_middleware(
 app.include_router(assimilation_router)
 app.include_router(vision_router)
 app.include_router(system_router, prefix="/system")
-app.include_router(reconstruction_router)  # NEW
+app.include_router(reconstruction_router)
+app.include_router(creation_router)  # <-- correct placement
 
 
 @app.get("/")

@@ -1,9 +1,143 @@
-import React from 'react';
+import React, { useState } from "react";
+import "./help.css";
 
 export default function Help() {
+  const [openFAQ, setOpenFAQ] = useState(null);
+
+  const toggleFAQ = (id) => {
+    setOpenFAQ(openFAQ === id ? null : id);
+  };
+
   return (
-    <div>
-      <h1>Help</h1>
+    <div className="help-wrapper">
+      <h2 className="help-title">Help & Documentation</h2>
+
+      {/* SECTION: Assimilation */}
+      <div className="help-card">
+        <h3>Assimilation</h3>
+        <p>
+          Assimilation extracts content from URLs, documents, or images. It is
+          designed for fast ingestion and clean transcript output.
+        </p>
+
+        <ul className="help-list">
+          <li><strong>URL Mode:</strong> Paste any webpage link to extract readable content.</li>
+          <li><strong>Document Mode:</strong> Upload PDFs, text files, or other supported formats.</li>
+          <li><strong>Picture Mode:</strong> Upload images for OCR and description.</li>
+          <li><strong>Saved Assimilations:</strong> Automatically stored with rename + delete options.</li>
+        </ul>
+      </div>
+
+      {/* SECTION: Reconstruction */}
+      <div className="help-card">
+        <h3>Reconstruction</h3>
+        <p>
+          Reconstruction transforms your input using selectable tools and options.
+          It is persistent — your input and output remain after refresh.
+        </p>
+
+        <ul className="help-list">
+          <li><strong>Toolbox:</strong> Choose the transformation type (summaries, rewrites, etc.).</li>
+          <li><strong>Options:</strong> Additional modifiers depending on the selected tool.</li>
+          <li><strong>Reconstruct Button:</strong> Generates output using the selected settings.</li>
+          <li><strong>Saved Reconstructions:</strong> Stores previous outputs for quick access.</li>
+        </ul>
+      </div>
+
+      {/* SECTION: Settings */}
+<div className="help-card">
+  <h3>Settings</h3>
+  <p>
+    The Settings page allows you to adjust the Output Window Font Size and view
+    system information.
+  </p>
+
+  <ul className="help-list">
+    <li><strong>Output Window Font Size:</strong> Controls the text size used in Assimilation, Reconstruction, and Help output windows.</li>
+    <li><strong>System Info:</strong> Version, build time, browser, platform, resolution.</li>
+  </ul>
+</div>
+
+
+      {/* SECTION: FAQs */}
+      <div className="help-card">
+        <h3>Frequently Asked Questions</h3>
+
+        <div className="faq-item">
+          <button className="faq-question" onClick={() => toggleFAQ(1)}>
+            Why doesn’t Assimilation persist input/output like Reconstruction?
+          </button>
+          {openFAQ === 1 && (
+            <div className="faq-answer">
+              Assimilation is designed to save each result as an individual card
+              rather than persist the active input. Reconstruction behaves like a
+              workspace, so its input/output persist automatically.
+            </div>
+          )}
+        </div>
+
+        <div className="faq-item">
+          <button className="faq-question" onClick={() => toggleFAQ(2)}>
+            Why do some files fail to upload?
+          </button>
+          {openFAQ === 2 && (
+            <div className="faq-answer">
+              Files may fail if they are locked, corrupted, or unsupported. Try
+              saving a fresh copy or ensuring the file is not open in another
+              program.
+            </div>
+          )}
+        </div>
+
+        <div className="faq-item">
+          <button className="faq-question" onClick={() => toggleFAQ(3)}>
+            Why does Reconstruction take longer than Assimilation?
+          </button>
+          {openFAQ === 3 && (
+            <div className="faq-answer">
+              Reconstruction performs deeper transformations and may require
+              multiple passes depending on the selected tool and options.
+            </div>
+          )}
+        </div>
+
+        <div className="faq-item">
+          <button className="faq-question" onClick={() => toggleFAQ(4)}>
+            How do I clear all saved items?
+          </button>
+          {openFAQ === 4 && (
+            <div className="faq-answer">
+              Saved Assimilations and Reconstructions can be deleted individually
+              using the ✕ button. A global “Clear All” option may be added in a
+              future update.
+            </div>
+          )}
+        </div>
+
+        <div className="faq-item">
+  <button className="faq-question" onClick={() => toggleFAQ(5)}>
+    What does “Output Window Font Size” change?
+  </button>
+  {openFAQ === 5 && (
+    <div className="faq-answer">
+      It adjusts the text size used in all output windows across ARC‑NEXUS,
+      including Assimilation transcripts, Reconstruction results, and Help
+      documentation. It does not affect button sizes or layout geometry.
+    </div>
+  )}
+</div>
+
+      </div>
+
+      {/* SECTION: About */}
+      <div className="help-card">
+        <h3>About ARC‑NEXUS</h3>
+        <p>
+          ARC‑NEXUS is a modular, neon‑themed interface designed for fast content
+          ingestion, transformation, and retrieval. Built with React, FastAPI,
+          and a persistent workspace philosophy.
+        </p>
+      </div>
     </div>
   );
 }

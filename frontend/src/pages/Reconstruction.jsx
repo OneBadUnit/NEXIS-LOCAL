@@ -280,7 +280,10 @@ export default function Reconstruction() {
               </button>
 
               {item.open && (
-                <pre className="saved-output">{item.output}</pre>
+                <div className="saved-output-wrapper">
+                  <pre className="saved-output">{item.output}</pre>
+                  <CopyButton text={item.output} />
+                </div>
               )}
             </div>
           ))}

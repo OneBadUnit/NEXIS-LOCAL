@@ -5,7 +5,11 @@
   padding: 20px;
   color: #d4ffd4;
   font-family: "Segoe UI", sans-serif;
+
+  /* NEW — enables global font scaling */
+  font-size: var(--arc-font-size);
 }
+
 
 .reconstruction-title {
   text-align: center;
@@ -108,7 +112,9 @@
 .output-card pre {
   white-space: pre-wrap;
   color: #d4ffd4;
+  font-size: var(--arc-font-size);
 }
+
 
 .output-actions {
   margin-top: 10px;
