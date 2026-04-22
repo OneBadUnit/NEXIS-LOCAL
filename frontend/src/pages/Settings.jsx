@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import "./settings.css";
 
 /* STATIC BUILD TIME */
 const BUILD_TIME = new Date().toLocaleString();
@@ -34,34 +33,51 @@ export default function Settings() {
   };
 
   return (
-    <div className="settings-wrapper">
-      <h2 className="settings-title">Settings</h2>
+    <div className="module-container">
+      <h1 className="module-title">Settings</h1>
 
       {/* OUTPUT WINDOW FONT SIZE */}
-      <div className="settings-card">
+      <div className="panel">
         <h3>Output Window Font Size</h3>
-        <p className="preview-label">Preview:</p>
-        <div className="font-preview">
+
+        <p style={{ opacity: 0.7, marginBottom: "8px" }}>Preview:</p>
+
+        <div
+          style={{
+            padding: "12px",
+            borderRadius: "6px",
+            background: "rgba(255,255,255,0.05)",
+            marginBottom: "16px",
+            fontSize: "var(--arc-font-size)",
+          }}
+        >
           Teaching snakes to kick.
         </div>
 
-        <div className="font-size-options">
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <button
-            className={`font-btn ${fontSize === "small" ? "active" : ""}`}
+            className={`btn ${fontSize === "small" ? "active" : ""}`}
             onClick={() => setFontSize("small")}
           >
             Small
           </button>
 
           <button
-            className={`font-btn ${fontSize === "medium" ? "active" : ""}`}
+            className={`btn ${fontSize === "medium" ? "active" : ""}`}
             onClick={() => setFontSize("medium")}
           >
             Medium
           </button>
 
           <button
-            className={`font-btn ${fontSize === "large" ? "active" : ""}`}
+            className={`btn ${fontSize === "large" ? "active" : ""}`}
             onClick={() => setFontSize("large")}
           >
             Large
@@ -70,10 +86,10 @@ export default function Settings() {
       </div>
 
       {/* SYSTEM INFO */}
-      <div className="settings-card">
+      <div className="panel">
         <h3>System Info</h3>
 
-        <div className="system-info">
+        <div style={{ marginTop: "10px", lineHeight: "1.6" }}>
           <p><strong>Version:</strong> {systemInfo.version}</p>
           <p><strong>Build Time:</strong> {systemInfo.build}</p>
           <p><strong>Browser:</strong> {systemInfo.browser}</p>

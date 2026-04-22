@@ -1,33 +1,54 @@
+# ============================================================
+# ARC‑NEXUS ASSIMILATION MODULE
+# Unified ingestion endpoint for text, URLs, and files.
+# ============================================================
+
 from fastapi import APIRouter, UploadFile, File, Form
-from ingestion.file_router import process_uploaded_file
+
 from ingestion.url_utils import process_url_or_youtube
+from ingestion.file_router import process_uploaded_file
+
+# ------------------------------------------------------------
+# Router
+# ------------------------------------------------------------
+router = APIRouter(tags=["assimilation"])
 
 
-router = APIRouter()
-
-@router.post("/assimilate")
-async def assimilate(
-    text: str = Form(None),
-    url: str = Form(None),
-    file: UploadFile = File(None)
+# ------------------------------------------------------------
+# POST /assimilation/process
+# Accepts multipart/form-data for files
+# Accepts Form fields for url/text
+# ------------------------------------------------------------
+@router.post("/process")
+async def process_assimilation(
+    source_type: str = Form(...),          # "text", "url", "file"
+    content: str = Form(""),               # URL or raw text
+    file: UploadFile = File(None)          # actual uploaded file
 ):
-    """
-    Unified ingestion endpoint.
-    Handles:
-    - raw text
-    - URLs (including YouTube)
-    - uploaded files
-    """
 
-    if text:
-        return {"type": "text", "content": text}
+    # -----------------------------
+    # URL ingestion
+    # -----------------------------
+    if source_type == "url":
+        extracted = await process_url_or_youtube(content)
+        return {"type": "url", "text": extracted}
 
-    if url:
-        content = await process_url_or_youtube(url)
-        return {"type": "url", "content": content}
+    # -----------------------------
+    # File ingestion
+    # -----------------------------
+    if source_type == "file":
+        if not file:
+            return {"error": "No file uploaded"}
+        extracted = await process_uploaded_file(file)
+        return {"type": "file", "text": extracted}
 
-    if file:
-        content = await process_uploaded_file(file)
-        return {"type": "file", "content": content}
+    # -----------------------------
+    # Raw text ingestion
+    # -----------------------------
+    if source_type == "text":
+        return {"type": "text", "text": content}
 
-    return {"error": "No input provided."}
+    # -----------------------------
+    # Invalid type
+    # -----------------------------
+    return {"error": "Invalid source_type"}

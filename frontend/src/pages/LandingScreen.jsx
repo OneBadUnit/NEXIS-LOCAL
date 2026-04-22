@@ -9,29 +9,24 @@ const LandingScreen = () => {
   const { setActivePage } = useContext(ArcNContext);
 
   const runSystemCheck = async () => {
-  try {
-    const res = await axios.get("http://127.0.0.1:8000/system/check");
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/system/check");
 
-    // ⭐ ADD THIS LINE EXACTLY HERE ⭐
-    console.log("SYSTEM CHECK RAW RESPONSE:", res.data);
+      console.log("SYSTEM CHECK RAW RESPONSE:", res.data);
 
-    setStatus({
-  configOk: res.data.config?.isReady,
-  modelsOk: res.data.models?.available,   // <-- FIXED
-  ollamaInstalled: res.data.ollama?.installed,
-  ollamaRunning: res.data.ollama?.running,
-});
-
-
-
-  } catch (err) {
-    console.error("System check failed:", err);
-    setStatus({ error: true });
-  } finally {
-    setLoading(false);
-  }
-};
-
+      setStatus({
+        configOk: res.data.config?.isReady,
+        modelsOk: res.data.models?.available,
+        ollamaInstalled: res.data.ollama?.installed,
+        ollamaRunning: res.data.ollama?.running,
+      });
+    } catch (err) {
+      console.error("System check failed:", err);
+      setStatus({ error: true });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     runSystemCheck();
@@ -52,56 +47,104 @@ const LandingScreen = () => {
   };
 
   if (loading) {
-    return <div className="system-check-loading">Running system diagnostics…</div>;
-  }
-
-  if (!status || status.error) {
     return (
-      <div className="system-check-panel">
-        <h2>System Diagnostics</h2>
-        <div className="check-item fail">Error running system check.</div>
+      <div
+        style={{
+          textAlign: "center",
+          paddingTop: "120px",
+          color: "var(--arc-text)",
+        }}
+      >
+        Running system diagnostics…
       </div>
     );
   }
 
-  const allGreen = status.configOk && status.modelsOk && status.ollamaInstalled && status.ollamaRunning;
+  if (!status || status.error) {
+    return (
+      <div className="module-container">
+        <div className="panel">
+          <h2>System Diagnostics</h2>
+          <p style={{ color: "red" }}>Error running system check.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const allGreen =
+    status.configOk &&
+    status.modelsOk &&
+    status.ollamaInstalled &&
+    status.ollamaRunning;
 
   return (
-  <>
-    
-    <div className="system-check-panel">
-      <h2>System Diagnostics</h2>
+    <div className="module-container">
+      <div className="panel" style={{ textAlign: "center" }}>
+        <h2>System Diagnostics</h2>
 
-      <div className={`check-item ${status.ollamaInstalled ? "ok" : "fail"}`}>
-        Ollama Installed: {status.ollamaInstalled ? "Yes" : "No"}
-      </div>
+        {/* STATUS ITEMS */}
+        <div style={{ marginTop: "20px", textAlign: "left" }}>
+          <StatusItem label="Ollama Installed" ok={status.ollamaInstalled} />
+          <StatusItem label="Ollama Running" ok={status.ollamaRunning} />
 
-      <div className={`check-item ${status.ollamaRunning ? "ok" : "fail"}`}>
-        Ollama Running: {status.ollamaRunning ? "Yes" : "No"}
-      </div>
+          <StatusItem label="Config File" ok={status.configOk}>
+            {!status.configOk && (
+              <button className="btn" onClick={fixConfig}>
+                Fix
+              </button>
+            )}
+          </StatusItem>
 
-      <div className={`check-item ${status.configOk ? "ok" : "fail"}`}>
-        Config File: {status.configOk ? "OK" : "Missing"}
-        {!status.configOk && (
-          <button className="fix-button" onClick={fixConfig}>Fix</button>
+          <StatusItem label="Models" ok={status.modelsOk}>
+            {!status.modelsOk && (
+              <button className="btn" onClick={fixModels}>
+                Fix
+              </button>
+            )}
+          </StatusItem>
+        </div>
+
+        {/* ENTER NEXUS */}
+        {allGreen && (
+          <button
+            className="btn"
+            style={{ marginTop: "20px" }}
+            onClick={handleEnterNexus}
+          >
+            ENTER NEXUS
+          </button>
         )}
       </div>
-
-      <div className={`check-item ${status.modelsOk ? "ok" : "fail"}`}>
-        Models: {status.modelsOk ? "OK" : "Missing"}
-        {!status.modelsOk && (
-          <button className="fix-button" onClick={fixModels}>Fix</button>
-        )}
-      </div>
-
-      {allGreen && (
-        <button className="enter-nexus-button" onClick={handleEnterNexus}>
-          ENTER NEXUS
-        </button>
-      )}
     </div>
-    </>
   );
 };
+
+function StatusItem({ label, ok, children }) {
+  return (
+    <div
+      style={{
+        marginBottom: "12px",
+        padding: "10px",
+        borderRadius: "6px",
+        background: "rgba(255,255,255,0.05)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        border: ok
+          ? "1px solid var(--arc-green)"
+          : "1px solid rgba(255,0,0,0.4)",
+      }}
+    >
+      <span>
+        {label}:{" "}
+        <strong style={{ color: ok ? "var(--arc-green)" : "red" }}>
+          {ok ? "OK" : "Missing"}
+        </strong>
+      </span>
+
+      {children}
+    </div>
+  );
+}
 
 export default LandingScreen;

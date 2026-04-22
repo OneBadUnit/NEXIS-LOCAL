@@ -1,9 +1,17 @@
-// frontend/src/components/TranscriptOutput.jsx
+// ============================================================
+// TRANSCRIPT OUTPUT
+// Displays processed transcript text from OCR, Whisper, or URL
+// extraction. Handles empty state and ensures clean formatting.
+// Styling is handled in: /styles/transcriptOutput.css
+// ============================================================
 
 import React from "react";
-import "./transcriptOutput.css";
+import "../styles/transcriptOutput.css";
 
 export default function TranscriptOutput({ transcript }) {
+  // ------------------------------------------------------------
+  // Empty state: no transcript available yet
+  // ------------------------------------------------------------
   if (!transcript) {
     return (
       <div className="transcript-output">
@@ -14,6 +22,9 @@ export default function TranscriptOutput({ transcript }) {
     );
   }
 
+  // ------------------------------------------------------------
+  // Render transcript text block
+  // ------------------------------------------------------------
   return (
     <div className="transcript-output">
       <div className="transcript-text">{transcript}</div>

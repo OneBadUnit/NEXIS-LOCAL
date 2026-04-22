@@ -1,3 +1,12 @@
+# ============================================================
+# ASSIMILATION MODULE (Backend)
+# Handles ingestion of external content such as YouTube URLs
+# and uploaded files. Attempts to fetch transcripts directly,
+# falling back to GPU Whisper transcription when needed.
+# All blocking operations (Whisper, yt-dlp) are executed in
+# thread pools to keep FastAPI fully async-safe.
+# ============================================================
+
 import os
 import tempfile
 from typing import Optional
@@ -5,18 +14,18 @@ from urllib.parse import urlparse, parse_qs
 
 import yt_dlp
 from faster_whisper import WhisperModel
-
 from youtube_transcript_api import (
     YouTubeTranscriptApi,
     TranscriptsDisabled,
     NoTranscriptFound
 )
 
+import asyncio
 
-# ---------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------
 
+# ------------------------------------------------------------
+# Helper: Extract YouTube Video ID
+# ------------------------------------------------------------
 def _extract_video_id(url: str) -> Optional[str]:
     parsed = urlparse(url)
 
@@ -32,10 +41,9 @@ def _extract_video_id(url: str) -> Optional[str]:
     return None
 
 
-# ---------------------------------------------------------
-# GPU Whisper Model (loaded once)
-# ---------------------------------------------------------
-
+# ------------------------------------------------------------
+# Whisper Model (GPU) — Loaded Once at Startup
+# ------------------------------------------------------------
 WHISPER_MODEL = WhisperModel(
     "medium",
     device="cuda",
@@ -43,14 +51,12 @@ WHISPER_MODEL = WhisperModel(
 )
 
 
-# ---------------------------------------------------------
-# YouTube Transcript Fetcher
-# ---------------------------------------------------------
-
+# ------------------------------------------------------------
+# YouTube Transcript Fetcher (Captions API)
+# Attempts to fetch captions directly. If unavailable, returns
+# None so Whisper can take over.
+# ------------------------------------------------------------
 async def get_youtube_transcript(url: str) -> Optional[str]:
-    """
-    Try to fetch captions. If unavailable, return None so Whisper can take over.
-    """
     video_id = _extract_video_id(url)
     if not video_id:
         return None
@@ -61,7 +67,7 @@ async def get_youtube_transcript(url: str) -> Optional[str]:
             languages=["en", "en-US", "en-GB"]
         )
         text = " ".join(seg.get("text", "") for seg in segments)
-        return text if text.strip() else None
+        return text.strip() or None
 
     except (TranscriptsDisabled, NoTranscriptFound):
         return None
@@ -69,28 +75,25 @@ async def get_youtube_transcript(url: str) -> Optional[str]:
         return None
 
 
-# ---------------------------------------------------------
-# Whisper Fallback
-# ---------------------------------------------------------
+# ------------------------------------------------------------
+# Whisper Transcription (Async-Safe)
+# Whisper is blocking, so we wrap it in a thread executor.
+# ------------------------------------------------------------
+def _whisper_sync(audio_path: str) -> str:
+    segments, _ = WHISPER_MODEL.transcribe(audio_path, beam_size=5)
+    return " ".join(seg.text.strip() for seg in segments).strip()
+
 
 async def whisper_transcribe(audio_path: str) -> str:
-    """
-    GPU Whisper transcription.
-    """
-    segments, _ = WHISPER_MODEL.transcribe(audio_path, beam_size=5)
-
-    text = " ".join(seg.text.strip() for seg in segments)
-    return text.strip()
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: _whisper_sync(audio_path))
 
 
-# ---------------------------------------------------------
-# Download Audio with yt-dlp
-# ---------------------------------------------------------
-
-async def download_audio(url: str) -> Optional[str]:
-    """
-    Downloads audio to a temporary file and returns the path.
-    """
+# ------------------------------------------------------------
+# yt-dlp Audio Download (Async-Safe)
+# yt-dlp is blocking, so we wrap it in a thread executor.
+# ------------------------------------------------------------
+def _download_audio_sync(url: str) -> Optional[str]:
     temp_dir = tempfile.mkdtemp()
     output_path = os.path.join(temp_dir, "audio.%(ext)s")
 
@@ -123,12 +126,17 @@ async def download_audio(url: str) -> Optional[str]:
     return None
 
 
-# ---------------------------------------------------------
-# Main Assimilation Logic
-# ---------------------------------------------------------
+async def download_audio(url: str) -> Optional[str]:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: _download_audio_sync(url))
 
+
+# ------------------------------------------------------------
+# Main Assimilation Logic
+# Attempts captions → falls back to Whisper → returns transcript.
+# ------------------------------------------------------------
 async def process_url(url: str):
-    # 1. Try captions
+    # 1. Try YouTube captions
     transcript = await get_youtube_transcript(url)
 
     # 2. If captions fail → Whisper fallback
@@ -150,10 +158,12 @@ async def process_url(url: str):
     }
 
 
-# ---------------------------------------------------------
-# File Processing (unchanged for now)
-# ---------------------------------------------------------
-
+# ------------------------------------------------------------
+# File Processing (Stubbed for Now)
+# Audio → placeholder
+# PDF → placeholder
+# Text → decoded directly
+# ------------------------------------------------------------
 async def process_file(file):
     content = await file.read()
 

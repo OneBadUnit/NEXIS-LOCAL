@@ -1,25 +1,52 @@
+# ============================================================
+# CREATION API
+# Handles all content-generation modes for ARC‑NEXUS:
+# reporting, tone/style, analysis, scripting, and ARC‑NEXUS
+# signature modes. Routes requests to the LLM service with
+# dynamically constructed prompts.
+# ============================================================
+
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from app.services.llm_service import run_llm
 
-router = APIRouter()
+
+# ------------------------------------------------------------
+# Router Configuration
+# ------------------------------------------------------------
+router = APIRouter(
+    prefix="/create",
+    tags=["creation"]
+)
 
 
+# ------------------------------------------------------------
+# Request Schema
+# tool:   reporting | tone | analysis | script | arc_nexus
+# option: specific mode within the tool
+# input:  raw text (article, transcript, notes, etc.)
+# ------------------------------------------------------------
 class CreationRequest(BaseModel):
-    tool: str      # reporting | tone | analysis | script | arc_nexus
-    option: str    # specific mode within the tool
-    input: str     # raw text: article, transcript, notes, etc.
+    tool: str
+    option: str
+    input: str
 
 
-@router.post("/create")
+# ------------------------------------------------------------
+# POST /create
+# Main Creation Engine endpoint. Builds a prompt based on
+# tool + option, then sends it to the LLM service.
+# ------------------------------------------------------------
+@router.post("")
 async def create_endpoint(payload: CreationRequest):
     tool = payload.tool
     option = payload.option
     text = payload.input
 
-    # -----------------------------
+    # ========================================================
     # REPORTING / NEWS BREAKDOWN
-    # -----------------------------
+    # ========================================================
     if tool == "reporting":
         if option == "straight-report":
             prompt = f"""
@@ -89,9 +116,9 @@ Task:
         else:
             prompt = f"Rewrite the following in a clear, factual reporting style:\n\n{text}"
 
-    # -----------------------------
+    # ========================================================
     # TONE / STYLE MODES
-    # -----------------------------
+    # ========================================================
     elif tool == "tone":
         if option == "instructional":
             prompt = f"""
@@ -162,9 +189,9 @@ Task:
         else:
             prompt = f"Rewrite the following in a tone appropriate for a serious, informative video:\n\n{text}"
 
-    # -----------------------------
+    # ========================================================
     # ANALYSIS / PROPAGANDA MODES
-    # -----------------------------
+    # ========================================================
     elif tool == "analysis":
         if option == "bias-detection":
             prompt = f"""
@@ -241,9 +268,9 @@ Task:
         else:
             prompt = f"Provide a clear, structured analysis of the following material:\n\n{text}"
 
-    # -----------------------------
+    # ========================================================
     # VIDEO SCRIPT MODES
-    # -----------------------------
+    # ========================================================
     elif tool == "script":
         if option == "60s":
             prompt = f"""
@@ -318,9 +345,9 @@ Task:
         else:
             prompt = f"Turn the following into a clear, engaging video script:\n\n{text}"
 
-    # -----------------------------
+    # ========================================================
     # ARC‑NEXUS SIGNATURE MODES
-    # -----------------------------
+    # ========================================================
     elif tool == "arc_nexus":
         if option == "synthesis":
             prompt = f"""
@@ -376,9 +403,9 @@ Task:
         else:
             prompt = f"Rewrite the following in a sharp, clear, ARC‑NEXUS style:\n\n{text}"
 
-    # -----------------------------
-    # FALLBACK
-    # -----------------------------
+    # ========================================================
+    # FALLBACK MODE
+    # ========================================================
     else:
         prompt = f"""
 You are ARC‑NEXUS Creation Engine.
@@ -390,19 +417,24 @@ Source Material:
 {text}
 """
 
-    # Call LLM
+    # --------------------------------------------------------
+    # Execute LLM
+    # --------------------------------------------------------
     output = await run_llm(prompt)
     return {"output": output}
-# ---------------------------------------------------------
+
+
+# ============================================================
 # TAG GENERATION ENDPOINT
-# ---------------------------------------------------------
+# ============================================================
+
 class TagRequest(BaseModel):
     output: str
     tool: str
     option: str
 
 
-@router.post("/create/tags")
+@router.post("create/tags")
 async def create_tags(payload: TagRequest):
     """
     Generate 5–8 short, relevant tags based on the generated output.
@@ -431,7 +463,6 @@ Return ONLY a JSON list of tags, like:
         import json
         tags = json.loads(raw)
         if isinstance(tags, list):
-            # Clean tags
             cleaned = [t.strip() for t in tags if isinstance(t, str) and t.strip()]
             return {"tags": cleaned[:8]}
     except:

@@ -6,203 +6,193 @@
 
   --arc-bg: #0a0a0a;
   --arc-panel: #111111;
+  --arc-panel-bg: #4e4b4b;
   --arc-text: #e0ffe8;
 
   --arc-border-soft: rgba(255, 255, 255, 0.08);
   --arc-border-strong: rgba(255, 255, 255, 0.15);
+  --arc-accent: #00FF41;
 
-  --arc-glow: 0 0 12px var(--arc-green);
+  --arc-accent-glow: 0 0 40px rgba(0,255,65,0.6);
+}
+
+input,
+textarea {
+  background: var(--arc-panel-bg);
+  color: var(--arc-text);
+  border: 1px solid var(--arc-border-soft);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+/* ============================================================
+   GLOBAL INPUT BOX BEHAVIOR
+   ============================================================ */
+textarea {
+  resize: none;
+  overflow: auto;
+  width: 100%;
+  max-height: 400px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 body {
   background: var(--arc-bg);
   color: var(--arc-text);
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-/* ROOT APP LAYOUT: sidebar + main content */
+/* ROOT LAYOUT (no sidebar) */
 .layout {
-  display: flex;
-  min-height: 100vh;
-  width: 100%;
-  transition: background 0.3s ease;
-  overflow: visible !important; /* allow dashboard grid to expand */
   background: var(--arc-bg);
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: 220px;
-  padding: 15px;
-  transition: width 0.3s ease;
-  border-right: 1px solid var(--arc-border-soft);
-  flex-shrink: 0 !important; /* prevents squeezing dashboard */
-  background: #050505;
-  color: var(--arc-text);
-}
-
-.sidebar.collapsed {
-  width: 60px;
-}
-
-.collapse-btn {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  color: var(--arc-text);
-}
-
-/* Sidebar Logo */
-.sidebar-logo {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  letter-spacing: 1px;
-  color: var(--arc-green);
-  text-shadow: var(--arc-glow);
-}
-
-/* Sidebar Items */
-.sidebar-item {
-  padding: 10px 12px;
-  margin: 6px 0;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.sidebar-item.active {
-  background: rgba(255, 255, 255, 0.15);
-  font-weight: bold;
-  color: var(--arc-green);
-}
-
-/* Section Headers */
-.sidebar-section-header {
-  margin-top: 20px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  opacity: 0.6;
-  letter-spacing: 1px;
-}
-
-/* Section Wrapper */
-.sidebar-section {
-  display: flex;
-  flex-direction: column;
 }
 
 /* TOP BAR */
 .topbar {
-  height: 55px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--arc-border-soft);
-  flex-shrink: 0;
+  height: 105px;
   background: #080808;
+  border-bottom: 1px solid var(--arc-border-soft);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Thin divider under topbar */
-.topbar-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-}
-
-/* MAIN CONTENT COLUMN (everything to the right of sidebar) */
-.arcn-content {
-  flex: 1;
+/* ARC/NEXUS title */
+.topbar-title {
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--arc-bg);
+  align-items: center;
 }
 
-/* SCROLLABLE MAIN AREA WHERE PAGES RENDER */
-.arcn-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 !important; /* critical: prevents grid squeeze */
-  box-sizing: border-box;
-}
-
-/* LEGACY / OTHER AREAS */
-.content-area {
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.output-panel {
-  margin-top: 20px;
-}
-
-.output-box {
-  padding: 20px;
-  border-radius: 8px;
-  min-height: 120px;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.status-indicator {
-  margin-right: auto;
-  font-size: 14px;
+.topbar-arc {
+  font-size: 24px;
+  letter-spacing: 2px;
   opacity: 0.8;
 }
 
-.mic-btn,
-.theme-toggle {
-  margin-left: 10px;
-  font-size: 20px;
+.topbar-nexus {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+/* NAV BAR */
+.navbar {
+  background: #080808;
+  border-bottom: 1px solid var(--arc-border-soft);
+  display: flex;
+  justify-content: center;
+  gap: 120px;
+  padding: 10px 20px;
+}
+
+/* NAV ITEMS */
+.nav-item {
   cursor: pointer;
-  background: none;
-  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  transition: 0.2s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-item.active {
+  color: var(--arc-green);
+  font-weight: 600;
+}
+
+/* MODULE TITLES */
+.module-title {
+  text-align: center;
+  font-size: 40px;
+  font-weight: 700;
+  margin: 20px 0;
   color: var(--arc-text);
 }
 
-/* CRITICAL: Stop layout flex rules from breaking NexusDashboard grid */
-.arcn-main > .nexus-dashboard {
-  display: block !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
+/* PANELS */
+.panel {
+  background: var(--arc-panel);
+  border: 1px solid var(--arc-border-soft);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
-.arcn-main {
-  padding: 0 !important;
-  display: block !important;
-  overflow: visible !important;
+/* ============================================================
+   GLOBAL OUTPUT PANEL STYLE
+   ============================================================ */
+.panel pre {
+  resize: none;
+  overflow: auto;
+  width: 100%;
+  max-height: 400px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.arcn-content {
-  overflow: visible !important;
+/* ============================================================
+   REFINEMENT TEXTAREA
+   ============================================================ */
+.refine-textarea {
+  background: var(--arc-panel-bg);
+  color: var(--arc-text);
+  border: 1px solid var(--arc-border-soft);
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+  min-height: 80px;
+  max-height: 220px;
+  resize: none;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.layout {
-  overflow: visible !important;
+/* REFINEMENT ACTIONS */
+.refine-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-/* Fix layout interference (deduped) */
-.arcn-main {
-  display: block !important;
-  overflow: visible !important;
-  padding: 0 !important;
+/* BUTTONS */
+.btn {
+  background: var(--arc-green-dark);
+  color: #000;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 400;
+  transition: 0.2s ease;
 }
 
-.arcn-content {
-  overflow: visible !important;
+.btn.active,
+.btn:hover {
+  box-shadow: var(--arc-accent-glow);
 }
 
-.layout {
-  overflow: visible !important;
+/* TEXT */
+p, span, div {
+  color: var(--arc-text);
+}
+
+/* BASE PRE STYLE */
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  overflow-x: auto;
 }

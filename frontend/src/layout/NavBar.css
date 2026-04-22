@@ -1,0 +1,57 @@
+/* ============================================================
+   NAVBAR — Fixed module navigation bar
+   Sits under the TopBar and never scrolls.
+   ============================================================ */
+.navbar {
+  position: fixed;
+  top: 55px;                     /* Height of TopBar */
+  left: 0;
+  right: 0;
+
+  height: 65px;                  /* Full bar height */
+  background: var(--arc-surface);
+  backdrop-filter: blur(6px);    /* ARC‑NEXUS glass effect */
+  border-bottom: 1px solid var(--arc-border);
+
+  display: flex;                 /* Align nav items horizontally */
+  align-items: center;           /* Vertically center items */
+  gap: 20px;                     /* Space between nav items */
+  padding: 0 24px;               /* Horizontal breathing room */
+
+  z-index: 900;
+}
+
+/* ============================================================
+   NAV ITEM — Default state
+   ============================================================ */
+.nav-item {
+  height: 100%;                  /* Fill navbar height */
+  display: flex;
+  align-items: center;
+  padding: 0 14px;               /* Horizontal padding */
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--arc-text-dim);
+  cursor: pointer;
+
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+/* ============================================================
+   NAV ITEM — Hover state (ARC‑NEXUS neon glow)
+   ============================================================ */
+.nav-item:hover {
+  color: var(--arc-text);
+  background: var(--arc-hover);
+  border-radius: 6px;
+}
+
+/* ============================================================
+   NAV ITEM — Active state (current module)
+   ============================================================ */
+.nav-item.active {
+  color: var(--arc-accent);
+  background: var(--arc-accent-fade);
+  border-radius: 6px;
+  font-weight: 600;
+}

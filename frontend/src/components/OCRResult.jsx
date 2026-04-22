@@ -1,41 +1,23 @@
 import React from "react";
+import "../styles/ui-widgets.css";   // for panel, neon, spacing, etc.
 
 export default function OCRResult({ data }) {
   if (!data) return null;
 
   return (
-    <div style={{ marginTop: "20px" }}>
-      <h2>OCR Result</h2>
+    <div className="ocr-result-container">
+      <h2 className="ocr-title">OCR Result</h2>
 
       {/* Plain text */}
-      <div
-        style={{
-          padding: "12px",
-          background: "#f5f5f5",
-          borderRadius: "8px",
-          marginBottom: "16px",
-          whiteSpace: "pre-wrap",
-          fontFamily: "monospace",
-        }}
-      >
+      <div className="ocr-plain-text">
         {data.plain_text || "(no text detected)"}
       </div>
 
       {/* Metadata */}
-      <details>
-        <summary style={{ cursor: "pointer", fontWeight: "bold" }}>
-          Metadata
-        </summary>
-        <pre
-          style={{
-            background: "#222",
-            color: "#0f0",
-            padding: "12px",
-            borderRadius: "8px",
-            marginTop: "12px",
-            overflowX: "auto",
-          }}
-        >
+      <details className="ocr-metadata-block">
+        <summary className="ocr-metadata-summary">Metadata</summary>
+
+        <pre className="ocr-metadata-pre">
           {JSON.stringify(data, null, 2)}
         </pre>
       </details>

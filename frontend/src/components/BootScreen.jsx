@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import "./boot.css";
+import "../styles/boot.css";
+
 
 export default function BootScreen({ appReady, onFinish }) {
   const [progress, setProgress] = useState(0);

@@ -3,6 +3,8 @@ import BootScreen from "./components/BootScreen";
 import Layout from "./layout/AppLayout";
 import { ArcNProvider } from "./context/ArcNContext";
 
+
+
 function App() {
   const [appReady, setAppReady] = useState(false);
   const [showBoot, setShowBoot] = useState(true);

@@ -1,7 +1,6 @@
-import React, { useContext, useEffect, useState, memo } from "react";
+import React, { useContext, useEffect, useState, memo, useCallback } from "react";
 import { ArcNContext } from "../context/ArcNContext";
 import axios from "axios";
-import "./nexus.css";
 import TranscriptOutput from "../components/TranscriptOutput";
 
 const NexusDashboard = () => {
@@ -15,37 +14,32 @@ const NexusDashboard = () => {
   const [fixingModels, setFixingModels] = useState(false);
   const [fixMessage, setFixMessage] = useState("");
 
-  const handleNewProject = () => {
-    setActivePage("PROJECTS");
-  };
+  // Wrapped in useCallback to satisfy ESLint and prevent infinite loops
+  const fetchStatus = useCallback(
+    async (retry = 0) => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/system/check");
+        setSystemStatus(res.data);
+        setError(null);
+      } catch (err) {
+        console.error("System status fetch failed:", err);
 
-  const handleOpenTranscription = () => {
-    setActivePage("TRANSCRIPTION");
-  };
+        if (retry < 3) {
+          setTimeout(() => fetchStatus(retry + 1), 1000);
+          return;
+        }
 
-  const fetchStatus = async (retry = 0) => {
-  try {
-    const res = await axios.get("http://127.0.0.1:8000/system/check");
-    setSystemStatus(res.data);
-    setError(null);
-  } catch (err) {
-    console.error("System status fetch failed:", err);
-
-    if (retry < 3) {
-      console.log(`Retrying system check... (${retry + 1})`);
-      setTimeout(() => fetchStatus(retry + 1), 1000);
-      return;
-    }
-
-    setError("Unable to fetch system status");
-  } finally {
-    setLoading(false);
-  }
-};
+        setError("Unable to fetch system status");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [] // no external dependencies needed
+  );
 
   useEffect(() => {
     fetchStatus();
-  }, []);
+  }, [fetchStatus]);
 
   const handleFixConfig = async () => {
     setFixingConfig(true);
@@ -55,7 +49,7 @@ const NexusDashboard = () => {
       await axios.post("http://127.0.0.1:8000/system/fix/config");
       setFixMessage("Config file created successfully.");
       await fetchStatus();
-    } catch (err) {
+    } catch {
       setFixMessage("Failed to fix config.");
     } finally {
       setFixingConfig(false);
@@ -70,7 +64,7 @@ const NexusDashboard = () => {
       await axios.post("http://127.0.0.1:8000/system/fix/models");
       setFixMessage("Models pulled successfully.");
       await fetchStatus();
-    } catch (err) {
+    } catch {
       setFixMessage("Failed to pull models.");
     } finally {
       setFixingModels(false);
@@ -78,142 +72,167 @@ const NexusDashboard = () => {
   };
 
   return (
-    <div className="nexus-dashboard">
+    <div className="module-container">
+      <h1 className="module-title">THE NEXUS</h1>
 
-      {/* HEADER */}
-      <header className="nexus-header">
-        <div className="nexus-emblem"></div>
-        <h1>NEXUS</h1>
-        <p className="nexus-subtitle">Cognitive Operations Hub</p>
-      </header>
-
-      {/* MAIN GRID */}
-      <div className="nexus-main-grid">
-
+      {/* GRID */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "20px",
+          marginTop: "20px",
+        }}
+      >
         {/* LEFT COLUMN */}
-        <section className="nexus-column nexus-projects">
-
-          <div className="nexus-card">
-            <div className="nexus-section-header">
-              <h2>Recent Projects</h2>
-              <button className="nexus-big-button" onClick={handleNewProject}>
+        <div>
+          {/* Recent Projects */}
+          <div className="panel">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3>Recent Projects</h3>
+              <button className="btn" onClick={() => setActivePage("PROJECTS")}>
                 New Project
               </button>
             </div>
           </div>
 
-          <div className="nexus-card">
-            <div className="nexus-card-title">Demo Project</div>
-            <div className="nexus-card-meta">
-              Status: Idle • Updated just now
-            </div>
+          {/* Demo Project */}
+          <div className="panel">
+            <h3>Demo Project</h3>
+            <p style={{ opacity: 0.7 }}>Status: Idle • Updated just now</p>
           </div>
 
-          <div className="nexus-card">
-            <h2>Recent Activity</h2>
+          {/* Recent Activity */}
+          <div className="panel">
+            <h3>Recent Activity</h3>
             <p>No recent activity yet.</p>
           </div>
-
-        </section>
+        </div>
 
         {/* RIGHT COLUMN */}
-        <section className="nexus-column nexus-system">
-
-          <div className="nexus-card">
-            <h2>System Status</h2>
+        <div>
+          {/* System Status */}
+          <div className="panel">
+            <h3>System Status</h3>
 
             {loading && <p>Checking system...</p>}
             {error && <p style={{ color: "red" }}>{error}</p>}
 
             {systemStatus && (
-              <div className="system-status-details">
+              <div style={{ marginTop: "10px" }}>
+                <StatusRow
+                  label="Ollama Installed"
+                  ok={systemStatus.ollama?.installed}
+                />
 
-                <p>
-                  Ollama Installed: {systemStatus.ollama?.installed ? "Yes" : "No"}
-                </p>
+                <StatusRow
+                  label="Ollama Running"
+                  ok={systemStatus.ollama?.running}
+                />
 
-                <p>
-                  Ollama Running: {systemStatus.ollama?.running ? "Yes" : "No"}
-                </p>
-
-                <p>
-                  Config Ready: {systemStatus.config?.isReady ? "Yes" : "No"}
+                <StatusRow label="Config Ready" ok={systemStatus.config?.isReady}>
                   {!systemStatus.config?.isReady && (
                     <button
-                      className="nexus-small-button"
+                      className="btn"
                       onClick={handleFixConfig}
                       disabled={fixingConfig}
                     >
                       {fixingConfig ? "Fixing..." : "Fix Config"}
                     </button>
                   )}
-                </p>
+                </StatusRow>
 
-                <p>
-                  Models Ready: {systemStatus.models?.available ? "Yes" : "No"}
+                <StatusRow
+                  label="Models Ready"
+                  ok={systemStatus.models?.available}
+                >
                   {!systemStatus.models?.available && (
                     <button
-                      className="nexus-small-button"
+                      className="btn"
                       onClick={handleFixModels}
                       disabled={fixingModels}
                     >
                       {fixingModels ? "Fixing..." : "Fix Models"}
                     </button>
                   )}
-                </p>
+                </StatusRow>
 
                 {fixMessage && (
-                  <p style={{ marginTop: "10px", color: "#4caf50" }}>
+                  <p style={{ marginTop: "10px", color: "var(--arc-green)" }}>
                     {fixMessage}
                   </p>
                 )}
-
               </div>
             )}
           </div>
 
-          <div className="nexus-card">
-            <h2>Active Model</h2>
+          {/* Active Model */}
+          <div className="panel">
+            <h3>Active Model</h3>
             <p>llama3.2 (primary)</p>
-            <button className="nexus-small-button">Change Model</button>
+            <button className="btn">Change Model</button>
           </div>
 
-          <div className="nexus-card">
-            <h2>Quick Modules</h2>
+          {/* Quick Modules */}
+          <div className="panel">
+            <h3>Quick Modules</h3>
 
-            <button
-              className="nexus-big-button"
-              onClick={handleOpenTranscription}
-            >
+            <button className="btn" onClick={() => setActivePage("TRANSCRIPTION")}>
               Documents
             </button>
 
-            <button
-              className="nexus-big-button"
-              onClick={() => setActivePage("EXTRACTION")}
-            >
+            <button className="btn" onClick={() => setActivePage("EXTRACTION")}>
               Extraction
             </button>
 
-            <button
-              className="nexus-big-button"
-              onClick={() => setActivePage("SYNTHESIS")}
-            >
+            <button className="btn" onClick={() => setActivePage("SYNTHESIS")}>
               Synthesis
             </button>
           </div>
 
-          <div className="nexus-card nexus-transcript-card">
-            <h2>Transcript Output</h2>
+          {/* Transcript Output */}
+          <div className="panel">
+            <h3>Transcript Output</h3>
             <TranscriptOutput transcript={systemStatus?.transcript} />
           </div>
-
-        </section>
-
+        </div>
       </div>
-
     </div>
   );
 };
+
+function StatusRow({ label, ok, children }) {
+  return (
+    <div
+      style={{
+        marginBottom: "12px",
+        padding: "10px",
+        borderRadius: "6px",
+        background: "rgba(255,255,255,0.05)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        border: ok
+          ? "1px solid var(--arc-green)"
+          : "1px solid rgba(255,0,0,0.4)",
+      }}
+    >
+      <span>
+        {label}:{" "}
+        <strong style={{ color: ok ? "var(--arc-green)" : "red" }}>
+          {ok ? "OK" : "Missing"}
+        </strong>
+      </span>
+
+      {children}
+    </div>
+  );
+}
 
 export default memo(NexusDashboard);

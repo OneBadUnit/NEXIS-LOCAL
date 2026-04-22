@@ -1,44 +1,44 @@
-import React, { useState, useEffect } from "react";
-import "./reconstruction.css";
+// ============================================================
+// ARC‑NEXUS MODULE: RECONSTRUCTION (GLOBAL VERSION)
+// Text‑only transformation engine.
+// Uses global ArcNContext for state + persistence.
+// Saved items flow through SavedCardsPanel (view + copy only).
+// ============================================================
+
+import React, { useState, useContext } from "react";
+import { ArcNContext } from "../context/ArcNContext";
 import CopyButton from "../components/CopyButton";
 import ScrollTopButton from "../components/ScrollTopButton";
+import SavedCardsPanel from "../components/SavedCardsPanel";
 
 export default function Reconstruction() {
-  const [selectedTool, setSelectedTool] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [inputText, setInputText] = useState("");
-  const [outputText, setOutputText] = useState("");
-  const [savedItems, setSavedItems] = useState([]);
+  const {
+    reconstructionState,
+    setReconstructionState,
+    savedReconstructions,
+    saveReconstruction,
+    setSavedReconstructions,
+    setReconstructionRefinementText,
+    refineReconstructionOutput,
+    keepRefinedReconstructionOutput,
+    revertReconstructionOutput,
+  } = useContext(ArcNContext);
+
+  const {
+    input,
+    output,
+    selectedTool,
+    selectedOption,
+    refinementText,
+    originalOutputBeforeRefine,
+    refining,
+  } = reconstructionState;
+
   const [loading, setLoading] = useState(false);
 
-  /* ---------------------------
-     LOAD PERSISTED STATE
-  ----------------------------*/
-  useEffect(() => {
-    const storedInput = localStorage.getItem("reconstruction-input");
-    const storedOutput = localStorage.getItem("reconstruction-output");
-    const storedSaves = localStorage.getItem("reconstruction-saves");
-
-    if (storedInput) setInputText(storedInput);
-    if (storedOutput) setOutputText(storedOutput);
-    if (storedSaves) setSavedItems(JSON.parse(storedSaves));
-  }, []);
-
-  /* ---------------------------
-     SAVE PERSISTED STATE
-  ----------------------------*/
-  useEffect(() => {
-    localStorage.setItem("reconstruction-input", inputText);
-  }, [inputText]);
-
-  useEffect(() => {
-    localStorage.setItem("reconstruction-output", outputText);
-  }, [outputText]);
-
-  useEffect(() => {
-    localStorage.setItem("reconstruction-saves", JSON.stringify(savedItems));
-  }, [savedItems]);
-
+  // ------------------------------------------------------------
+  // TOOL OPTIONS (MUST MATCH BACKEND EXACTLY)
+  // ------------------------------------------------------------
   const OPTIONS = {
     summarize: ["Short", "Medium", "Long", "Narrative", "Academic"],
     rewrite: [
@@ -52,7 +52,7 @@ export default function Reconstruction() {
       "Key Points",
       "Entities",
       "Timeline",
-      "Topics / Themes",
+      "Topics and Themes", // backend now accepts this
       "Quotes",
       "JSON Structured Data",
     ],
@@ -73,221 +73,230 @@ export default function Reconstruction() {
     ],
   };
 
+  // ------------------------------------------------------------
+  // SAFE SETTERS WITH GUARDS
+  // ------------------------------------------------------------
+  const setTool = (tool) => {
+    if (!OPTIONS[tool] || OPTIONS[tool].length === 0) return;
+
+    setReconstructionState((prev) => ({
+      ...prev,
+      selectedTool: tool,
+      selectedOption: OPTIONS[tool][0], // guaranteed valid
+    }));
+  };
+
+  const setOption = (opt) => {
+    if (!selectedTool) return;
+    if (!OPTIONS[selectedTool].includes(opt)) return;
+
+    setReconstructionState((prev) => ({
+      ...prev,
+      selectedOption: opt,
+    }));
+  };
+
+  const setInput = (value) => {
+    setReconstructionState((prev) => ({
+      ...prev,
+      input: value,
+    }));
+  };
+
+  const setOutput = (value) => {
+    setReconstructionState((prev) => ({
+      ...prev,
+      output: value,
+    }));
+  };
+
+  // ------------------------------------------------------------
+  // RUN RECONSTRUCTION (API CALL) WITH GUARDS
+  // ------------------------------------------------------------
   const handleReconstruct = async () => {
-    if (!selectedTool || !selectedOption || !inputText) return;
+    // HARD GUARDS — prevent invalid requests
+    if (!input || input.trim() === "") {
+      setOutput("No input provided.");
+      return;
+    }
+
+    if (!selectedTool || !OPTIONS[selectedTool]) {
+      setOutput("Invalid tool selected.");
+      return;
+    }
+
+    if (!selectedOption || !OPTIONS[selectedTool].includes(selectedOption)) {
+      setOutput("Invalid option selected.");
+      return;
+    }
 
     setLoading(true);
-    setOutputText("");
+    setOutput("");
 
     try {
+      const payload = {
+        text: input,
+        mode: selectedTool,
+        option: selectedOption,
+      };
+
+      console.log("Sending Reconstruction Payload:", payload);
+
       const response = await fetch(
         "http://localhost:8000/reconstruction/reconstruct",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: inputText,
-            mode: selectedTool,
-            option: selectedOption,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const data = await response.json();
-      setOutputText(data.output || "No output generated.");
-    } catch (error) {
-      setOutputText("Error processing reconstruction.");
+      setOutput(data.output || "No output generated.");
+    } catch (err) {
+      console.error("Reconstruction error:", err);
+      setOutput("Error processing reconstruction.");
     }
 
     setLoading(false);
   };
 
+  // ------------------------------------------------------------
+  // SAVE OUTPUT
+  // ------------------------------------------------------------
   const saveOutput = () => {
-    if (!outputText) return;
+    if (!output) return;
 
     const name = prompt("Enter a name for this reconstruction:");
     if (!name) return;
 
-    const newItem = {
-      id: Date.now().toString() + Math.random().toString(16).slice(2),
-      name,
-      timestamp: new Date().toISOString(),
-      output: outputText,
-      open: false,
-      editing: false,
-    };
-
-    setSavedItems((prev) => [...prev, newItem]);
+    saveReconstruction({
+      title: name,
+      text: output,
+    });
   };
 
-  const clearForm = () => {
-    if (!window.confirm("Really?")) return;
-    if (!window.confirm("Really really?")) return;
-
-    setInputText("");
-    setOutputText("");
-
-    localStorage.setItem("reconstruction-input", "");
-    localStorage.setItem("reconstruction-output", "");
-  };
-
-  const renameItem = (id, newName) => {
-    setSavedItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, name: newName } : item
-      )
-    );
-  };
-
-  const toggleEditing = (id) => {
-    setSavedItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, editing: !item.editing } : item
-      )
-    );
-  };
-
+  // ------------------------------------------------------------
+  // DELETE SAVED ITEM
+  // ------------------------------------------------------------
   const deleteItem = (id) => {
-    setSavedItems((prev) => prev.filter((item) => item.id !== id));
+    setSavedReconstructions((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const toggleOpen = (id) => {
-    setSavedItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, open: !item.open } : item
-      )
-    );
-  };
-
+  // ------------------------------------------------------------
+  // RENDER
+  // ------------------------------------------------------------
   return (
-    <div className="reconstruction-container">
-      <h1 className="reconstruction-title">Reconstruction</h1>
+    <div className="module-container">
+      <h1 className="module-title">Reconstruction</h1>
 
       {/* TOOLBOX */}
-      <div className="toolbox">
-        {Object.keys(OPTIONS).map((tool) => (
-          <button
-            key={tool}
-            className={`tool-button ${
-              selectedTool === tool ? "active" : ""
-            }`}
-            onClick={() => {
-              setSelectedTool(tool);
-              setSelectedOption(null);
-            }}
-          >
-            {tool.charAt(0).toUpperCase() + tool.slice(1)}
-          </button>
-        ))}
+      <div className="panel" style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+          {Object.keys(OPTIONS).map((tool) => (
+            <button
+              key={tool}
+              className={`btn ${selectedTool === tool ? "active" : ""}`}
+              onClick={() => setTool(tool)}
+            >
+              {tool.charAt(0).toUpperCase() + tool.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* OPTIONS */}
       {selectedTool && (
-        <div className="options-panel">
-          {OPTIONS[selectedTool].map((opt) => (
-            <button
-              key={opt}
-              className={`option-button ${
-                selectedOption === opt ? "active" : ""
-              }`}
-              onClick={() => setSelectedOption(opt)}
-            >
-              {opt}
-            </button>
-          ))}
+        <div className="panel" style={{ textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+            {OPTIONS[selectedTool].map((opt) => (
+              <button
+                key={opt}
+                className={`btn ${selectedOption === opt ? "active" : ""}`}
+                onClick={() => setOption(opt)}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* INPUT */}
-      <div className="input-card">
+      <div className="panel">
         <textarea
-          className="input-textarea"
           placeholder="Enter text to reconstruct..."
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          style={{ width: "100%", minHeight: "160px" }}
         />
       </div>
 
       {/* ACTION BUTTON */}
-      <button
-        className={`reconstruct-button ${loading ? "loading" : ""}`}
-        onClick={handleReconstruct}
-        disabled={loading}
-      >
-        {loading ? "Reconstructing..." : "Reconstruct"}
-      </button>
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <button className="btn" onClick={handleReconstruct} disabled={loading}>
+          {loading ? "Reconstructing..." : "Reconstruct"}
+        </button>
+      </div>
 
       {/* OUTPUT */}
-      <div className="output-card">
-        <h2>Output</h2>
-        <pre>{outputText}</pre>
+      <div className="panel">
+        <h3>Output</h3>
+        <pre>{output}</pre>
 
-        {outputText && (
-          <div className="output-actions">
-            <CopyButton text={outputText} />
-            <button className="save-button" onClick={saveOutput}>
-              Save
-            </button>
-            <button className="save-button" onClick={clearForm}>
-              Clear Form
-            </button>
+        {output && (
+          <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
+            <CopyButton text={output} />
+            <button className="btn" onClick={saveOutput}>Save</button>
+            <button className="btn" onClick={() => setInput("")}>Clear Input</button>
           </div>
         )}
       </div>
 
-      {/* SAVED ITEMS */}
-      <div className="saved-panel">
-        <h2>Saved Reconstructions</h2>
+      {/* REFINEMENT */}
+      {output && (
+        <div className="panel">
+          <h3>Refine Output (optional)</h3>
 
-        <div className="saved-list">
-          {savedItems.map((item) => (
-            <div key={item.id} className="saved-item">
-              <div className="saved-header">
-                {item.editing ? (
-                  <input
-                    className="saved-name-input"
-                    value={item.name}
-                    onChange={(e) => renameItem(item.id, e.target.value)}
-                    onBlur={() => toggleEditing(item.id)}
-                    autoFocus
-                  />
-                ) : (
-                  <div
-                    className="saved-name-display"
-                    onClick={() => toggleEditing(item.id)}
-                  >
-                    {item.name}
-                  </div>
-                )}
+          <textarea
+            className="refine-textarea"
+            placeholder="Describe how to refine this output..."
+            value={refinementText}
+            onChange={(e) => setReconstructionRefinementText(e.target.value)}
+          />
 
-                <button
-                  className="delete-btn"
-                  onClick={() => deleteItem(item.id)}
-                >
-                  ✕
-                </button>
-              </div>
+          <div className="refine-actions">
+            <button
+              className="btn"
+              onClick={refineReconstructionOutput}
+              disabled={!refinementText || refining}
+            >
+              {refining ? "Refining..." : "Refine Output"}
+            </button>
 
-              <div className="saved-timestamp">
-                {new Date(item.timestamp).toLocaleString()}
-              </div>
-
-              <button
-                className="view-output-btn"
-                onClick={() => toggleOpen(item.id)}
-              >
-                {item.open ? "Hide Output" : "View Output"}
-              </button>
-
-              {item.open && (
-                <div className="saved-output-wrapper">
-                  <pre className="saved-output">{item.output}</pre>
-                  <CopyButton text={item.output} />
-                </div>
-              )}
-            </div>
-          ))}
+            {originalOutputBeforeRefine && (
+              <>
+                <button className="btn" onClick={keepRefinedReconstructionOutput}>Keep Changes</button>
+                <button className="btn" onClick={revertReconstructionOutput}>Revert</button>
+              </>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* SAVED ITEMS */}
+      <div className="panel">
+        <h3>Saved Reconstructions</h3>
+
+        <SavedCardsPanel
+          savedItems={savedReconstructions}
+          onSelect={(item) => console.log("Selected reconstruction:", item)}
+          onDelete={deleteItem}
+        />
       </div>
 
       <ScrollTopButton />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import "./creation.css";
 import CopyButton from "../components/CopyButton";
+import ScrollTopButton from "../components/ScrollTopButton";
 
 export default function Creation() {
   /* ----------------------------------------
@@ -46,10 +46,7 @@ export default function Creation() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 1200);
+    setTimeout(() => setCopied(false), 1200);
   };
 
   /* ----------------------------------------
@@ -99,55 +96,50 @@ export default function Creation() {
     arc_nexus: ["synthesis", "deconstruction", "enhancement", "compression"],
   };
 
-  /* ----------------------------------------
-     GENERATE OUTPUT + TAGS
-  ---------------------------------------- */
-  const generate = async () => {
-    if (!creationState.input.trim()) return;
+/* ----------------------------------------
+   GENERATE OUTPUT + TAGS
+---------------------------------------- */
+const generate = async () => {
+  if (!creationState.input.trim()) return;
 
-    update("loading", true);
+  update("loading", true);
 
-    try {
-      const response = await fetch("http://localhost:5000/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tool: creationState.tool,
-          option: creationState.option,
-          input: creationState.input,
-        }),
-      });
+  try {
+    // MAIN CREATION CALL
+    const response = await fetch("http://localhost:8000/create/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instruction: creationState.input
+      }),
+    });
 
-      const data = await response.json();
-      update("output", data.output || "No output received.");
+    const data = await response.json();
+    const output = data.output || "No output received.";
+    update("output", output);
 
-      /* ----------------------------------------
-         SECOND PASS: TAG GENERATION
-      ---------------------------------------- */
-      try {
-        const tagResponse = await fetch("http://localhost:5000/create/tags", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            output: data.output,
-            tool: creationState.tool,
-            option: creationState.option,
-          }),
-        });
+    // TAG GENERATION CALL
+    const tagResponse = await fetch("http://localhost:8000/create/tags", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: output
+      }),
+    });
 
-        const tagData = await tagResponse.json();
-        update("tags", tagData.tags || []);
-      } catch (err) {
-        update("tags", []);
-      }
+    const tagData = await tagResponse.json();
+    update("tags", tagData.tags || []);
 
-    } catch (err) {
-      update("output", "Error connecting to backend.");
-      update("tags", []);
-    }
+  } catch (err) {
+    update("output", "Error connecting to backend.");
+    update("tags", []);
+  }
 
-    update("loading", false);
-  };
+  update("loading", false);
+};
+
+
+;
 
   /* ----------------------------------------
      SAVE CREATION
@@ -193,81 +185,83 @@ export default function Creation() {
      RENDER
   ---------------------------------------- */
   return (
-    <div className="creation-container">
-      <h2 className="creation-title">Creation</h2>
+    <div className="module-container">
+      <h1 className="module-title">Creation</h1>
 
       {/* TOOLBOX */}
-      <div className="toolbox">
-        {tools.map((t) => (
-          <button
-            key={t.id}
-            className={`tool-button ${
-              creationState.tool === t.id ? "active" : ""
-            }`}
-            onClick={() => update("tool", t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="panel" style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+          {tools.map((t) => (
+            <button
+              key={t.id}
+              className={`btn ${creationState.tool === t.id ? "active" : ""}`}
+              onClick={() => update("tool", t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* OPTIONS */}
-      <div className="options-panel indented">
-        {options[creationState.tool].map((opt) => (
-          <button
-            key={opt}
-            className={`option-button ${
-              creationState.option === opt ? "active" : ""
-            }`}
-            onClick={() => update("option", opt)}
-          >
-            {opt.replace(/-/g, " ").toUpperCase()}
-          </button>
-        ))}
+      <div className="panel" style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexWrap: "wrap" }}>
+          {options[creationState.tool].map((opt) => (
+            <button
+              key={opt}
+              className={`btn ${creationState.option === opt ? "active" : ""}`}
+              onClick={() => update("option", opt)}
+            >
+              {opt.replace(/-/g, " ").toUpperCase()}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* INPUT */}
-      <div className="input-card">
+      <div className="panel">
         <textarea
-          className="input-textarea"
           placeholder="Paste article, transcript, or describe what you want..."
           value={creationState.input}
           onChange={(e) => update("input", e.target.value)}
+          style={{
+            width: "100%",
+            minHeight: "160px",
+            resize: "vertical",
+          }}
         />
       </div>
 
       {/* GENERATE BUTTON */}
-      <button
-        className={`generate-button ${
-          creationState.loading ? "loading" : ""
-        }`}
-        onClick={generate}
-        disabled={creationState.loading}
-      >
-        {creationState.loading ? "Generating..." : "Generate"}
-      </button>
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <button
+          className="btn"
+          onClick={generate}
+          disabled={creationState.loading}
+        >
+          {creationState.loading ? "Generating..." : "Generate"}
+        </button>
+      </div>
 
       {/* OUTPUT */}
       {creationState.output && (
-        <div className="output-card">
+        <div className="panel">
           <pre>{creationState.output}</pre>
 
           {/* TAGS */}
           {creationState.tags?.length > 0 && (
-            <div className="tag-list">
+            <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {creationState.tags.map((tag, i) => (
                 <span key={i} className="tag">{tag}</span>
               ))}
             </div>
           )}
 
-          <div className="output-actions">
-            <button className="save-button" onClick={saveCreation}>
-              Save
-            </button>
+          <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
+            <button className="btn" onClick={saveCreation}>Save</button>
 
             <button
-              className="copy-button"
+              className="btn"
               onClick={() => copyToClipboard(creationState.output)}
             >
               {copied ? "Copied!" : "Copy"}
@@ -277,56 +271,53 @@ export default function Creation() {
       )}
 
       {/* SAVED CREATIONS */}
-      <div className="saved-panel">
+      <div className="panel">
         <h3>Saved Creations</h3>
 
-        <div className="saved-list">
-          {savedCreations.map((item) => (
-            <div key={item.id} className="saved-item">
-              <div className="saved-header">
-                <input
-                  className="saved-name-input"
-                  value={item.name}
-                  onChange={(e) => updateSavedName(item.id, e.target.value)}
-                />
+        {savedCreations.map((item) => (
+          <div key={item.id} className="panel" style={{ marginTop: "15px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <input
+                value={item.name}
+                onChange={(e) => updateSavedName(item.id, e.target.value)}
+                style={{ flex: 1, marginRight: "10px" }}
+              />
 
-                <button
-                  className="delete-btn"
-                  onClick={() => deleteSaved(item.id)}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="saved-timestamp">{item.timestamp}</div>
-
-              <button
-                className="view-output-btn"
-                onClick={() => toggleSavedOpen(item.id)}
-              >
-                {item.open ? "Hide Output" : "View Output"}
+              <button className="btn btn-small" onClick={() => deleteSaved(item.id)}>
+                ✕
               </button>
-
-              {item.open && (
-                <div className="saved-output-wrapper">
-                  <pre className="saved-output">{item.output}</pre>
-
-                  {/* SAVED TAGS */}
-                  {item.tags?.length > 0 && (
-                    <div className="saved-tag-list">
-                      {item.tags.map((tag, i) => (
-                        <span key={i} className="tag">{tag}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  <CopyButton text={item.output} />
-                </div>
-              )}
             </div>
-          ))}
-        </div>
+
+            <div style={{ opacity: 0.6, marginTop: "4px" }}>{item.timestamp}</div>
+
+            <button
+              className="btn"
+              style={{ marginTop: "10px" }}
+              onClick={() => toggleSavedOpen(item.id)}
+            >
+              {item.open ? "Hide Output" : "View Output"}
+            </button>
+
+            {item.open && (
+              <div style={{ marginTop: "10px" }}>
+                <pre>{item.output}</pre>
+
+                {item.tags?.length > 0 && (
+                  <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {item.tags.map((tag, i) => (
+                      <span key={i} className="tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
+
+                <CopyButton text={item.output} />
+              </div>
+            )}
+          </div>
+        ))}
       </div>
+
+      <ScrollTopButton />
     </div>
   );
 }

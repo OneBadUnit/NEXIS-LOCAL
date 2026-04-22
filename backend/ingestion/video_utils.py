@@ -1,26 +1,43 @@
+# ============================================================
+# VIDEO INGESTION MODULE
+# Extracts audio from video using ffmpeg, then sends the audio
+# to the Whisper transcription engine. Fully async, safe temp
+# handling, and debug‑instrumented for visibility.
+# ============================================================
+
 print(">>> VIDEO_UTILS LOADED FROM ingestion/video_utils.py")
 
 import asyncio
 import os
 import tempfile
+
 from .audio_utils import transcribe_audio_file
 
+
+# ------------------------------------------------------------
+# CONFIG
+# ------------------------------------------------------------
 FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
 
 SAFE_TMP = r"D:\arc-nexus\tmp"
 os.makedirs(SAFE_TMP, exist_ok=True)
 
 
+# ------------------------------------------------------------
+# VIDEO → AUDIO → TRANSCRIPTION
+# ------------------------------------------------------------
 async def transcribe_video_file(path: str) -> str:
     tmp_dir = tempfile.mkdtemp(prefix="arc_vid_", dir=SAFE_TMP)
     audio_path = os.path.join(tmp_dir, "audio.wav")
 
     try:
+        # Debug: input file size
         try:
             print(">>> DEBUG: Input video file size:", os.path.getsize(path))
         except Exception as e:
             print(">>> DEBUG: Could not stat input file:", str(e))
 
+        # ffmpeg command
         cmd = [
             FFMPEG_PATH,
             "-y",
@@ -34,6 +51,7 @@ async def transcribe_video_file(path: str) -> str:
 
         print(">>> FFMPEG CMD:", " ".join(cmd))
 
+        # Run ffmpeg asynchronously
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -46,9 +64,11 @@ async def transcribe_video_file(path: str) -> str:
         print(">>> FFMPEG STDERR (first 400 chars):", err_text[:400], "…")
         print(">>> FFMPEG RETURN CODE:", proc.returncode)
 
+        # ffmpeg failure
         if proc.returncode != 0:
             return f"[FFMPEG ERROR] {err_text}"
 
+        # Ensure audio file exists
         if not os.path.exists(audio_path):
             print(">>> ERROR: ffmpeg did not create audio file")
             return "[Video ERROR] ffmpeg produced no audio file."
@@ -62,6 +82,7 @@ async def transcribe_video_file(path: str) -> str:
 
         print(">>> FFMPEG SUCCESS, calling Whisper…")
 
+        # Transcribe audio
         text = await transcribe_audio_file(audio_path)
         print(">>> WHISPER RESULT (first 200 chars):", repr(text[:200]), "…")
 
@@ -72,6 +93,7 @@ async def transcribe_video_file(path: str) -> str:
         return f"[Video ERROR] {str(e)}"
 
     finally:
+        # Cleanup
         try:
             if os.path.exists(audio_path):
                 os.remove(audio_path)

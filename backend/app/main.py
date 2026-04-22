@@ -1,51 +1,50 @@
+# ============================================================
+# ARC‑NEXUS BACKEND MAIN ENTRYPOINT
+# Loads all module routers and mounts them under clean prefixes.
+# ============================================================
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import subprocess
+from app.api.routes.ai_helper import router as ai_helper_router
 
+
+# ------------------------------------------------------------
+# Import module routers directly (no wrappers)
+# ------------------------------------------------------------
 from app.assimilation import router as assimilation_router
-from app.api.vision import router as vision_router
-from app.api.routes.system import router as system_router
-from app.api.routes.reconstruction import router as reconstruction_router
-from app.api.routes.creation import router as creation_router  # <-- correct import
+from app.reconstruction import router as reconstruction_router
+from app.creation import router as creation_router
+from app.vision import router as vision_router
 
-app = FastAPI()  # <-- MUST be before include_router()
+# ------------------------------------------------------------
+# App Initialization
+# ------------------------------------------------------------
+app = FastAPI(title="ARC‑NEXUS Backend")
 
-
-# -------------------------------
-# AUTO-UPDATE YT-DLP ON STARTUP
-# -------------------------------
-def auto_update_ytdlp():
-    try:
-        print(">>> Checking for yt-dlp updates...")
-        subprocess.run(["yt-dlp", "-U"], check=False)
-        print(">>> yt-dlp update check complete.")
-    except Exception as e:
-        print(">>> yt-dlp auto-update failed:", e)
-
-@app.on_event("startup")
-async def startup_event():
-    auto_update_ytdlp()
-
-
-# -------------------------------
-# CORS + ROUTERS
-# -------------------------------
+# ------------------------------------------------------------
+# CORS (Frontend → Backend)
+# ------------------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # You can restrict later
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# No prefixes — frontend expects exact paths
-app.include_router(assimilation_router)
-app.include_router(vision_router)
-app.include_router(system_router, prefix="/system")
-app.include_router(reconstruction_router)
-app.include_router(creation_router)  # <-- correct placement
+# ------------------------------------------------------------
+# ROUTER MOUNTING
+# ------------------------------------------------------------
+app.include_router(assimilation_router, prefix="/assimilation")
+app.include_router(reconstruction_router, prefix="/reconstruction")
+app.include_router(creation_router, prefix="/create")
 
+app.include_router(vision_router, prefix="/vision")
+app.include_router(ai_helper_router)
 
+# ------------------------------------------------------------
+# Root Endpoint
+# ------------------------------------------------------------
 @app.get("/")
 def root():
-    return {"status": "ARC-NEXUS backend running"}
+    return {"status": "ARC‑NEXUS backend running"}

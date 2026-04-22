@@ -1,11 +1,25 @@
-// src/components/SystemCheckPanel.jsx
+// ============================================================
+// SYSTEM CHECK PANEL
+// Displays the full ARC‑NEXUS environment diagnostic results.
+// Shows Ollama status, model availability, config readiness,
+// and provides Fix actions when issues are detected.
+// Styling is handled in: /styles/SystemCheckPanel.css
+// ============================================================
+
 import React, { useContext } from "react";
-import { ArcNContext } from "../context/ArcNContext";
-import "./SystemCheckPanel.css";
+import "../styles/SystemCheckPanel.css";
 
-const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixModels }) => {
-  const { setActivePage } = useContext(ArcNContext);
+export default function SystemCheckPanel({
+  hasRunCheck,
+  result,
+  loading,
+  onFixConfig,
+  onFixModels
+}) {
 
+  // ------------------------------------------------------------
+  // Pre-check: user has not run system check yet
+  // ------------------------------------------------------------
   if (!hasRunCheck) {
     return (
       <div className="system-check-hint">
@@ -14,6 +28,9 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
     );
   }
 
+  // ------------------------------------------------------------
+  // Loading state while backend performs checks
+  // ------------------------------------------------------------
   if (loading) {
     return (
       <div className="system-check-panel">
@@ -23,6 +40,9 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
     );
   }
 
+  // ------------------------------------------------------------
+  // No result returned (unexpected backend state)
+  // ------------------------------------------------------------
   if (!result) {
     return (
       <div className="system-check-panel">
@@ -32,16 +52,23 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
     );
   }
 
+  // ------------------------------------------------------------
+  // Determine if all system checks passed
+  // ------------------------------------------------------------
   const allGreen =
     result.ollama?.installed &&
     result.ollama?.running &&
     result.models?.available &&
     result.config?.isReady;
 
+  // ------------------------------------------------------------
+  // Render full system check panel
+  // ------------------------------------------------------------
   return (
     <div className="system-check-panel">
       <div className="system-check-title">System Check</div>
 
+      {/* Ollama Installed */}
       <div className="system-check-row">
         <strong>Ollama Installed:</strong>{" "}
         {result.ollama?.installed ? (
@@ -51,6 +78,7 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
         )}
       </div>
 
+      {/* Ollama Running */}
       <div className="system-check-row">
         <strong>Ollama Running:</strong>{" "}
         {result.ollama?.running ? (
@@ -60,6 +88,7 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
         )}
       </div>
 
+      {/* Required Models */}
       <div className="system-check-row">
         <strong>Required Models:</strong>{" "}
         {result.models?.available ? (
@@ -76,6 +105,7 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
         )}
       </div>
 
+      {/* ARC‑N Config */}
       <div className="system-check-row">
         <strong>ARC‑N Config:</strong>{" "}
         {result.config?.isReady ? (
@@ -92,20 +122,11 @@ const SystemCheckPanel = ({ hasRunCheck, result, loading, onFixConfig, onFixMode
         )}
       </div>
 
-      {allGreen && (
-        <button
-          className="enter-nexus-button"
-          onClick={() => setActivePage("Nexus")}
-        >
-          ENTER NEXUS
-        </button>
-      )}
+      
 
       <div className="system-check-footer">
         System check completed. Resolve any issues above to continue.
       </div>
     </div>
   );
-};
-
-export default SystemCheckPanel;
+}

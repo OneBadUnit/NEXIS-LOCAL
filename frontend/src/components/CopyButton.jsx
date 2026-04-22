@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./ui-widgets.css";
+import "../styles/ui-widgets.css";
+
 
 export default function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);

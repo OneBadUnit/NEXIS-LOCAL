@@ -1,3 +1,12 @@
+# ============================================================
+# URL INGESTION MODULE
+# Handles:
+#   - YouTube (API → yt‑dlp fallback → audio transcription)
+#   - Direct media URLs (mp4, mp3, wav, etc.)
+#   - HTML extraction (cleaned, readable text)
+# Fully async, safe temp handling, robust fallbacks.
+# ============================================================
+
 print(">>> URL_UTILS LOADED FROM ingestion/url_utils.py")
 
 import os
@@ -9,12 +18,19 @@ from bs4 import BeautifulSoup
 from .youtube_utils import transcribe_youtube_url
 from .file_router import process_uploaded_file
 
-MEDIA_EXT = {".mp4", ".mov", ".mkv", ".avi", ".mp3", ".wav", ".m4a", ".ogg"}
+
+# ------------------------------------------------------------
+# MEDIA EXTENSIONS
+# ------------------------------------------------------------
+MEDIA_EXT = {
+    ".mp4", ".mov", ".mkv", ".avi",
+    ".mp3", ".wav", ".m4a", ".ogg"
+}
 
 
-# ---------------------------------------------------------
-#  YOUTUBE FALLBACK: yt-dlp audio extraction
-# ---------------------------------------------------------
+# ------------------------------------------------------------
+# YOUTUBE FALLBACK: yt-dlp audio extraction
+# ------------------------------------------------------------
 async def extract_audio_with_ytdlp(url: str) -> str:
     print(">>> YT: Falling back to yt-dlp audio extraction")
 
@@ -32,7 +48,6 @@ async def extract_audio_with_ytdlp(url: str) -> str:
             url,
         ]
 
-        # ⭐ FIX: Force UTF‑8 decoding + replace invalid chars
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -67,23 +82,23 @@ async def extract_audio_with_ytdlp(url: str) -> str:
         return None
 
 
-# ---------------------------------------------------------
-#  MAIN URL PROCESSOR
-# ---------------------------------------------------------
+# ------------------------------------------------------------
+# MAIN URL PROCESSOR
+# ------------------------------------------------------------
 async def process_url_or_youtube(url: str) -> str:
     print(f">>> process_url_or_youtube CALLED with: {url}")
 
     if not url:
         return "No URL provided."
 
-    # -----------------------------------------------------
-    #  YOUTUBE HANDLING
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # YOUTUBE HANDLING
+    # --------------------------------------------------------
     if "youtube.com" in url or "youtu.be" in url:
         print(">>> YT BRANCH HIT")
 
-        print(">>> YT: Attempting transcript API")
         try:
+            print(">>> YT: Attempting transcript API")
             yt_text = await transcribe_youtube_url(url)
             if yt_text and len(yt_text.strip()) > 20:
                 print(">>> YT: Transcript API SUCCESS")
@@ -98,9 +113,9 @@ async def process_url_or_youtube(url: str) -> str:
 
         return "[YouTube processing failed — no transcript and yt-dlp failed]"
 
-    # -----------------------------------------------------
-    #  MEDIA URL HANDLING (mp4, mp3, wav, etc.)
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # DIRECT MEDIA URL HANDLING
+    # --------------------------------------------------------
     lower = url.lower()
     for ext in MEDIA_EXT:
         if lower.endswith(ext):
@@ -138,9 +153,9 @@ async def process_url_or_youtube(url: str) -> str:
             except Exception as e:
                 return f"Error downloading media: {str(e)}"
 
-    # -----------------------------------------------------
-    #  HTML FALLBACK (Improved Wikipedia + general pages)
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # HTML FALLBACK (Wikipedia‑aware)
+    # --------------------------------------------------------
     print(">>> HTML BRANCH HIT")
 
     try:
@@ -153,7 +168,6 @@ async def process_url_or_youtube(url: str) -> str:
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
-        # Remove scripts, styles, nav, footer, tables, etc.
         for tag in soup([
             "script", "style", "noscript",
             "header", "footer", "nav",
@@ -161,23 +175,18 @@ async def process_url_or_youtube(url: str) -> str:
         ]):
             tag.extract()
 
-        # Wikipedia-specific: extract only main article content
         content = soup.find("div", id="mw-content-text")
         if content:
             soup = content
 
-        # Remove citation markers like [1], [2], [a]
         for sup in soup.find_all("sup"):
             sup.extract()
 
-        # Remove edit links like "[edit]"
         for span in soup.find_all("span", class_="mw-editsection"):
             span.extract()
 
-        # Extract readable text
         text = soup.get_text(separator="\n")
 
-        # Clean whitespace
         cleaned = "\n".join(
             line.strip()
             for line in text.splitlines()

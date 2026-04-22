@@ -1,3 +1,10 @@
+# ============================================================
+# FILE INGESTION ROUTER
+# Routes uploaded files to the correct extraction/transcription
+# pipeline based on extension. Handles text, PDF, DOCX, images,
+# audio, and video. Uses a safe temp directory for media.
+# ============================================================
+
 import os
 import tempfile
 from fastapi import UploadFile
@@ -8,9 +15,17 @@ from .ocr_utils import extract_text_from_image
 from .audio_utils import transcribe_audio_file
 from .video_utils import transcribe_video_file
 
+
+# ------------------------------------------------------------
+# TEMP DIRECTORY (SAFE)
+# ------------------------------------------------------------
 SAFE_TMP = r"D:\arc-nexus\tmp"
 os.makedirs(SAFE_TMP, exist_ok=True)
 
+
+# ------------------------------------------------------------
+# EXTENSION GROUPS
+# ------------------------------------------------------------
 TEXT_EXT = {".txt", ".md"}
 PDF_EXT = {".pdf"}
 DOCX_EXT = {".docx"}
@@ -19,6 +34,9 @@ AUDIO_EXT = {".mp3", ".wav", ".m4a", ".ogg"}
 VIDEO_EXT = {".mp4", ".mov", ".mkv", ".avi"}
 
 
+# ------------------------------------------------------------
+# MAIN ROUTER FUNCTION
+# ------------------------------------------------------------
 async def process_uploaded_file(uploaded_file: UploadFile) -> str:
     filename = (uploaded_file.filename or "").lower()
     _, ext = os.path.splitext(filename)
@@ -49,6 +67,9 @@ async def process_uploaded_file(uploaded_file: UploadFile) -> str:
     return "Unsupported file type."
 
 
+# ------------------------------------------------------------
+# AUDIO HANDLER
+# ------------------------------------------------------------
 async def _transcribe_audio_bytes(data: bytes, ext: str) -> str:
     tmp_dir = tempfile.mkdtemp(prefix="arc_audio_", dir=SAFE_TMP)
     path = os.path.join(tmp_dir, f"audio{ext}")
@@ -68,6 +89,9 @@ async def _transcribe_audio_bytes(data: bytes, ext: str) -> str:
             pass
 
 
+# ------------------------------------------------------------
+# VIDEO HANDLER
+# ------------------------------------------------------------
 async def _transcribe_video_bytes(data: bytes, ext: str) -> str:
     tmp_dir = tempfile.mkdtemp(prefix="arc_video_", dir=SAFE_TMP)
     path = os.path.join(tmp_dir, f"video{ext}")

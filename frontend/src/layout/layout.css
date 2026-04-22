@@ -1,162 +1,75 @@
-/* ------------------------------
-   APP LAYOUT WRAPPER
------------------------------- */
+/* ============================================================
+   UNIFIED TOP NAV BAR
+   Fixed at top. Contains brand + module navigation.
+   ============================================================ */
+.topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
 
-.app-shell {
-  background-color: #020617;   /* full dark background */
-  min-height: 100vh;           /* fill entire screen */
+  height: 75px;                     /* unified bar height */
+  background: var(--arc-surface);
+  border-bottom: 1px solid var(--arc-border);
+  backdrop-filter: blur(6px);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 24px;
+  z-index: 1000;
+}
+
+/* BRAND BLOCK */
+.brand {
   display: flex;
   flex-direction: column;
-  color: #e2e8f0;
+  cursor: pointer;
 }
 
-/* ------------------------------
-   MAIN CONTENT AREA
------------------------------- */
-
-.main-content {
-  flex: 1;
-  padding: 24px 32px;
-}
-/* ------------------------------
-   TOP BAR — NEW UI
------------------------------- */
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 32px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  background-color: #020617;
+.brand-acr {
+  font-size: 11px;
+  opacity: 0.6;
+  letter-spacing: 8px;
 }
 
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbar-center {
-  flex: 1;
-  text-align: center;
-  font-size: 28px;
+.brand-nexus {
+  font-size: 40px;
   font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #e2e8f0;
+  margin-top: -8px;
 }
 
-.topbar-right {
+/* NAV ITEMS */
+.nav-items {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 32px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  background-color: #020617;
-}
-
-.topbar-left,
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topbar-center {
-  flex: 1;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #e2e8f0;
-}
-.navbar {
-  display: flex;
-  justify-content: center;
-  gap: 96px;
-  padding: 16px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  gap: 140px;
 }
 
 .nav-item {
-  font-size: 18px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  padding: 8px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  opacity: 0.7;
+  color: var(--arc-text-dim);
+  display: flex;
+  align-items: center;
 }
 
 .nav-item:hover {
-  opacity: 1;
+  background: var(--arc-hover);
+  color: var(--arc-text);
 }
 
 .nav-item.active {
-  opacity: 1;
-  font-weight: 700;
-}
-.topbar-left {
-  min-width: 120px; /* keeps ARC fully left */
-}
-/* TOP BAR — CENTERED ARC OVER NEXUS */
-
-.topbar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px 0;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  background-color: #020617;
+  background: var(--arc-accent-fade);
+  color: var(--arc-accent);
+  font-weight: 600;
 }
 
-.topbar-title {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-
-  text-shadow:
-    0 0 8px rgba(34, 197, 94, 0.55),
-    0 0 16px rgba(34, 197, 94, 0.35),
-    0 0 24px rgba(34, 197, 94, 0.25);
-}
-
-
-
-.topbar-arc {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  opacity: 0.8;
-  font-family: "Orbitron", sans-serif;
-
-}
-
-.topbar-nexus {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  margin-top: 4px;
-  font-family: "Orbitron", sans-serif;
-
-}
-
-/* ACTIVE NAV ITEM — GREEN GLOW */
-.nav-item.active {
-  color: rgb(34, 197, 94) !important; /* emerald green */
-  font-weight: 700;
-  opacity: 1 !important;
-
-  text-shadow:
-    0 0 8px rgba(34, 197, 94, 0.75),
-    0 0 16px rgba(34, 197, 94, 0.55),
-    0 0 24px rgba(34, 197, 94, 0.35);
+/* CONTENT AREA */
+.arcn-main {
+  margin-top: 75px;                 /* unified bar height */
+  height: calc(100vh - 75px);
+  overflow-y: auto;
+  padding: 20px;
 }
