@@ -10,35 +10,41 @@ const LandingScreen = () => {
 
   const runSystemCheck = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/system/check");
+      const res = await axios.get("http://127.0.0.1:8000/api/system/check");
 
       console.log("SYSTEM CHECK RAW RESPONSE:", res.data);
 
       setStatus({
-        configOk: res.data.config?.isReady,
-        modelsOk: res.data.models?.available,
-        ollamaInstalled: res.data.ollama?.installed,
-        ollamaRunning: res.data.ollama?.running,
-      });
-    } catch (err) {
-      console.error("System check failed:", err);
-      setStatus({ error: true });
-    } finally {
-      setLoading(false);
-    }
-  };
+  configOk: res.data.config?.isReady,
+
+  modelsOk:
+    res.data.models?.available ??
+    res.data.models?.isReady ??
+    false,
+
+  ollamaInstalled:
+    res.data.ollama?.installed ??
+    res.data.ollamaInstalled ??
+    false,
+
+  ollamaRunning:
+    res.data.ollama?.running ??
+    res.data.ollamaRunning ??
+    false,
+});
+
 
   useEffect(() => {
     runSystemCheck();
   }, []);
 
   const fixConfig = async () => {
-    await axios.post("http://127.0.0.1:8000/system/fix/config");
+    await axios.post("http://127.0.0.1:8000/api/system/fix/config");
     runSystemCheck();
   };
 
   const fixModels = async () => {
-    await axios.post("http://127.0.0.1:8000/system/fix/models");
+    await axios.post("http://127.0.0.1:8000/api/system/fix/models");
     runSystemCheck();
   };
 

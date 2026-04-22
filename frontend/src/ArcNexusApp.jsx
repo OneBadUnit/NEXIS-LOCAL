@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import BootScreen from "./components/BootScreen";
+import AcknowledgmentModal from "./components/AcknowledgmentModal";
 import Layout from "./layout/AppLayout";
 import { ArcNProvider } from "./context/ArcNContext";
 
-
+const STORAGE_KEY = "arcn_ack_version";
+const CURRENT_VERSION = "1.0.6";
 
 function App() {
   const [appReady, setAppReady] = useState(false);
   const [showBoot, setShowBoot] = useState(true);
+  const [showAck, setShowAck] = useState(false);
 
-  // When Layout mounts, mark app as ready
   useEffect(() => {
-    // Small delay ensures Layout has rendered at least once
     const timer = setTimeout(() => {
       setAppReady(true);
     }, 100);
@@ -19,17 +20,31 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // When appReady flips true, fade out boot screen
   const handleBootFinish = () => {
-    // BootScreen will call this when its loading bar finishes
     setShowBoot(false);
+
+    const savedVersion = localStorage.getItem(STORAGE_KEY);
+
+    // Show modal if:
+    // - No version stored (user didn't check the box)
+    // - OR stored version doesn't match current version
+    if (savedVersion !== CURRENT_VERSION) {
+      setShowAck(true);
+    }
+  };
+
+  const handleAcknowledge = () => {
+    setShowAck(false);
   };
 
   return (
     <ArcNProvider>
-      {showBoot && <BootScreen appReady={appReady} onFinish={handleBootFinish} />}
+      {showBoot && (
+        <BootScreen appReady={appReady} onFinish={handleBootFinish} />
+      )}
 
-      {/* Layout always mounts immediately — no white flash */}
+      {showAck && <AcknowledgmentModal onAcknowledge={handleAcknowledge} />}
+
       <Layout />
     </ArcNProvider>
   );

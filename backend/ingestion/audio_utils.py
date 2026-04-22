@@ -22,14 +22,19 @@ from faster_whisper import WhisperModel
 MODEL_NAME = "large-v3"
 
 # Load Whisper model once (GPU)
-# compute_type="float16" is optimal for RTX 40‑series GPUs
 try:
+    print("\n================ WHISPER INIT ================")
+    print(f"[WHISPER] Requested device: cuda")
+
     model = WhisperModel(
         MODEL_NAME,
         device="cuda",
         compute_type="float16"
     )
-    print(f">>> WHISPER MODEL LOADED: {MODEL_NAME} (GPU float16)")
+
+    print(f"[WHISPER] Model loaded successfully on GPU (float16)")
+    print("==============================================\n")
+
 except Exception as e:
     print(">>> ERROR LOADING WHISPER MODEL:", e)
     model = None
@@ -55,16 +60,22 @@ async def transcribe_audio_file(path: str) -> str:
 
     def _work():
         try:
-            print(">>> WHISPER: starting transcription for:", path)
+            print("\n================ WHISPER RUN ================")
+            print(f"[WHISPER] Starting transcription for: {path}")
+            print(f"[WHISPER] Runtime device: cuda")
+            print("=============================================\n")
 
             segments, info = model.transcribe(path)
 
             text = " ".join(seg.text.strip() for seg in segments)
 
-            print(">>> WHISPER RAW TEXT (len={}): {}".format(
-                len(text),
-                repr(text[:200])
-            ))
+            # Clean preview instead of dumping full text
+            preview = text[:200].replace("\n", " ")
+            print(f">>> WHISPER PREVIEW (first 200 chars): {preview!r}")
+
+            print("\n================ WHISPER DONE ================")
+            print(f"[WHISPER] Finished transcription for: {path}")
+            print("==============================================\n")
 
             return text if text else "No speech detected in audio."
 

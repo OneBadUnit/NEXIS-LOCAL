@@ -18,7 +18,7 @@ const NexusDashboard = () => {
   const fetchStatus = useCallback(
     async (retry = 0) => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/system/check");
+        const res = await axios.get("http://127.0.0.1:8000/api/system/check");
         setSystemStatus(res.data);
         setError(null);
       } catch (err) {
@@ -46,7 +46,7 @@ const NexusDashboard = () => {
     setFixMessage("");
 
     try {
-      await axios.post("http://127.0.0.1:8000/system/fix/config");
+      await axios.post("http://127.0.0.1:8000/api/system/fix/config");
       setFixMessage("Config file created successfully.");
       await fetchStatus();
     } catch {
@@ -61,7 +61,7 @@ const NexusDashboard = () => {
     setFixMessage("");
 
     try {
-      await axios.post("http://127.0.0.1:8000/system/fix/models");
+      await axios.post("http://127.0.0.1:8000/api/system/fix/models");
       setFixMessage("Models pulled successfully.");
       await fetchStatus();
     } catch {
