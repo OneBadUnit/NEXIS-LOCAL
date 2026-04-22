@@ -14,28 +14,24 @@ const NexusDashboard = () => {
   const [fixingModels, setFixingModels] = useState(false);
   const [fixMessage, setFixMessage] = useState("");
 
-  // Wrapped in useCallback to satisfy ESLint and prevent infinite loops
-  const fetchStatus = useCallback(
-    async (retry = 0) => {
-      try {
-        const res = await axios.get("http://127.0.0.1:8000/api/system/check");
-        setSystemStatus(res.data);
-        setError(null);
-      } catch (err) {
-        console.error("System status fetch failed:", err);
+  const fetchStatus = useCallback(async (retry = 0) => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/system/check");
+      setSystemStatus(res.data);
+      setError(null);
+    } catch (err) {
+      console.error("System status fetch failed:", err);
 
-        if (retry < 3) {
-          setTimeout(() => fetchStatus(retry + 1), 1000);
-          return;
-        }
-
-        setError("Unable to fetch system status");
-      } finally {
-        setLoading(false);
+      if (retry < 3) {
+        setTimeout(() => fetchStatus(retry + 1), 1000);
+        return;
       }
-    },
-    [] // no external dependencies needed
-  );
+
+      setError("Unable to fetch system status");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchStatus();
@@ -73,134 +69,99 @@ const NexusDashboard = () => {
 
   return (
     <div className="module-container">
-      <h1 className="module-title">THE NEXUS</h1>
+
+      {/* Title */}
+      <h1 className="module-title" style={{ marginBottom: "30px" }}>
+        THE NEXUS
+      </h1>
 
       {/* GRID */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-          marginTop: "20px",
+          gap: "24px",
         }}
       >
         {/* LEFT COLUMN */}
-        <div>
-          {/* Recent Projects */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
           <div className="panel">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <h3>Recent Projects</h3>
-              <button className="btn" onClick={() => setActivePage("PROJECTS")}>
-                New Project
-              </button>
-            </div>
-          </div>
+  <div className="panel-header">
+    <h3>Quick Start</h3>
+  </div>
 
-          {/* Demo Project */}
+  <p className="subtle" style={{ lineHeight: "1.5" }}>
+    Welcome to the Nexus Dashboard. This is your central command center for ARC NEXUS.
+    To return here at any time, click <strong>NEXUS</strong> in the top‑left navigation.
+  </p>
+
+  <p className="subtle" style={{ marginTop: "12px", lineHeight: "1.5" }}>
+    On the right, you’ll see <strong>System Status</strong>. When all indicators are 
+    <span style={{ color: "var(--arc-green)" }}> green</span>, the system is fully operational. 
+    If any show <span style={{ color: "lightcoral" }}>Missing</span>, consult the 
+    <a href="system-status-help.html" target="_blank" rel="noopener noreferrer" style={{ marginLeft: "4px" }}>System Status Help File</a>.
+  </p>
+
+  <p className="subtle" style={{ marginTop: "12px", lineHeight: "1.5" }}>
+    Depending on your hardware and model choices, some files may take 
+    <strong> up to, and occasionally over, 10 minutes</strong> to transcribe. 
+    This is normal for longer audio, dense speech, or CPU‑only processing. 
+    ARC NEXUS will continue working in the background until the task completes.
+  </p>
+</div>
+
+
           <div className="panel">
             <h3>Demo Project</h3>
-            <p style={{ opacity: 0.7 }}>Status: Idle • Updated just now</p>
+            <p className="subtle">Status: Idle • Updated just now</p>
           </div>
 
-          {/* Recent Activity */}
-          <div className="panel">
-            <h3>Recent Activity</h3>
-            <p>No recent activity yet.</p>
-          </div>
+          
         </div>
 
         {/* RIGHT COLUMN */}
-        <div>
-          {/* System Status */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
           <div className="panel">
             <h3>System Status</h3>
 
             {loading && <p>Checking system...</p>}
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p className="error">{error}</p>}
 
             {systemStatus && (
-              <div style={{ marginTop: "10px" }}>
-                <StatusRow
-                  label="Ollama Installed"
-                  ok={systemStatus.ollama?.installed}
-                />
-
-                <StatusRow
-                  label="Ollama Running"
-                  ok={systemStatus.ollama?.running}
-                />
+              <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <StatusRow label="Ollama Installed" ok={systemStatus.ollama?.installed} />
+                <StatusRow label="Ollama Running" ok={systemStatus.ollama?.running} />
 
                 <StatusRow label="Config Ready" ok={systemStatus.config?.isReady}>
                   {!systemStatus.config?.isReady && (
-                    <button
-                      className="btn"
-                      onClick={handleFixConfig}
-                      disabled={fixingConfig}
-                    >
+                    <button className="btn" onClick={handleFixConfig} disabled={fixingConfig}>
                       {fixingConfig ? "Fixing..." : "Fix Config"}
                     </button>
                   )}
                 </StatusRow>
 
-                <StatusRow
-                  label="Models Ready"
-                  ok={systemStatus.models?.available}
-                >
+                <StatusRow label="Models Ready" ok={systemStatus.models?.available}>
                   {!systemStatus.models?.available && (
-                    <button
-                      className="btn"
-                      onClick={handleFixModels}
-                      disabled={fixingModels}
-                    >
+                    <button className="btn" onClick={handleFixModels} disabled={fixingModels}>
                       {fixingModels ? "Fixing..." : "Fix Models"}
                     </button>
                   )}
                 </StatusRow>
 
-                {fixMessage && (
-                  <p style={{ marginTop: "10px", color: "var(--arc-green)" }}>
-                    {fixMessage}
-                  </p>
-                )}
+                {fixMessage && <p className="success">{fixMessage}</p>}
               </div>
             )}
           </div>
 
-          {/* Active Model */}
           <div className="panel">
             <h3>Active Model</h3>
             <p>llama3.2 (primary)</p>
             <button className="btn">Change Model</button>
           </div>
 
-          {/* Quick Modules */}
-          <div className="panel">
-            <h3>Quick Modules</h3>
-
-            <button className="btn" onClick={() => setActivePage("TRANSCRIPTION")}>
-              Documents
-            </button>
-
-            <button className="btn" onClick={() => setActivePage("EXTRACTION")}>
-              Extraction
-            </button>
-
-            <button className="btn" onClick={() => setActivePage("SYNTHESIS")}>
-              Synthesis
-            </button>
-          </div>
-
-          {/* Transcript Output */}
-          <div className="panel">
-            <h3>Transcript Output</h3>
-            <TranscriptOutput transcript={systemStatus?.transcript} />
-          </div>
+                    
         </div>
       </div>
     </div>
@@ -211,16 +172,13 @@ function StatusRow({ label, ok, children }) {
   return (
     <div
       style={{
-        marginBottom: "12px",
-        padding: "10px",
+        padding: "12px",
         borderRadius: "6px",
         background: "rgba(255,255,255,0.05)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        border: ok
-          ? "1px solid var(--arc-green)"
-          : "1px solid rgba(255,0,0,0.4)",
+        border: ok ? "1px solid var(--arc-green)" : "1px solid rgba(255,0,0,0.4)",
       }}
     >
       <span>

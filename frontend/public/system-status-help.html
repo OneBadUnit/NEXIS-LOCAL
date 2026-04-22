@@ -1,0 +1,198 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 15 (filtered)">
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+	{font-family:"Segoe UI Emoji";
+	panose-1:2 11 5 2 4 2 4 2 2 3;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:0in;
+	line-height:115%;
+	font-size:12.0pt;
+	font-family:"Calibri",sans-serif;}
+a:link, span.MsoHyperlink
+	{color:#0563C1;
+	text-decoration:underline;}
+.MsoChpDefault
+	{font-family:"Calibri",sans-serif;}
+.MsoPapDefault
+	{margin-bottom:8.0pt;
+	line-height:115%;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;}
+div.WordSection1
+	{page:WordSection1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link="#0563C1" vlink="#954F72" style='word-wrap:break-word'>
+
+<div class=WordSection1>
+
+<p class=MsoNormal><b><span style='font-size:22.0pt;line-height:115%'>System Status
+Help Guide</span></b></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>This guide explains each System Status indicator and
+provides clear steps for resolving issues.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b><span style='font-family:"Segoe UI Emoji",sans-serif'>&#9989;</span>
+Ollama Not Installed</b></p>
+
+<p class=MsoNormal><b>Meaning:</b> ARC&#8209;NEXUS cannot detect the Ollama
+application on your system.</p>
+
+<p class=MsoNormal><b>Fix: Install or Verify Ollama</b></p>
+
+<p class=MsoNormal><b>Step 1 (Required):</b> Download and install Ollama from: <b><a
+href="https://ollama.com/download">https://ollama.com/download</a></b></p>
+
+<p class=MsoNormal>After installation, restart ARC&#8209;NEXUS. No additional
+setup is required.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Step 2 (Optional):</b> If Ollama was installed in a non&#8209;standard
+location, reinstall it using the default installer location. This ensures your
+system recognizes it automatically.</p>
+
+<p class=MsoNormal>Avoid installing Ollama inside your ARC&#8209;NEXUS project
+folder.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b><span style='font-family:"Segoe UI Emoji",sans-serif'>&#9989;</span>
+Ollama Not Running</b></p>
+
+<p class=MsoNormal><b>Meaning:</b> Ollama is installed, but the background
+service is not currently active.</p>
+
+<p class=MsoNormal><b>Option 1: Start Ollama Manually (Recommended)</b></p>
+
+<p class=MsoNormal><b>Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Open your console (Command Prompt, PowerShell, or
+     Terminal)</li>
+ <li class=MsoNormal>Run: ollama serve</li>
+ <li class=MsoNormal>If the console shows 'listening' or stays open without
+     errors or negative replies, Ollama is running correctly..</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Option 2: Start the Ollama Service</b></p>
+
+<p class=MsoNormal><b>Windows Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Open <b>Services</b></li>
+ <li class=MsoNormal>Locate <b>Ollama</b></li>
+ <li class=MsoNormal>Click <b>Start</b></li>
+</ol>
+
+<p class=MsoNormal><b>macOS Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Open <b>Terminal</b></li>
+ <li class=MsoNormal>Run: launchctl start io.ollama</li>
+</ol>
+
+<p class=MsoNormal style='margin-left:.25in'>&nbsp;</p>
+
+<p class=MsoNormal><b><span style='font-family:"Segoe UI Emoji",sans-serif'>&#9989;</span>
+Config Not Ready</b></p>
+
+<p class=MsoNormal><b>Meaning:</b> ARC&#8209;NEXUS cannot find or read its
+configuration file.</p>
+
+<p class=MsoNormal><b>Option 1: Auto&#8209;Generate a New Config (Recommended)</b></p>
+
+<p class=MsoNormal><b>Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Click <b>Fix Config</b> in the System Status panel</li>
+ <li class=MsoNormal>Wait for confirmation</li>
+ <li class=MsoNormal>ARC&#8209;NEXUS will create a clean, valid config file
+     automatically</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Option 2: Manual Reset</b></p>
+
+<p class=MsoNormal><b>Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Open your user directory</li>
+ <li class=MsoNormal>Delete the file: ~/.arc-nexus/config.json</li>
+ <li class=MsoNormal>Restart ARC&#8209;NEXUS</li>
+ <li class=MsoNormal>A fresh config file will be created automatically</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b><span style='font-family:"Segoe UI Emoji",sans-serif'>&#9989;</span>
+Models Not Ready</b></p>
+
+<p class=MsoNormal><b>Meaning:</b> Required AI models are not downloaded or not
+available to Ollama.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Option 1: Auto&#8209;Download Models (Recommended)</b></p>
+
+<p class=MsoNormal><b>Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Click <b>Fix Models</b> in the System Status panel</li>
+ <li class=MsoNormal>Wait for the download to complete</li>
+ <li class=MsoNormal>ARC&#8209;NEXUS will verify the models automatically</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Option 2: Manual Model Pull</b></p>
+
+<p class=MsoNormal><b>Steps:</b></p>
+
+<ol style='margin-top:0in' start=1 type=1>
+ <li class=MsoNormal>Open your console</li>
+ <li class=MsoNormal>Run: ollama pull llama3.2 (or whichever model your ARC&#8209;NEXUS
+     configuration specifies)</li>
+ <li class=MsoNormal>Wait for the download to finish</li>
+ <li class=MsoNormal>Restart ARC&#8209;NEXUS if needed</li>
+</ol>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>
