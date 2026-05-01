@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - NEXIS GUIDE PANEL
 // File: src/components/AIHelper/AIHelperPanel.jsx
-// Version: 003 (ESLint Streaming Fix)
+// Version: 004 (Summary + Creator Package — Correct Terminology)
 // ============================================================
 
 import React, { useState } from "react";
@@ -14,7 +14,7 @@ export default function AIHelperPanel({ isOpen, onClose }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Hi — I’m NEXIS Guide. Ask me how to use Collect, Understand, Create, or Vision.",
+      text: "Hi — I'm NEXIS Guide. Ask me how to use Collect, Convert, or Create, or which preset and option to pick.",
     },
   ]);
   const [loading, setLoading] = useState(false);

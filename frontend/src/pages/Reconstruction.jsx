@@ -1,7 +1,7 @@
 // ============================================================
-// ARC-NEXUS - NEXIS UNDERSTAND PAGE
+// ARC-NEXUS - NEXIS CONVERT PAGE
 // File: src/pages/Reconstruction.jsx
-// Version: 006 (CONVERT Refactor — 3-Category Collapse)
+// Version: 009 (Package Run-All)
 // ============================================================
 
 import React, { useState, useContext } from "react";
@@ -12,6 +12,17 @@ import CopyButton from "../components/CopyButton";
 import ScrollTopButton from "../components/ScrollTopButton";
 import SavedCardsPanel from "../components/SavedCardsPanel";
 
+const PACKAGES = {
+  summary: {
+    label: "Summary Package",
+    items: ["Outline", "Timeline", "Key Points", "Summary"],
+  },
+  creator: {
+    label: "Creator Package",
+    items: ["Make Engaging", "Hook Script", "Dialogue Script", "Title Suggestions", "Keywords"],
+  },
+};
+
 export default function Reconstruction() {
   const {
     reconstructionState,
@@ -21,69 +32,16 @@ export default function Reconstruction() {
     setSavedReconstructions,
   } = useContext(ArcNContext);
 
-  const { input, output, preset, action, selectedOption } = reconstructionState;
+  const { input, output, preset } = reconstructionState;
 
   const [loading, setLoading] = useState(false);
 
-  const PRESETS = ["student", "creator", "explained", "analysis"];
+  const selectedPackage = PACKAGES[preset] ? preset : null;
 
-  const RULES = {
-    student: {
-      summarize: ["Short", "Medium", "Long"],
-      extract: ["Key Points", "Quotes", "Entities"],
-      transform: ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
-    },
-    creator: {
-      summarize: ["Short", "Medium"],
-      extract: ["Key Points", "Quotes", "Timeline"],
-      transform: ["Make Engaging", "Dialogue Script", "Hook Script", "Social Post"],
-    },
-    explained: {
-      summarize: ["Short", "Medium"],
-      extract: ["Key Points", "Entities"],
-      transform: ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
-    },
-    analysis: {
-      summarize: ["Long"],
-      extract: ["Key Points", "Entities", "Timeline"],
-      transform: ["Make Professional", "Improve Clarity", "JSON", "Paragraph"],
-    },
-  };
-
-  const label = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-
-  const safePreset = RULES[preset] ? preset : "explained";
-  const availableActions = Object.keys(RULES[safePreset]);
-  const safeAction = RULES[safePreset][action] ? action : availableActions[0];
-  const availableOptions = RULES[safePreset][safeAction];
-  const safeOption = availableOptions.includes(selectedOption)
-    ? selectedOption
-    : availableOptions[0];
-
-  const setPreset = (nextPreset) => {
-    const firstAction = Object.keys(RULES[nextPreset])[0];
-    const firstOption = RULES[nextPreset][firstAction][0];
-
+  const selectPackage = (pkg) => {
     setReconstructionState((prev) => ({
       ...prev,
-      preset: nextPreset,
-      action: firstAction,
-      selectedOption: firstOption,
-    }));
-  };
-
-  const setAction = (nextAction) => {
-    setReconstructionState((prev) => ({
-      ...prev,
-      action: nextAction,
-      selectedOption: RULES[safePreset][nextAction][0],
-    }));
-  };
-
-  const setOption = (nextOption) => {
-    setReconstructionState((prev) => ({
-      ...prev,
-      selectedOption: nextOption,
+      preset: pkg,
     }));
   };
 
@@ -101,18 +59,30 @@ export default function Reconstruction() {
       return;
     }
 
+    if (!selectedPackage) {
+      setOutput("Select a package first.");
+      return;
+    }
+
     setLoading(true);
     setOutput("");
 
-    try {
-      const result = await nexisUnderstand({
-        text: input,
-        preset: safePreset,
-        action: safeAction,
-        option: safeOption,
-      });
+    const items = PACKAGES[selectedPackage].items;
+    const sections = [];
 
-      setOutput(result.output || "No output returned.");
+    try {
+      for (const item of items) {
+        const result = await nexisUnderstand({
+          text: input,
+          preset: selectedPackage,
+          action: "transform",
+          option: item,
+        });
+
+        sections.push(`=== ${item} ===\n\n${result.output || ""}`);
+      }
+
+      setOutput(sections.join("\n\n\n"));
     } catch {
       setOutput("Error processing request.");
     }
@@ -137,62 +107,34 @@ export default function Reconstruction() {
     <div className="module-container">
       <h1 className="module-title">CONVERT</h1>
 
+      {/* PACKAGE SELECTION */}
       <div className="panel">
-        <div style={{ marginBottom: 16 }}>
-          <div className="subtle" style={{ marginBottom: 6 }}>
-            1. Choose a preset
-          </div>
-
-          <div className="row">
-            {PRESETS.map((item) => (
+        <div className="row" style={{ alignItems: "flex-start", gap: 24 }}>
+          {Object.entries(PACKAGES).map(([key, pkg]) => (
+            <div key={key} style={{ flex: 1 }}>
               <button
-                key={item}
-                className={`btn ${safePreset === item ? "active" : ""}`}
-                onClick={() => setPreset(item)}
+                className={`btn ${selectedPackage === key ? "active" : ""}`}
+                style={{ width: "100%", marginBottom: 12 }}
+                onClick={() => selectPackage(key)}
               >
-                {label(item)}
+                {pkg.label}
               </button>
-            ))}
-          </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div className="subtle" style={{ marginBottom: 6 }}>
-            2. Choose an action
-          </div>
+              <div className="subtle" style={{ marginBottom: 4 }}>
+                Included:
+              </div>
 
-          <div className="row">
-            {availableActions.map((item) => (
-              <button
-                key={item}
-                className={`btn ${safeAction === item ? "active" : ""}`}
-                onClick={() => setAction(item)}
-              >
-                {label(item)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div className="subtle" style={{ marginBottom: 6 }}>
-            3. Choose an option
-          </div>
-
-          <div className="row">
-            {availableOptions.map((item) => (
-              <button
-                key={item}
-                className={`btn ${safeOption === item ? "active" : ""}`}
-                onClick={() => setOption(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
+              <ul style={{ margin: 0, paddingLeft: 18, lineHeight: "1.9" }}>
+                {pkg.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* INPUT */}
       <div className="panel">
         <textarea
           value={input}
@@ -201,6 +143,7 @@ export default function Reconstruction() {
         />
       </div>
 
+      {/* RUN */}
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <button
           className="btn primary"
@@ -211,6 +154,7 @@ export default function Reconstruction() {
         </button>
       </div>
 
+      {/* OUTPUT */}
       <div className="panel">
         <h3>Output</h3>
 
@@ -226,6 +170,7 @@ export default function Reconstruction() {
         )}
       </div>
 
+      {/* SAVED */}
       <div className="panel">
         <SavedCardsPanel
           savedItems={savedReconstructions}

@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - NEXIS ENGINE
 # File: app/reconstruction.py
-# Version: 014 (CONVERT Refactor — 3-Category Collapse)
+# Version: 015 (Summary + Creator Package Refinement)
 # ============================================================
 
 from fastapi import APIRouter, HTTPException
@@ -12,7 +12,7 @@ from app.services.llm_service import run_llm
 
 router = APIRouter(tags=["nexis-understand"])
 
-PresetType = Literal["student", "creator", "explained", "analysis"]
+PresetType = Literal["summary", "creator", "explained", "analysis"]
 ActionType = Literal["summarize", "extract", "transform"]
 
 
@@ -37,15 +37,15 @@ def sanitize(text: str) -> str:
 
 def validate(preset: str, action: str, option: str):
     allowed = {
-        "student": {
+        "summary": {
             "summarize": ["Short", "Medium", "Long"],
-            "extract": ["Key Points", "Quotes", "Entities"],
-            "transform": ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
+            "extract": ["Quotes", "Entities"],
+            "transform": ["Outline", "Timeline", "Key Points", "Summary"],
         },
         "creator": {
             "summarize": ["Short", "Medium"],
             "extract": ["Key Points", "Quotes", "Timeline"],
-            "transform": ["Make Engaging", "Dialogue Script", "Hook Script", "Social Post"],
+            "transform": ["Make Engaging", "Hook Script", "Dialogue Script", "Title Suggestions", "Keywords"],
         },
         "explained": {
             "summarize": ["Short", "Medium"],
@@ -75,6 +75,110 @@ def validate(preset: str, action: str, option: str):
 # ============================================================
 
 def transform_prompt(text: str, preset: str, option: str) -> str:
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — OUTLINE
+    # ------------------------------------------------------------
+    if option == "Outline":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Create a structured outline of the source material.
+
+CRITICAL:
+- Do NOT summarize or compress
+- Do NOT describe the source
+- Do NOT add information not in the source
+- Use only content that is present in the source
+
+RETURN ONLY:
+
+Title:
+<clear title derived from source>
+
+I. <main section or topic>
+   A. <supporting detail>
+   B. <supporting detail>
+
+II. <main section or topic>
+   A. <supporting detail>
+   B. <supporting detail>
+
+III. <main section or topic>
+   A. <supporting detail>
+   B. <supporting detail>
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — TIMELINE
+    # (also available as extract for other presets)
+    # ------------------------------------------------------------
+    if option == "Timeline":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Extract a chronological timeline of events from the source.
+
+FORMAT:
+<date or period> — <event>
+<date or period> — <event>
+
+RULES:
+- Use only what is stated in the source
+- Do NOT infer or add events
+- Order chronologically
+- If no dates are present, use relative markers (e.g. \"Before X\", \"After Y\")
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — KEY POINTS
+    # ------------------------------------------------------------
+    if option == "Key Points":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Extract the key points as a numbered list.
+
+RULES:
+- Each point must be a complete, standalone sentence
+- Use only content from the source
+- Do NOT add commentary or explanation
+- Do NOT infer or summarize beyond what is stated
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — SUMMARY
+    # ------------------------------------------------------------
+    if option == "Summary":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Write a structured summary of the source material.
+
+STRICT OUTPUT RULES:
+- Use ONLY content present in the source — do NOT add outside knowledge
+- Do NOT infer, speculate, or assume anything not stated
+- Do NOT include opinions, recommendations, or analysis
+- Keep tone strictly neutral and factual
+- Remove repetition and filler
+- Write in full sentences — do NOT use bullet points
+- Do NOT create a conclusion section
+
+RETURN ONLY:
+
+Topic:
+<one sentence stating what this source is about, using only source content>
+
+Coverage:
+<2–3 sentences describing what the source covers, in the order it appears>
+
+Key Information:
+<3–5 sentences capturing the most important facts stated in the source, in order of appearance>
+"""
 
     # ------------------------------------------------------------
     # SIMPLIFY
@@ -303,32 +407,50 @@ CTA:
 """
 
     # ------------------------------------------------------------
-    # CREATOR — SOCIAL POST
+    # CREATOR PACKAGE — TITLE SUGGESTIONS
     # ------------------------------------------------------------
-    if option == "Social Post":
+    if option == "Title Suggestions":
         return f"""SOURCE TEXT:
 {text}
 
 TASK:
-Transform the source into a concise social media post.
+Generate 5 concise, attention-grabbing title options based strictly on the source content.
 
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Write like a person posting to an audience
-- Preserve factual accuracy
+RULES:
+- Each title must be grounded in the source material
+- Do NOT invent angles or claims not present in the source
+- No clickbait, no speculation
+- Vary the style across the 5 options
 
 RETURN ONLY:
 
-Post:
-<short engaging post>
+1. <title option>
+2. <title option>
+3. <title option>
+4. <title option>
+5. <title option>
+"""
 
-Key Point:
-<one clear takeaway>
+    # ------------------------------------------------------------
+    # CREATOR PACKAGE — KEYWORDS
+    # ------------------------------------------------------------
+    if option == "Keywords":
+        return f"""SOURCE TEXT:
+{text}
 
-Optional Hashtags:
-<3 to 5 relevant hashtags, only if useful>
+TASK:
+Extract the most relevant keywords and key phrases from the source.
+
+RULES:
+- Use only terms present in or directly stated by the source
+- Do NOT invent or infer keywords
+- Include both single words and short phrases where relevant
+- Order by relevance (most important first)
+
+RETURN ONLY:
+
+Keywords:
+<keyword>, <keyword>, <keyword>, <keyword>, <keyword>, <keyword>, <keyword>, <keyword>, <keyword>, <keyword>
 """
 
     # ------------------------------------------------------------
