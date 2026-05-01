@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - NEXIS ENGINE
 # File: app/reconstruction.py
-# Version: 013 (Transform Routing Fix Only)
+# Version: 014 (CONVERT Refactor — 3-Category Collapse)
 # ============================================================
 
 from fastapi import APIRouter, HTTPException
@@ -13,7 +13,7 @@ from app.services.llm_service import run_llm
 router = APIRouter(tags=["nexis-understand"])
 
 PresetType = Literal["student", "creator", "explained", "analysis"]
-ActionType = Literal["summarize", "extract", "rewrite", "transform", "clean"]
+ActionType = Literal["summarize", "extract", "transform"]
 
 
 class ReconstructionRequest(BaseModel):
@@ -40,35 +40,22 @@ def validate(preset: str, action: str, option: str):
         "student": {
             "summarize": ["Short", "Medium", "Long"],
             "extract": ["Key Points", "Quotes", "Entities"],
-            "rewrite": ["Simplify", "Improve Clarity"],
-            "transform": ["Study Guide", "Paragraph"],
-            "clean": ["Remove Filler", "Fix Formatting"],
+            "transform": ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
         },
         "creator": {
             "summarize": ["Short", "Medium"],
             "extract": ["Key Points", "Quotes", "Timeline"],
-            "rewrite": ["Make Engaging", "Improve Flow"],
-            "transform": [
-                "Dialogue Script",
-                "Narrative Story",
-                "Hook Script",
-                "Social Post",
-            ],
-            "clean": ["Remove Filler"],
+            "transform": ["Make Engaging", "Dialogue Script", "Hook Script", "Social Post"],
         },
         "explained": {
             "summarize": ["Short", "Medium"],
             "extract": ["Key Points", "Entities"],
-            "rewrite": ["Improve Clarity", "Simplify"],
-            "transform": ["Paragraph", "Study Guide"],
-            "clean": ["Normalize Spacing", "Remove Filler"],
+            "transform": ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
         },
         "analysis": {
             "summarize": ["Long"],
             "extract": ["Key Points", "Entities", "Timeline"],
-            "rewrite": ["Make Professional", "Improve Clarity"],
-            "transform": ["JSON", "Paragraph"],
-            "clean": ["Deduplicate", "Fix Formatting"],
+            "transform": ["Make Professional", "Improve Clarity", "JSON", "Paragraph"],
         },
     }
 
@@ -90,7 +77,99 @@ def validate(preset: str, action: str, option: str):
 def transform_prompt(text: str, preset: str, option: str) -> str:
 
     # ------------------------------------------------------------
-    # STUDENT / EXPLAINED — STUDY GUIDE
+    # SIMPLIFY
+    # ------------------------------------------------------------
+    if option == "Simplify":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Rewrite in simpler language.
+
+RULES:
+- Keep meaning identical
+- Use shorter sentences and common words
+- Do NOT remove key information
+- Do NOT summarize
+- Do NOT add ideas
+
+OUTPUT:
+Return simplified text only.
+"""
+
+    # ------------------------------------------------------------
+    # IMPROVE CLARITY
+    # ------------------------------------------------------------
+    if option == "Improve Clarity":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Rewrite the text to improve clarity.
+
+RULES:
+- Preserve ALL original meaning exactly
+- Do NOT add interpretation or new ideas
+- Do NOT summarize or remove important detail
+- Remove redundancy and vague language
+- Strengthen cause and effect relationships
+- Improve sentence structure and flow
+- Keep neutral, professional tone
+
+FORBIDDEN:
+- "This appears to be"
+- "The instructor explains"
+- Any summarizing language
+
+OUTPUT:
+Return ONLY the rewritten text.
+"""
+
+    # ------------------------------------------------------------
+    # MAKE ENGAGING
+    # ------------------------------------------------------------
+    if option == "Make Engaging":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Rewrite to be more engaging and readable.
+
+RULES:
+- Keep all facts accurate
+- Add natural, active tone
+- Improve sentence rhythm and variety
+- Do NOT invent information
+- Do NOT change meaning
+- Do NOT summarize
+
+OUTPUT:
+Return rewritten text only.
+"""
+
+    # ------------------------------------------------------------
+    # MAKE PROFESSIONAL
+    # ------------------------------------------------------------
+    if option == "Make Professional":
+        return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Rewrite in a formal, professional tone.
+
+RULES:
+- Use precise, formal language
+- Remove slang, casual phrasing, and filler
+- Maintain logical structure
+- Preserve meaning exactly
+- Do NOT summarize
+
+OUTPUT:
+Return rewritten text only.
+"""
+
+    # ------------------------------------------------------------
+    # STUDY GUIDE
     # ------------------------------------------------------------
     if option == "Study Guide":
         return f"""SOURCE TEXT:
@@ -149,7 +228,7 @@ RULES:
     # ------------------------------------------------------------
     # CREATOR — DIALOGUE SCRIPT
     # ------------------------------------------------------------
-    if preset == "creator" and option == "Dialogue Script":
+    if option == "Dialogue Script":
         return f"""SOURCE TEXT:
 {text}
 
@@ -188,38 +267,9 @@ Speaker 2:
 """
 
     # ------------------------------------------------------------
-    # CREATOR — NARRATIVE STORY
-    # ------------------------------------------------------------
-    if preset == "creator" and option == "Narrative Story":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Transform the source into a grounded narrative story.
-
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Do NOT invent major events
-- Preserve factual accuracy
-
-RETURN ONLY:
-
-Title:
-<short title>
-
-Story:
-<beginning, middle, and end based only on the source>
-
-Takeaway:
-<one clear lesson or meaning>
-"""
-
-    # ------------------------------------------------------------
     # CREATOR — HOOK SCRIPT
     # ------------------------------------------------------------
-    if preset == "creator" and option == "Hook Script":
+    if option == "Hook Script":
         return f"""SOURCE TEXT:
 {text}
 
@@ -255,7 +305,7 @@ CTA:
     # ------------------------------------------------------------
     # CREATOR — SOCIAL POST
     # ------------------------------------------------------------
-    if preset == "creator" and option == "Social Post":
+    if option == "Social Post":
         return f"""SOURCE TEXT:
 {text}
 
@@ -284,7 +334,7 @@ Optional Hashtags:
     # ------------------------------------------------------------
     # ANALYSIS — JSON
     # ------------------------------------------------------------
-    if preset == "analysis" and option == "JSON":
+    if option == "JSON":
         return f"""SOURCE TEXT:
 {text}
 
@@ -331,129 +381,6 @@ RETURN ONLY THIS JSON SHAPE:
 
 
 # ============================================================
-# 🔥 REWRITE PROMPTS (FINAL LOCKED VERSION)
-# ============================================================
-
-def rewrite_prompt(text: str, option: str) -> str:
-
-    if option == "Improve Clarity":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Rewrite the text to improve clarity.
-
-CRITICAL RULES:
-- Preserve ALL original meaning exactly
-- Do NOT add interpretation or new ideas
-- Do NOT generalize or introduce framing
-- Do NOT summarize
-- Do NOT remove important detail
-- Do NOT change intent
-- Do NOT refer to instructor, speaker, or lecture
-- Do NOT describe teaching context
-- Convert everything into direct clinical statements
-
-PRECISION RULES:
-- Remove redundancy (no repeated ideas)
-- Replace vague language with precise clinical wording
-- Strengthen cause → effect relationships
-- Use definitive wording where appropriate (avoid "may" when unnecessary)
-
-STYLE RULES:
-- Improve sentence structure
-- Improve flow
-- Keep neutral, professional tone
-- Maintain original detail level
-
-FORBIDDEN:
-- "This appears to be"
-- "The instructor explains"
-- "The lecture"
-- Any summarizing language
-- Any added conclusions
-
-OUTPUT:
-Return ONLY the rewritten text.
-"""
-
-    if option == "Simplify":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Rewrite in simpler language.
-
-RULES:
-- Keep meaning identical
-- Use simpler words
-- Shorten sentence structure
-- Do NOT remove key information
-- Do NOT summarize
-- Do NOT add ideas
-
-OUTPUT:
-Return simplified text only.
-"""
-
-    if option == "Make Engaging":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Rewrite to be more engaging.
-
-RULES:
-- Keep facts accurate
-- Improve readability
-- Add natural tone
-- Do NOT invent information
-- Do NOT summarize heavily
-
-OUTPUT:
-Return rewritten text only.
-"""
-
-    if option == "Improve Flow":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Improve flow and readability.
-
-RULES:
-- Improve transitions
-- Reduce repetition
-- Maintain exact meaning
-- Do NOT summarize
-- Do NOT add content
-
-OUTPUT:
-Return rewritten text only.
-"""
-
-    if option == "Make Professional":
-        return f"""SOURCE TEXT:
-{text}
-
-TASK:
-Rewrite in professional tone.
-
-RULES:
-- Formal language
-- Clear structure
-- No slang
-- Preserve meaning exactly
-- Do NOT summarize
-
-OUTPUT:
-Return rewritten text only.
-"""
-
-    raise HTTPException(400, f"No rewrite prompt for {option}")
-
-
-# ============================================================
 # PROMPT BUILDER
 # ============================================================
 
@@ -462,57 +389,132 @@ def build_prompt(text: str, preset: str, action: str, option: str) -> str:
     if action == "transform":
         return transform_prompt(text, preset, option)
 
-    if action == "rewrite":
-        return rewrite_prompt(text, option)
-
     if action == "summarize":
         if option == "Short":
-            task = "Summarize in 2–3 sentences only."
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Write a 2–3 sentence summary.
+
+RULES:
+- Preserve all key facts
+- No bullets, no headings
+- Do NOT add information not in the source
+"""
         elif option == "Medium":
-            task = "Summarize in 2 paragraphs."
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Write a 2-paragraph summary.
+
+RULES:
+- First paragraph: main idea and context
+- Second paragraph: supporting detail and outcome
+- No bullets, no headings
+- Do NOT add information not in the source
+"""
         elif option == "Long":
-            task = "Structured detailed summary."
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Write a structured detailed summary.
+
+RETURN ONLY:
+
+Overview:
+<1 paragraph covering the main idea>
+
+Key Points:
+- <key point>
+- <key point>
+- <key point>
+
+Notable Details:
+- <important detail>
+- <important detail>
+
+Conclusion:
+<1–2 sentences>
+
+RULES:
+- Use only source content
+- Do NOT add information not in the source
+"""
         else:
             raise HTTPException(400, "Invalid summarize option")
 
     elif action == "extract":
         if option == "Key Points":
-            task = "Extract key points as bullets."
-        elif option == "Quotes":
-            task = "Extract exact quotes only."
-        elif option == "Entities":
-            task = "Extract named entities."
-        elif option == "Timeline":
-            task = "Extract chronological events."
-        else:
-            raise HTTPException(400, "Invalid extract option")
-
-    elif action == "clean":
-        if option == "Remove Filler":
-            task = "Remove filler words only."
-        elif option == "Fix Formatting":
-            task = "Fix formatting only."
-        elif option == "Normalize Spacing":
-            task = "Normalize spacing."
-        elif option == "Deduplicate":
-            task = "Remove duplicates."
-        else:
-            raise HTTPException(400, "Invalid clean option")
-
-    else:
-        raise HTTPException(400, "Invalid action")
-
-    return f"""SOURCE TEXT:
+            return f"""SOURCE TEXT:
 {text}
 
 TASK:
-{task}
+Extract the key points as a numbered list.
 
 RULES:
-- Use only the text
-- No hallucination
-- No explanation
+- Each point must be a complete, standalone sentence
+- Use only content from the source
+- No commentary, no added explanation
 """
+        elif option == "Quotes":
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Extract direct quotes only.
+
+RULES:
+- Format each quote as: "<quote>"
+- Do NOT paraphrase
+- Do NOT add commentary
+- Only include text that appears verbatim in the source
+"""
+        elif option == "Entities":
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Extract all named entities from the source.
+
+RETURN ONLY:
+
+People:
+- <name> — <role or context>
+
+Places:
+- <name> — <context>
+
+Organizations:
+- <name> — <context>
+
+RULES:
+- Skip any category with no entries
+- Use only what is stated in the source
+"""
+        elif option == "Timeline":
+            return f"""SOURCE TEXT:
+{text}
+
+TASK:
+Extract a chronological timeline of events.
+
+FORMAT:
+<date or period> — <event>
+<date or period> — <event>
+
+RULES:
+- Use only what is stated in the source
+- Do NOT infer or add events
+- Order chronologically
+"""
+        else:
+            raise HTTPException(400, "Invalid extract option")
+
+    else:
+        raise HTTPException(400, "Invalid action")
 
 
 # ============================================================

@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - NEXIS UNDERSTAND PAGE
 // File: src/pages/Reconstruction.jsx
-// Version: 005 (Preset-Aware Logic + Expanded Creator Options)
+// Version: 006 (CONVERT Refactor — 3-Category Collapse)
 // ============================================================
 
 import React, { useState, useContext } from "react";
@@ -31,35 +31,22 @@ export default function Reconstruction() {
     student: {
       summarize: ["Short", "Medium", "Long"],
       extract: ["Key Points", "Quotes", "Entities"],
-      rewrite: ["Simplify", "Improve Clarity"],
-      transform: ["Study Guide", "Paragraph"],
-      clean: ["Remove Filler", "Fix Formatting"],
+      transform: ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
     },
     creator: {
       summarize: ["Short", "Medium"],
       extract: ["Key Points", "Quotes", "Timeline"],
-      rewrite: ["Make Engaging", "Improve Flow"],
-      transform: [
-        "Dialogue Script",
-        "Narrative Story",
-        "Hook Script",
-        "Social Post",
-      ],
-      clean: ["Remove Filler"],
+      transform: ["Make Engaging", "Dialogue Script", "Hook Script", "Social Post"],
     },
     explained: {
       summarize: ["Short", "Medium"],
       extract: ["Key Points", "Entities"],
-      rewrite: ["Improve Clarity", "Simplify"],
-      transform: ["Paragraph", "Study Guide"],
-      clean: ["Normalize Spacing", "Remove Filler"],
+      transform: ["Simplify", "Improve Clarity", "Study Guide", "Paragraph"],
     },
     analysis: {
       summarize: ["Long"],
       extract: ["Key Points", "Entities", "Timeline"],
-      rewrite: ["Make Professional", "Improve Clarity"],
-      transform: ["JSON", "Paragraph"],
-      clean: ["Deduplicate", "Fix Formatting"],
+      transform: ["Make Professional", "Improve Clarity", "JSON", "Paragraph"],
     },
   };
 
