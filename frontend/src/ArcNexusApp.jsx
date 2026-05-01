@@ -1,3 +1,9 @@
+// ============================================================
+// ARC-NEXUS - MAIN FRONTEND APP
+// File: src/ArcNexusApp.jsx
+// Version: 002 (Header Consistency)
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 import BootScreen from "./components/BootScreen";
 import AcknowledgmentModal from "./components/AcknowledgmentModal";
@@ -25,9 +31,6 @@ function App() {
 
     const savedVersion = localStorage.getItem(STORAGE_KEY);
 
-    // Show modal if:
-    // - No version stored (user didn't check the box)
-    // - OR stored version doesn't match current version
     if (savedVersion !== CURRENT_VERSION) {
       setShowAck(true);
     }

@@ -1,11 +1,13 @@
-import React, { useContext, useEffect, useState, memo, useCallback } from "react";
-import { ArcNContext } from "../context/ArcNContext";
-import axios from "axios";
-import TranscriptOutput from "../components/TranscriptOutput";
+// ============================================================
+// ARC-NEXUS - NEXUS DASHBOARD
+// File: src/pages/NexusDashboard.jsx
+// Version: 003 (ESLint Cleanup)
+// ============================================================
+
+import React, { useEffect, useState, memo, useCallback } from "react";
+import { systemCheck } from "../api/api";
 
 const NexusDashboard = () => {
-  const { setActivePage } = useContext(ArcNContext);
-
   const [systemStatus, setSystemStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,8 +18,8 @@ const NexusDashboard = () => {
 
   const fetchStatus = useCallback(async (retry = 0) => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/api/system/check");
-      setSystemStatus(res.data);
+      const data = await systemCheck();
+      setSystemStatus(data);
       setError(null);
     } catch (err) {
       console.error("System status fetch failed:", err);
@@ -42,7 +44,9 @@ const NexusDashboard = () => {
     setFixMessage("");
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/system/fix/config");
+      await fetch("http://127.0.0.1:8000/api/system/fix/config", {
+        method: "POST",
+      });
       setFixMessage("Config file created successfully.");
       await fetchStatus();
     } catch {
@@ -57,7 +61,9 @@ const NexusDashboard = () => {
     setFixMessage("");
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/system/fix/models");
+      await fetch("http://127.0.0.1:8000/api/system/fix/models", {
+        method: "POST",
+      });
       setFixMessage("Models pulled successfully.");
       await fetchStatus();
     } catch {
@@ -69,13 +75,10 @@ const NexusDashboard = () => {
 
   return (
     <div className="module-container">
-
-      {/* Title */}
       <h1 className="module-title" style={{ marginBottom: "30px" }}>
         THE NEXUS
       </h1>
 
-      {/* GRID */}
       <div
         style={{
           display: "grid",
@@ -83,46 +86,28 @@ const NexusDashboard = () => {
           gap: "24px",
         }}
       >
-        {/* LEFT COLUMN */}
+        {/* LEFT */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          
           <div className="panel">
-  <div className="panel-header">
-    <h3>Quick Start</h3>
-  </div>
+            <h3>Quick Start</h3>
 
-  <p className="subtle" style={{ lineHeight: "1.5" }}>
-    Welcome to the Nexus Dashboard. This is your central command center for ARC NEXUS.
-    To return here at any time, click <strong>NEXUS</strong> in the top‑left navigation.
-  </p>
+            <p className="subtle">
+              Welcome to your command center. Use Collect → Understand → Create.
+            </p>
 
-  <p className="subtle" style={{ marginTop: "12px", lineHeight: "1.5" }}>
-    On the right, you’ll see <strong>System Status</strong>. When all indicators are 
-    <span style={{ color: "var(--arc-green)" }}> green</span>, the system is fully operational. 
-    If any show <span style={{ color: "lightcoral" }}>Missing</span>, consult the 
-    <a href="system-status-help.html" target="_blank" rel="noopener noreferrer" style={{ marginLeft: "4px" }}>System Status Help File</a>.
-  </p>
-
-  <p className="subtle" style={{ marginTop: "12px", lineHeight: "1.5" }}>
-    Depending on your hardware and model choices, some files may take 
-    <strong> up to, and occasionally over, 10 minutes</strong> to transcribe. 
-    This is normal for longer audio, dense speech, or CPU‑only processing. 
-    ARC NEXUS will continue working in the background until the task completes.
-  </p>
-</div>
-
+            <p className="subtle">
+              When System Status is green, everything is ready.
+            </p>
+          </div>
 
           <div className="panel">
             <h3>Demo Project</h3>
-            <p className="subtle">Status: Idle • Updated just now</p>
+            <p className="subtle">Status: Idle</p>
           </div>
-
-          
         </div>
 
-        {/* RIGHT COLUMN */}
+        {/* RIGHT */}
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          
           <div className="panel">
             <h3>System Status</h3>
 
@@ -130,7 +115,14 @@ const NexusDashboard = () => {
             {error && <p className="error">{error}</p>}
 
             {systemStatus && (
-              <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div
+                style={{
+                  marginTop: "12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
                 <StatusRow label="Ollama Installed" ok={systemStatus.ollama?.installed} />
                 <StatusRow label="Ollama Running" ok={systemStatus.ollama?.running} />
 
@@ -157,11 +149,8 @@ const NexusDashboard = () => {
 
           <div className="panel">
             <h3>Active Model</h3>
-            <p>llama3.2 (primary)</p>
-            <button className="btn">Change Model</button>
+            <p>Local Ollama Model</p>
           </div>
-
-                    
         </div>
       </div>
     </div>
@@ -178,7 +167,9 @@ function StatusRow({ label, ok, children }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        border: ok ? "1px solid var(--arc-green)" : "1px solid rgba(255,0,0,0.4)",
+        border: ok
+          ? "1px solid var(--arc-green)"
+          : "1px solid rgba(255,0,0,0.4)",
       }}
     >
       <span>

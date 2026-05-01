@@ -1,6 +1,11 @@
+// ============================================================
+// ARC-NEXUS - SETTINGS PAGE
+// File: src/pages/Settings.jsx
+// Version: 002 (Terminology + Display Cleanup)
+// ============================================================
+
 import React, { useState, useEffect } from "react";
 
-/* STATIC BUILD TIME */
 const BUILD_TIME = new Date().toLocaleString();
 
 export default function Settings() {
@@ -8,7 +13,6 @@ export default function Settings() {
     localStorage.getItem("arcFontSize") || "medium"
   );
 
-  /* APPLY FONT SIZE GLOBALLY */
   useEffect(() => {
     const sizeMap = {
       small: "0.9rem",
@@ -25,7 +29,7 @@ export default function Settings() {
   }, [fontSize]);
 
   const systemInfo = {
-    version: "ARC‑NEXUS v1.0.0",
+    version: "NEXIS v1.0.0",
     build: BUILD_TIME,
     browser: navigator.userAgent,
     platform: navigator.platform,
@@ -36,9 +40,8 @@ export default function Settings() {
     <div className="module-container">
       <h1 className="module-title">Settings</h1>
 
-      {/* OUTPUT WINDOW FONT SIZE */}
       <div className="panel">
-        <h3>Output Window Font Size</h3>
+        <h3>Output Font Size</h3>
 
         <p style={{ opacity: 0.7, marginBottom: "8px" }}>Preview:</p>
 
@@ -51,41 +54,22 @@ export default function Settings() {
             fontSize: "var(--arc-font-size)",
           }}
         >
-          Teaching snakes to kick.
+          Sample NEXIS output text.
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            className={`btn ${fontSize === "small" ? "active" : ""}`}
-            onClick={() => setFontSize("small")}
-          >
-            Small
-          </button>
-
-          <button
-            className={`btn ${fontSize === "medium" ? "active" : ""}`}
-            onClick={() => setFontSize("medium")}
-          >
-            Medium
-          </button>
-
-          <button
-            className={`btn ${fontSize === "large" ? "active" : ""}`}
-            onClick={() => setFontSize("large")}
-          >
-            Large
-          </button>
+        <div className="row">
+          {["small", "medium", "large"].map((size) => (
+            <button
+              key={size}
+              className={`btn ${fontSize === size ? "active" : ""}`}
+              onClick={() => setFontSize(size)}
+            >
+              {size.charAt(0).toUpperCase() + size.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* SYSTEM INFO */}
       <div className="panel">
         <h3>System Info</h3>
 

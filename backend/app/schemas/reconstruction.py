@@ -1,21 +1,25 @@
 # ============================================================
-# RECONSTRUCTION SCHEMAS
-# Defines the request model for Reconstruction operations.
-# Used by the Reconstruction API to validate incoming data.
+# ARC-NEXUS - RECONSTRUCTION SCHEMAS
+# File: app/schemas/reconstruction.py
+# Version: 002 (Aligned with NEXIS System)
 # ============================================================
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Literal
+
+
+# ------------------------------------------------------------
+# Types (match backend exactly)
+# ------------------------------------------------------------
+PresetType = Literal["student", "creator", "explained", "analysis"]
+ActionType = Literal["summarize", "extract", "rewrite", "transform", "clean"]
 
 
 # ------------------------------------------------------------
 # ReconstructionRequest
-# Matches the backend Reconstruction endpoint:
-#   text:   the input text to process
-#   mode:   summarize | rewrite | extract | transform | clean
-#   option: specific sub-mode (varies by mode)
 # ------------------------------------------------------------
 class ReconstructionRequest(BaseModel):
     text: str
-    mode: str
-    option: Optional[str] = None
+    preset: PresetType
+    action: ActionType
+    option: str

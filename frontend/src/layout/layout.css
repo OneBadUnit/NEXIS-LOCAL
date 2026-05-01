@@ -1,75 +1,128 @@
 /* ============================================================
-   UNIFIED TOP NAV BAR
-   Fixed at top. Contains brand + module navigation.
-   ============================================================ */
+   ARC-NEXUS - APP LAYOUT STYLES
+   File: src/layout/layout.css
+   Version: 003 (Clean Visual Reset)
+============================================================ */
+
+.layout {
+  min-height: 100vh;
+  background: var(--arc-bg);
+}
+
 .topnav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 1000;
 
-  height: 75px;                     /* unified bar height */
-  background: var(--arc-surface);
-  border-bottom: 1px solid var(--arc-border);
-  backdrop-filter: blur(6px);
+  height: 76px;
+  padding: 0 32px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 24px;
 
-  padding: 0 24px;
-  z-index: 1000;
+  background: rgba(8, 13, 23, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* BRAND BLOCK */
 .brand {
+  all: unset;
+  cursor: pointer;
+
   display: flex;
   flex-direction: column;
-  cursor: pointer;
+  line-height: 1;
 }
 
 .brand-acr {
-  font-size: 11px;
-  opacity: 0.6;
-  letter-spacing: 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.38rem;
+  color: var(--arc-muted);
 }
 
 .brand-nexus {
-  font-size: 40px;
+  font-size: 2rem;
   font-weight: 800;
-  margin-top: -8px;
+  color: var(--arc-text);
 }
 
-/* NAV ITEMS */
 .nav-items {
   display: flex;
-  gap: 140px;
+  align-items: center;
+  gap: 8px;
 }
 
 .nav-item {
-  padding: 8px 14px;
-  border-radius: 6px;
+  all: unset;
   cursor: pointer;
-  color: var(--arc-text-dim);
-  display: flex;
-  align-items: center;
+
+  padding: 10px 14px;
+  border-radius: 10px;
+
+  color: var(--arc-muted);
+  font-size: 0.92rem;
+  font-weight: 650;
+
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .nav-item:hover {
-  background: var(--arc-hover);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--arc-text);
 }
 
 .nav-item.active {
-  background: var(--arc-accent-fade);
-  color: var(--arc-accent);
-  font-weight: 600;
+  background: rgba(56, 189, 248, 0.13);
+  color: #7dd3fc;
 }
 
-/* CONTENT AREA */
 .arcn-main {
-  margin-top: 75px;                 /* unified bar height */
-  height: calc(100vh - 75px);
+  min-height: 100vh;
+  padding: 108px 28px 56px;
   overflow-y: auto;
-  padding: 20px;
+}
+
+.scroll-top-button {
+  position: fixed;
+  right: 86px;
+  bottom: 22px;
+  z-index: 9999;
+
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--arc-text);
+
+  cursor: pointer;
+}
+
+.scroll-top-button:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #7dd3fc;
+}
+
+@media (max-width: 900px) {
+  .topnav {
+    height: auto;
+    min-height: 76px;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 18px;
+  }
+
+  .nav-items {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .arcn-main {
+    padding-top: 146px;
+  }
 }

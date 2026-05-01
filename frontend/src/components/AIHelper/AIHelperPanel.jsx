@@ -1,51 +1,124 @@
-import React, { useState, useRef } from "react";
-import "./AIHelperPanel.css";
+// ============================================================
+// ARC-NEXUS - NEXIS GUIDE PANEL
+// File: src/components/AIHelper/AIHelperPanel.jsx
+// Version: 003 (ESLint Streaming Fix)
+// ============================================================
 
-export default function AIHelperPanel() {
-  const [aiText, setAiText] = useState("");
-  const [history, setHistory] = useState([]);
-  const inputRef = useRef(null);
+import React, { useState } from "react";
+import "./aiHelper.css";
 
-  // Lifted out of the loop — no-loop-func warning resolved
-  const handleHistoryClick = (item) => {
-    setAiText(item);
+const API_URL = "http://127.0.0.1:8000/ai-helper/respond";
+
+export default function AIHelperPanel({ isOpen, onClose }) {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      text: "Hi — I’m NEXIS Guide. Ask me how to use Collect, Understand, Create, or Vision.",
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
+
+  const updateLastAssistantMessage = (text) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      updated[updated.length - 1] = {
+        role: "assistant",
+        text,
+      };
+      return updated;
+    });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!aiText.trim()) return;
+  const sendMessage = async (event) => {
+    event.preventDefault();
 
-    setHistory((prev) => [...prev, aiText]);
-    setAiText("");
-    inputRef.current?.focus();
+    const cleanInput = input.trim();
+    if (!cleanInput || loading) return;
+
+    setInput("");
+    setLoading(true);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: cleanInput },
+      { role: "assistant", text: "" },
+    ]);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: cleanInput,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("NEXIS Guide failed to respond.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      const chunks = [];
+
+      while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        chunks.push(decoder.decode(value));
+        updateLastAssistantMessage(chunks.join(""));
+      }
+    } catch (error) {
+      updateLastAssistantMessage(
+        error.message ||
+          "NEXIS Guide is unavailable. Make sure the backend and Ollama are running."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="ai-helper-panel">
-      <h2>ARC‑NEXUS AI Helper</h2>
+    <section className={`ai-helper-panel ${isOpen ? "open" : ""}`}>
+      <div className="ai-helper-header">
+        <span>NEXIS Guide</span>
 
-      <form onSubmit={handleSubmit}>
-        <textarea
-          ref={inputRef}
-          value={aiText}
-          onChange={(e) => setAiText(e.target.value)}
-          placeholder="Ask ARC‑NEXUS anything..."
-        />
-        <button type="submit">Send</button>
-      </form>
+        <button
+          className="ai-close-btn"
+          type="button"
+          onClick={onClose}
+          aria-label="Close NEXIS Guide"
+        >
+          ×
+        </button>
+      </div>
 
-      <div className="history">
-        <h3>History</h3>
-        {history.map((item, index) => (
-          <div
-            key={index}
-            className="history-item"
-            onClick={() => handleHistoryClick(item)}
-          >
-            {item}
+      <div className="ai-helper-messages">
+        {messages.map((message, index) => (
+          <div key={`${message.role}-${index}`} className={`msg ${message.role}`}>
+            {message.text ||
+              (loading && index === messages.length - 1 ? "Thinking..." : "")}
           </div>
         ))}
       </div>
-    </div>
+
+      <form className="ai-helper-input" onSubmit={sendMessage}>
+        <input
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="Ask how to use NEXIS..."
+          disabled={loading}
+        />
+
+        <button type="submit" disabled={loading}>
+          {loading ? "..." : "Ask"}
+        </button>
+      </form>
+    </section>
   );
 }

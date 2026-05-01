@@ -1,3 +1,9 @@
+// ============================================================
+// ARC-NEXUS - HELP PAGE
+// File: src/pages/Help.jsx
+// Version: 002 (Terminology Aligned)
+// ============================================================
+
 import React, { useState } from "react";
 
 export default function Help() {
@@ -11,135 +17,133 @@ export default function Help() {
     <div className="module-container">
       <h1 className="module-title">Help & Documentation</h1>
 
-      {/* SECTION: Assimilation */}
+      {/* COLLECT */}
       <div className="panel">
-        <h3>Assimilation</h3>
+        <h3>Collect</h3>
         <p>
-          Assimilation extracts content from URLs, documents, or images. It is
-          designed for fast ingestion and clean transcript output.
+          Collect extracts content from URLs, files, or images. It is designed
+          for fast ingestion and clean text output.
         </p>
 
         <ul>
-          <li><strong>URL Mode:</strong> Paste any webpage link to extract readable content.</li>
-          <li><strong>Document Mode:</strong> Upload PDFs, text files, or other supported formats.</li>
-          <li><strong>Picture Mode:</strong> Upload images for OCR and description.</li>
-          <li><strong>Saved Assimilations:</strong> Automatically stored with rename + delete options.</li>
+          <li><strong>URL:</strong> Paste any webpage link to extract readable content.</li>
+          <li><strong>File:</strong> Upload documents or media for processing.</li>
+          <li><strong>Picture:</strong> Upload images for OCR and description.</li>
+          <li><strong>Saved:</strong> Results are stored automatically.</li>
         </ul>
       </div>
 
-      {/* SECTION: Reconstruction */}
+      {/* UNDERSTAND */}
       <div className="panel">
-        <h3>Reconstruction</h3>
+        <h3>Understand</h3>
         <p>
-          Reconstruction transforms your input using selectable tools and options.
-          It is persistent — your input and output remain after refresh.
+          Understand transforms your input using structured presets, actions,
+          and options.
         </p>
 
         <ul>
-          <li><strong>Toolbox:</strong> Choose the transformation type (summaries, rewrites, etc.).</li>
-          <li><strong>Options:</strong> Additional modifiers depending on the selected tool.</li>
-          <li><strong>Reconstruct Button:</strong> Generates output using the selected settings.</li>
-          <li><strong>Saved Reconstructions:</strong> Stores previous outputs for quick access.</li>
+          <li><strong>Presets:</strong> Student, Creator, Explained, Analysis.</li>
+          <li><strong>Actions:</strong> Summarize, Extract, Rewrite, Transform.</li>
+          <li><strong>Options:</strong> Context-specific refinements.</li>
+          <li><strong>Saved:</strong> Outputs are stored for reuse.</li>
         </ul>
       </div>
 
-      {/* SECTION: Settings */}
+      {/* CREATE */}
+      <div className="panel">
+        <h3>Create</h3>
+        <p>
+          Create generates new content from your ideas using structured modes.
+        </p>
+
+        <ul>
+          <li><strong>Modes:</strong> Script, Post, Email, Idea.</li>
+          <li><strong>Options:</strong> Length or tone variations.</li>
+          <li><strong>Output:</strong> Ready-to-use generated content.</li>
+        </ul>
+      </div>
+
+      {/* SETTINGS */}
       <div className="panel">
         <h3>Settings</h3>
         <p>
-          The Settings page allows you to adjust the Output Window Font Size and view
-          system information.
+          Adjust display and system preferences.
         </p>
 
         <ul>
-          <li><strong>Output Window Font Size:</strong> Controls the text size used in Assimilation, Reconstruction, and Help output windows.</li>
-          <li><strong>System Info:</strong> Version, build time, browser, platform, resolution.</li>
+          <li><strong>Font Size:</strong> Controls output text size.</li>
+          <li><strong>System Info:</strong> Shows environment details.</li>
         </ul>
       </div>
 
-      {/* SECTION: FAQs */}
+      {/* FAQ */}
       <div className="panel">
         <h3>Frequently Asked Questions</h3>
 
-        {/* FAQ 1 */}
-        <div style={{ marginBottom: "12px" }}>
-          <button className="btn" onClick={() => toggleFAQ(1)}>
-            Why doesn’t Assimilation persist input/output like Reconstruction?
-          </button>
-          {openFAQ === 1 && (
-            <div style={{ marginTop: "10px" }}>
-              Assimilation is designed to save each result as an individual card
-              rather than persist the active input. Reconstruction behaves like a
-              workspace, so its input/output persist automatically.
-            </div>
-          )}
-        </div>
+        <FAQ
+          id={1}
+          open={openFAQ}
+          toggle={toggleFAQ}
+          q="Why doesn't Collect persist input like Understand?"
+          a="Collect saves results as entries, while Understand works as a persistent workspace."
+        />
 
-        {/* FAQ 2 */}
-        <div style={{ marginBottom: "12px" }}>
-          <button className="btn" onClick={() => toggleFAQ(2)}>
-            Why do some files fail to upload?
-          </button>
-          {openFAQ === 2 && (
-            <div style={{ marginTop: "10px" }}>
-              Files may fail if they are locked, corrupted, or unsupported. Try
-              saving a fresh copy or ensuring the file is not open in another
-              program.
-            </div>
-          )}
-        </div>
+        <FAQ
+          id={2}
+          open={openFAQ}
+          toggle={toggleFAQ}
+          q="Why do some files fail?"
+          a="Files may be unsupported, locked, or corrupted."
+        />
 
-        {/* FAQ 3 */}
-        <div style={{ marginBottom: "12px" }}>
-          <button className="btn" onClick={() => toggleFAQ(3)}>
-            Why does Reconstruction take longer than Assimilation?
-          </button>
-          {openFAQ === 3 && (
-            <div style={{ marginTop: "10px" }}>
-              Reconstruction performs deeper transformations and may require
-              multiple passes depending on the selected tool and options.
-            </div>
-          )}
-        </div>
+        <FAQ
+          id={3}
+          open={openFAQ}
+          toggle={toggleFAQ}
+          q="Why is Understand slower?"
+          a="It performs deeper transformations using AI models."
+        />
 
-        {/* FAQ 4 */}
-        <div style={{ marginBottom: "12px" }}>
-          <button className="btn" onClick={() => toggleFAQ(4)}>
-            How do I clear all saved items?
-          </button>
-          {openFAQ === 4 && (
-            <div style={{ marginTop: "10px" }}>
-              Saved Assimilations and Reconstructions can be deleted individually
-              using the ✕ button. A global “Clear All” option may be added in a
-              future update.
-            </div>
-          )}
-        </div>
+        <FAQ
+          id={4}
+          open={openFAQ}
+          toggle={toggleFAQ}
+          q="Can I clear all saved items?"
+          a="Currently manual delete only. Bulk options may be added later."
+        />
 
-        {/* FAQ 5 */}
-        <div style={{ marginBottom: "12px" }}>
-          <button className="btn" onClick={() => toggleFAQ(5)}>
-            What does “Output Window Font Size” change?
-          </button>
-          {openFAQ === 5 && (
-            <div style={{ marginTop: "10px" }}>
-              It adjusts the text size used in all output windows across ARC‑NEXUS,
-              including Assimilation transcripts, Reconstruction results, and Help
-              documentation. It does not affect button sizes or layout geometry.
-            </div>
-          )}
-        </div>
+        <FAQ
+          id={5}
+          open={openFAQ}
+          toggle={toggleFAQ}
+          q="What does font size change?"
+          a="It affects all output text across the system."
+        />
       </div>
 
-      {/* SECTION: About */}
+      {/* ABOUT */}
       <div className="panel">
-        <h3>About ARC‑NEXUS</h3>
+        <h3>About ARC-NEXUS</h3>
         <p>
-          ARC‑NEXUS is a modular, neon‑themed interface designed for fast content
-          ingestion, transformation, and retrieval. Built with React, FastAPI,
-          and a persistent workspace philosophy.
+          ARC-NEXUS is a modular system for collecting, understanding, and
+          creating content using local AI.
         </p>
       </div>
+    </div>
+  );
+}
+
+function FAQ({ id, open, toggle, q, a }) {
+  return (
+    <div style={{ marginBottom: "12px" }}>
+      <button className="btn" onClick={() => toggle(id)}>
+        {q}
+      </button>
+      {open === id && (
+        <div style={{ marginTop: "10px" }}>
+          {a}
+        </div>
+      )}
     </div>
   );
 }

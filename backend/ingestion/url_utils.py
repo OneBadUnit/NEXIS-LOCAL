@@ -1,10 +1,6 @@
 # ============================================================
 # URL INGESTION MODULE
-# Handles:
-#   - YouTube (API → yt‑dlp fallback → audio transcription)
-#   - Direct media URLs (mp4, mp3, wav, etc.)
-#   - HTML extraction (cleaned, readable text)
-# Fully async, safe temp handling, robust fallbacks.
+# Version: 003 (SSL Fallback + Robust HTML Fetch)
 # ============================================================
 
 print(">>> URL_UTILS LOADED FROM ingestion/url_utils.py")
@@ -14,14 +10,12 @@ import tempfile
 import requests
 import subprocess
 from bs4 import BeautifulSoup
+from requests.exceptions import SSLError
 
 from .youtube_utils import transcribe_youtube_url
 from .file_router import process_uploaded_file
 
 
-# ------------------------------------------------------------
-# MEDIA EXTENSIONS
-# ------------------------------------------------------------
 MEDIA_EXT = {
     ".mp4", ".mov", ".mkv", ".avi",
     ".mp3", ".wav", ".m4a", ".ogg"
@@ -29,7 +23,27 @@ MEDIA_EXT = {
 
 
 # ------------------------------------------------------------
-# YOUTUBE FALLBACK: yt-dlp audio extraction
+# SAFE REQUEST (WITH SSL FALLBACK)
+# ------------------------------------------------------------
+def safe_get(url: str):
+    try:
+        return requests.get(
+            url,
+            timeout=15,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+    except SSLError:
+        print(">>> SSL FAILED — retrying without verification")
+        return requests.get(
+            url,
+            timeout=15,
+            headers={"User-Agent": "Mozilla/5.0"},
+            verify=False
+        )
+
+
+# ------------------------------------------------------------
+# YOUTUBE FALLBACK
 # ------------------------------------------------------------
 async def extract_audio_with_ytdlp(url: str) -> str:
     print(">>> YT: Falling back to yt-dlp audio extraction")
@@ -91,41 +105,31 @@ async def process_url_or_youtube(url: str) -> str:
     if not url:
         return "No URL provided."
 
-    # --------------------------------------------------------
-    # YOUTUBE HANDLING
-    # --------------------------------------------------------
+    # ---------------- YOUTUBE ----------------
     if "youtube.com" in url or "youtu.be" in url:
         print(">>> YT BRANCH HIT")
 
         try:
-            print(">>> YT: Attempting transcript API")
             yt_text = await transcribe_youtube_url(url)
             if yt_text and len(yt_text.strip()) > 20:
-                print(">>> YT: Transcript API SUCCESS")
                 return yt_text
-            print(">>> YT: Transcript API returned empty")
         except Exception as e:
-            print(">>> YT: Transcript API FAILED:", e)
+            print(">>> YT API FAILED:", e)
 
         processed = await extract_audio_with_ytdlp(url)
         if processed:
             return processed
 
-        return "[YouTube processing failed — no transcript and yt-dlp failed]"
+        return "[YouTube processing failed]"
 
-    # --------------------------------------------------------
-    # DIRECT MEDIA URL HANDLING
-    # --------------------------------------------------------
+    # ---------------- MEDIA ----------------
     lower = url.lower()
     for ext in MEDIA_EXT:
         if lower.endswith(ext):
             print(">>> MEDIA BRANCH HIT:", ext)
+
             try:
-                resp = requests.get(
-                    url,
-                    timeout=30,
-                    headers={"User-Agent": "Mozilla/5.0"}
-                )
+                resp = safe_get(url)
                 resp.raise_for_status()
 
                 tmp_dir = tempfile.mkdtemp(prefix="arc_url_media_")
@@ -153,17 +157,11 @@ async def process_url_or_youtube(url: str) -> str:
             except Exception as e:
                 return f"Error downloading media: {str(e)}"
 
-    # --------------------------------------------------------
-    # HTML FALLBACK (Wikipedia‑aware)
-    # --------------------------------------------------------
+    # ---------------- HTML ----------------
     print(">>> HTML BRANCH HIT")
 
     try:
-        resp = requests.get(
-            url,
-            timeout=15,
-            headers={"User-Agent": "Mozilla/5.0"}
-        )
+        resp = safe_get(url)
         resp.raise_for_status()
 
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -175,6 +173,7 @@ async def process_url_or_youtube(url: str) -> str:
         ]):
             tag.extract()
 
+        # Wikipedia targeting
         content = soup.find("div", id="mw-content-text")
         if content:
             soup = content
@@ -193,7 +192,7 @@ async def process_url_or_youtube(url: str) -> str:
             if line.strip()
         )
 
-        return cleaned if cleaned else "No readable text found on page."
+        return cleaned if cleaned else "No readable text found."
 
     except Exception as e:
         return f"Error processing URL: {str(e)}"

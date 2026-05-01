@@ -1,55 +1,58 @@
-// src/pages/LandingScreen.jsx
-import React, { useEffect, useState, useContext } from "react";
-import axios from "axios";
+// ============================================================
+// ARC-NEXUS - LANDING SCREEN
+// File: src/pages/LandingScreen.jsx
+// Version: 002 (Syntax Fix + API Alignment)
+// ============================================================
+
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import { ArcNContext } from "../context/ArcNContext";
+import { systemCheck } from "../api/api";
 
 const LandingScreen = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const { setActivePage } = useContext(ArcNContext);
 
-  const runSystemCheck = async () => {
-    try {
-      const res = await axios.get("http://127.0.0.1:8000/api/system/check");
+  const runSystemCheck = useCallback(async () => {
+    setLoading(true);
 
-      console.log("SYSTEM CHECK RAW RESPONSE:", res.data);
+    try {
+      const data = await systemCheck();
 
       setStatus({
-  configOk: res.data.config?.isReady,
-
-  modelsOk:
-    res.data.models?.available ??
-    res.data.models?.isReady ??
-    false,
-
-  ollamaInstalled:
-    res.data.ollama?.installed ??
-    res.data.ollamaInstalled ??
-    false,
-
-  ollamaRunning:
-    res.data.ollama?.running ??
-    res.data.ollamaRunning ??
-    false,
-});
-
+        configOk: data.config?.isReady ?? false,
+        modelsOk: data.models?.ready ?? false,
+        ollamaInstalled: data.ollama?.installed ?? false,
+        ollamaRunning: data.ollama?.running ?? false,
+        error: null,
+      });
+    } catch {
+      setStatus({ error: true });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     runSystemCheck();
-  }, []);
+  }, [runSystemCheck]);
 
   const fixConfig = async () => {
-    await axios.post("http://127.0.0.1:8000/api/system/fix/config");
+    await fetch("http://127.0.0.1:8000/api/system/fix/config", {
+      method: "POST",
+    });
     runSystemCheck();
   };
 
   const fixModels = async () => {
-    await axios.post("http://127.0.0.1:8000/api/system/fix/models");
+    await fetch("http://127.0.0.1:8000/api/system/fix/models", {
+      method: "POST",
+    });
     runSystemCheck();
   };
 
   const handleEnterNexus = () => {
-    setActivePage("NEXUS");
+    setActivePage("nexus");
   };
 
   if (loading) {
@@ -88,7 +91,6 @@ const LandingScreen = () => {
       <div className="panel" style={{ textAlign: "center" }}>
         <h2>System Diagnostics</h2>
 
-        {/* STATUS ITEMS */}
         <div style={{ marginTop: "20px", textAlign: "left" }}>
           <StatusItem label="Ollama Installed" ok={status.ollamaInstalled} />
           <StatusItem label="Ollama Running" ok={status.ollamaRunning} />
@@ -110,7 +112,6 @@ const LandingScreen = () => {
           </StatusItem>
         </div>
 
-        {/* ENTER NEXUS */}
         {allGreen && (
           <button
             className="btn"

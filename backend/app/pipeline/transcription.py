@@ -1,74 +1,83 @@
 # ============================================================
-# PIPELINE: AUDIO TRANSCRIPTION (Whisper Integration)
-# This module provides the real transcription function used by
-# the ingestion/assimilation pipeline. It loads Whisper using
-# GPU when available, logs device usage, and returns structured
-# transcription output.
+# ARC-NEXUS - AUDIO TRANSCRIPTION PIPELINE
+# File: app/pipeline/transcription.py
+# Version: 002 (Model Reuse + Cleaner Logging + Stability)
 # ============================================================
 
 import traceback
 from faster_whisper import WhisperModel
+
 from app.utils.gpu_detection import get_whisper_device
 
 
 # ------------------------------------------------------------
-# transcribe_audio
-# Accepts a path to an audio file and returns a dictionary:
-#   - text:          full transcription text
-#   - segments:      list of segment dicts (start, end, text)
-#   - device_used:   "cuda" or "cpu"
-#
-# This function is synchronous because Whisper GPU execution
-# is blocking. If async behavior is needed later, wrap this
-# function in a thread executor.
+# Global Model Cache (prevents reload every call)
 # ------------------------------------------------------------
-def transcribe_audio(audio_path: str) -> dict:
+_whisper_model = None
+_whisper_device = None
+
+
+# ------------------------------------------------------------
+# Load Whisper Model (once)
+# ------------------------------------------------------------
+def get_model():
+    global _whisper_model, _whisper_device
+
+    if _whisper_model is not None:
+        return _whisper_model, _whisper_device
+
     device = get_whisper_device()
 
-    # ============================================================
-    # WHISPER INIT LOGS
-    # ============================================================
-    print("\n================ WHISPER INIT ================")
-    print(f"[WHISPER] Requested device: {device}")
-
     try:
-        model = WhisperModel(
+        print(f"[WHISPER] Loading model on {device}...")
+
+        _whisper_model = WhisperModel(
             "medium",
             device=device,
             compute_type="float16" if device == "cuda" else "int8"
         )
-        print(f"[WHISPER] Model loaded successfully on: {device}")
-    except Exception as e:
-        print("[WHISPER] ERROR loading Whisper model:")
+
+        _whisper_device = device
+
+        print(f"[WHISPER] Model ready on {device}")
+
+    except Exception:
+        print("[WHISPER] ERROR loading model:")
         traceback.print_exc()
+        _whisper_model = None
+        _whisper_device = device
+
+    return _whisper_model, _whisper_device
+
+
+# ------------------------------------------------------------
+# Transcribe Audio
+# ------------------------------------------------------------
+def transcribe_audio(audio_path: str) -> dict:
+    model, device = get_model()
+
+    if model is None:
         return {
             "text": "",
             "segments": [],
             "device_used": device,
-            "error": f"Model load failure: {e}"
+            "error": "Model not available"
         }
 
-    # ============================================================
-    # WHISPER TRANSCRIPTION START
-    # ============================================================
-    print("\n================ WHISPER RUN ================")
-    print(f"[WHISPER] Starting transcription for: {audio_path}")
-    print(f"[WHISPER] Runtime device: {device}")
-    print("=============================================\n")
+    print(f"[WHISPER] Transcribing: {audio_path} on {device}")
 
     try:
         segments, info = model.transcribe(audio_path)
-    except Exception as e:
+    except Exception:
         print("[WHISPER] ERROR during transcription:")
         traceback.print_exc()
         return {
             "text": "",
             "segments": [],
             "device_used": device,
-            "error": f"Transcription failure: {e}"
+            "error": "Transcription failure"
         }
 
-    # Collect segments into a clean list
     collected_segments = []
     full_text = []
 
@@ -79,13 +88,6 @@ def transcribe_audio(audio_path: str) -> dict:
             "text": seg.text
         })
         full_text.append(seg.text)
-
-    # ============================================================
-    # WHISPER TRANSCRIPTION COMPLETE
-    # ============================================================
-    print("\n================ WHISPER DONE ================")
-    print(f"[WHISPER] Finished transcription for: {audio_path}")
-    print("==============================================\n")
 
     return {
         "text": " ".join(full_text).strip(),

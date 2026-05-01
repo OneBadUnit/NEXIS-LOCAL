@@ -19,7 +19,7 @@ from .video_utils import transcribe_video_file
 # ------------------------------------------------------------
 # TEMP DIRECTORY (SAFE)
 # ------------------------------------------------------------
-SAFE_TMP = r"D:\arc-nexus\tmp"
+SAFE_TMP = r"D:\NEXIS\tmp"
 os.makedirs(SAFE_TMP, exist_ok=True)
 
 

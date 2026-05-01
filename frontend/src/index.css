@@ -1,13 +1,218 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ============================================================
+   ARC-NEXUS GLOBAL STYLES
+   File: src/index.css
+   Version: 004 (Clean Reset + Wide Layout + Proper Buttons)
+============================================================ */
+
+/* ------------------------------------------------------------
+   ROOT THEME
+------------------------------------------------------------ */
+:root {
+  --arc-bg: #0b0f17;
+  --arc-panel: #121826;
+  --arc-panel-soft: rgba(18, 24, 38, 0.9);
+  --arc-border: rgba(255, 255, 255, 0.08);
+
+  --arc-text: #e5e7eb;
+  --arc-subtle: #9ca3af;
+
+  --arc-accent: #38bdf8;
+  --arc-accent-hover: #7dd3fc;
+  --arc-accent-soft: rgba(56, 189, 248, 0.12);
+
+  --arc-error: #ef4444;
+
+  --arc-radius: 14px;
+  --arc-font-size: 1rem;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* ------------------------------------------------------------
+   BASE
+------------------------------------------------------------ */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--arc-bg);
+  color: var(--arc-text);
+
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  font-size: var(--arc-font-size);
+  line-height: 1.5;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------
+   LAYOUT
+------------------------------------------------------------ */
+.module-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+}
+
+.module-title {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 800;
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------
+   PANELS
+------------------------------------------------------------ */
+.panel {
+  background: var(--arc-panel-soft);
+  border: 1px solid var(--arc-border);
+  border-radius: var(--arc-radius);
+
+  padding: 24px;
+  margin-bottom: 22px;
+
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+/* ------------------------------------------------------------
+   ROWS
+------------------------------------------------------------ */
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------
+   BUTTONS
+------------------------------------------------------------ */
+.btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--arc-text);
+
+  padding: 10px 16px;
+  border-radius: 10px;
+
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 600;
+
+  transition: all 0.15s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: var(--arc-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn.active {
+  background: var(--arc-accent-soft);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: var(--arc-accent);
+}
+
+/* PRIMARY ACTION */
+.btn.primary {
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  border: none;
+  color: #021018;
+  font-weight: 700;
+}
+
+.btn.primary:hover {
+  background: linear-gradient(180deg, #7dd3fc, #38bdf8);
+}
+
+/* DISABLED */
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------
+   INPUTS (FIXED + WIDER + NO RESIZE HANDLE)
+------------------------------------------------------------ */
+input,
+textarea {
+  width: 100%;
+
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+
+  padding: 14px 16px;
+  color: var(--arc-text);
+
+  font-size: var(--arc-font-size);
+  line-height: 1.6;
+
+  margin-bottom: 16px;
+
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.08);
+}
+
+/* ------------------------------------------------------------
+   TEXTAREA (BIG FIXES HERE)
+------------------------------------------------------------ */
+textarea {
+  min-height: 240px;     /* bigger input area */
+  resize: none;          /* removes bottom-right drag handle */
+}
+
+/* ------------------------------------------------------------
+   OUTPUT (THIS FIXES YOUR NARROW FEEL)
+------------------------------------------------------------ */
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  line-height: 1.7;
+  font-size: 0.98rem;
+
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+
+  padding: 20px;
+  margin-top: 14px;
+}
+
+/* ------------------------------------------------------------
+   TEXT HELPERS
+------------------------------------------------------------ */
+.subtle {
+  color: var(--arc-subtle);
+}
+
+.error {
+  color: var(--arc-error);
+}
+
+/* ------------------------------------------------------------
+   SCROLLBAR
+------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
 }

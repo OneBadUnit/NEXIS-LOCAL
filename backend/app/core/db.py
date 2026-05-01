@@ -1,7 +1,7 @@
 # ============================================================
-# DATABASE CORE (SQLAlchemy Engine + Session + Base)
-# Initializes the PostgreSQL engine, session factory, and
-# declarative base used across all ORM models in ARC‑NEXUS.
+# ARC-NEXUS - DATABASE CORE
+# File: app/core/db.py
+# Version: 002 (Disabled by Default + Safe Initialization)
 # ============================================================
 
 from sqlalchemy import create_engine
@@ -11,31 +11,50 @@ from app.core.config import settings
 
 
 # ------------------------------------------------------------
-# SQLAlchemy Engine
-# Connects to PostgreSQL using the DATABASE_URL from settings.
-# future=True enables SQLAlchemy 2.0-style behavior.
+# Flags
 # ------------------------------------------------------------
-engine = create_engine(
-    settings.DATABASE_URL,
-    future=True
-)
+DB_ENABLED = bool(settings.DATABASE_URL)
 
 
 # ------------------------------------------------------------
-# Session Factory
-# Creates database sessions with:
-#   - autoflush=False: prevents premature flushes
-#   - autocommit=False: explicit commit required
+# Engine (only if configured)
 # ------------------------------------------------------------
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False
-)
+engine = None
+SessionLocal = None
+
+if DB_ENABLED:
+    try:
+        engine = create_engine(
+            settings.DATABASE_URL,
+            future=True
+        )
+
+        SessionLocal = sessionmaker(
+            bind=engine,
+            autoflush=False,
+            autocommit=False
+        )
+
+    except Exception:
+        engine = None
+        SessionLocal = None
 
 
 # ------------------------------------------------------------
-# Declarative Base
-# Base class for all ORM models (Project, Source, etc.)
+# Base (always available for models)
 # ------------------------------------------------------------
 Base = declarative_base()
+
+
+# ------------------------------------------------------------
+# Dependency Helper (optional use)
+# ------------------------------------------------------------
+def get_db():
+    if not SessionLocal:
+        raise RuntimeError("Database is not configured.")
+
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

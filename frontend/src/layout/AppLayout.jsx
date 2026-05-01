@@ -1,5 +1,7 @@
 // ============================================================
-// APP LAYOUT — Unified TopBar/Nav + Scrollable Content
+// ARC-NEXUS - APP LAYOUT
+// File: src/layout/AppLayout.jsx
+// Version: 003 (Clean Page Routing + Product Shell)
 // ============================================================
 
 import React, { useState, useEffect } from "react";
@@ -17,13 +19,18 @@ import Help from "../pages/Help";
 
 import "./layout.css";
 
+const PAGES = {
+  nexus: <NexusDashboard />,
+  assimilation: <Assimilation />,
+  reconstruction: <Reconstruction />,
+  creation: <Creation />,
+  settings: <Settings />,
+  help: <Help />,
+};
+
 export default function AppLayout() {
   const [activePage, setActivePage] = useState("nexus");
-  const [open, setOpen] = useState(false);
-
-  // ---------------------------------------------
-  // Scroll-to-top button visibility
-  // ---------------------------------------------
+  const [guideOpen, setGuideOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -35,14 +42,24 @@ export default function AppLayout() {
     };
 
     main.addEventListener("scroll", handleScroll);
-    return () => main.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      main.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
-  // ---------------------------------------------
-  // Scroll-to-top action
-  // ---------------------------------------------
+  const handlePageChange = (page) => {
+    setActivePage(page);
+
+    const main = document.querySelector(".arcn-main");
+    if (main) {
+      main.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const scrollToTop = () => {
     const main = document.querySelector(".arcn-main");
+
     if (main) {
       main.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -50,24 +67,22 @@ export default function AppLayout() {
 
   return (
     <div className="layout">
-      <TopBar activePage={activePage} setActivePage={setActivePage} />
+      <TopBar activePage={activePage} setActivePage={handlePageChange} />
 
       <main className="arcn-main">
-        {activePage === "nexus" && <NexusDashboard />}
-        {activePage === "assimilation" && <Assimilation />}
-        {activePage === "creation" && <Creation />}
-        {activePage === "reconstruction" && <Reconstruction />}
-        {activePage === "settings" && <Settings />}
-        {activePage === "help" && <Help />}
+        {PAGES[activePage] || <NexusDashboard />}
       </main>
 
-      {/* AI Helper */}
-      <AIHelperButton onClick={() => setOpen(!open)} />
-      <AIHelperPanel isOpen={open} onClose={() => setOpen(false)} />
+      <AIHelperButton onClick={() => setGuideOpen((prev) => !prev)} />
+      <AIHelperPanel isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
 
-      {/* Scroll-to-top button */}
       {showScrollTop && (
-        <button className="scroll-top-button" onClick={scrollToTop}>
+        <button
+          className="scroll-top-button"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          title="Scroll to top"
+        >
           ↑
         </button>
       )}

@@ -1,14 +1,14 @@
 # ============================================================
-# PROJECT MODEL (SQLAlchemy ORM)
-# Represents a user-created Project inside ARC‑NEXUS.
-# Projects act as containers for Sources, Settings, and
-# generated artifacts. Stored in PostgreSQL via SQLAlchemy.
+# ARC-NEXUS - PROJECT MODEL
+# File: app/models/project.py
+# Version: 002 (Optional Database Compatibility)
 # ============================================================
+
+from datetime import datetime
+import uuid
 
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from datetime import datetime
-import uuid
 
 from app.core.db import Base
 
@@ -19,14 +19,14 @@ from app.core.db import Base
 class Project(Base):
     __tablename__ = "projects"
 
-    # Unique project identifier (UUID v4)
+    # Unique project identifier
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Human-readable project name
     name = Column(String, nullable=False)
 
-    # Arbitrary settings dict (JSONB for flexibility)
+    # Optional project settings
     settings = Column(JSONB, nullable=True)
 
-    # Timestamp of creation
+    # Creation timestamp
     created_at = Column(DateTime, default=datetime.utcnow)

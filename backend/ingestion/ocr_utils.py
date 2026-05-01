@@ -14,7 +14,7 @@ import asyncio
 # ------------------------------------------------------------
 # TESSERACT CONFIG
 # ------------------------------------------------------------
-pytesseract.pytesseract.tesseract_cmd = r"D:\arc-nexus\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"D:\NEXIS\Tesseract-OCR\tesseract.exe"
 
 
 # ------------------------------------------------------------

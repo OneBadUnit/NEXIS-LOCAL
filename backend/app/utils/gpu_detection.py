@@ -1,15 +1,50 @@
 # ============================================================
-# WHISPER DEVICE HELPER
-# Determines whether Whisper should run on GPU (CUDA) or CPU.
-# Used by modules that rely on Whisper for transcription.
+# ARC-NEXUS - GPU DETECTION UTILITY
+# File: app/utils/gpu_detection.py
+# Version: 002 (Safe Detection + Logging)
 # ============================================================
 
 import torch
 
 
 # ------------------------------------------------------------
-# Device Selector
-# Returns "cuda" if a compatible GPU is available, otherwise "cpu".
+# Get Whisper Device
 # ------------------------------------------------------------
 def get_whisper_device() -> str:
-    return "cuda" if torch.cuda.is_available() else "cpu"
+    """
+    Returns:
+        "cuda" if GPU is available
+        "cpu" otherwise
+    """
+    try:
+        if torch.cuda.is_available():
+            return "cuda"
+    except Exception:
+        pass
+
+    return "cpu"
+
+
+# ------------------------------------------------------------
+# Optional: Debug Info (not required, but useful)
+# ------------------------------------------------------------
+def get_gpu_info() -> dict:
+    """
+    Returns basic GPU info for diagnostics.
+    Safe to call even if CUDA is not available.
+    """
+    try:
+        if torch.cuda.is_available():
+            return {
+                "available": True,
+                "device_name": torch.cuda.get_device_name(0),
+                "device_count": torch.cuda.device_count(),
+            }
+    except Exception:
+        pass
+
+    return {
+        "available": False,
+        "device_name": None,
+        "device_count": 0,
+    }

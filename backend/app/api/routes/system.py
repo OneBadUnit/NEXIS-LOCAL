@@ -1,13 +1,7 @@
 # ============================================================
-# SYSTEM CHECK API
-# Provides diagnostics for local ARC‑NEXUS environment:
-# - Ollama installation
-# - Ollama running state
-# - Required model availability
-# - ARC‑NEXUS config readiness
-#
-# Also provides "fix" endpoints to bootstrap missing config
-# and pull required models.
+# ARC-NEXUS - SYSTEM CHECK API
+# File: app/api/routes/system.py
+# Version: 002 (Model Alignment + Safer Diagnostics)
 # ============================================================
 
 from fastapi import APIRouter
@@ -23,68 +17,96 @@ import json
 router = APIRouter(tags=["system"])
 
 
-
 # ------------------------------------------------------------
-# PATHS & CONSTANTS
+# Paths & Constants
 # ------------------------------------------------------------
 CONFIG_PATH = os.path.expanduser("~/.arc_nexus/config.json")
-REQUIRED_MODELS = ["llama3.2", "llama3.2:1b"]
+
+# Must match the models currently used by services:
+# - app/services/llm_service.py
+# - app/services/vision_service.py
+REQUIRED_MODELS = [
+    "llama3.1:8b",
+    "llava:34b",
+]
 
 
 # ------------------------------------------------------------
-# CHECK FUNCTIONS
+# Safe Command Helper
+# ------------------------------------------------------------
+def run_command(command: list[str]) -> str:
+    try:
+        return subprocess.check_output(
+            command,
+            stderr=subprocess.STDOUT,
+            timeout=20,
+        ).decode(errors="ignore")
+    except Exception:
+        return ""
+
+
+# ------------------------------------------------------------
+# Check Functions
 # ------------------------------------------------------------
 def check_ollama_installed() -> bool:
-    """Return True if Ollama binary exists on PATH."""
     return shutil.which("ollama") is not None
 
 
 def check_ollama_running() -> bool:
-    """Return True if 'ollama ps' executes successfully."""
-    try:
-        subprocess.check_output(["ollama", "ps"], stderr=subprocess.STDOUT)
-        return True
-    except Exception:
+    if not check_ollama_installed():
         return False
+
+    output = run_command(["ollama", "ps"])
+    return bool(output)
+
+
+def get_available_models() -> list[str]:
+    if not check_ollama_installed():
+        return []
+
+    output = run_command(["ollama", "list"])
+
+    if not output:
+        return []
+
+    return output.split()
 
 
 def check_models_available() -> bool:
-    """Return True if all required models appear in 'ollama list'."""
-    try:
-        output = subprocess.check_output(["ollama", "list"]).decode()
-        return all(model in output for model in REQUIRED_MODELS)
-    except Exception:
-        return False
+    available_text = " ".join(get_available_models())
+    return all(model in available_text for model in REQUIRED_MODELS)
 
 
 def check_config_ready() -> bool:
-    """Return True if ARC‑NEXUS config file exists."""
     return os.path.exists(CONFIG_PATH)
 
 
 # ------------------------------------------------------------
-# GET /system/check
-# Returns full system diagnostic status.
+# GET /api/system/check
 # ------------------------------------------------------------
 @router.get("/check")
 def system_check():
+    available_models = get_available_models()
+
     return {
         "ollama": {
             "installed": check_ollama_installed(),
             "running": check_ollama_running(),
         },
         "models": {
-            "available": check_models_available(),
+            "required": REQUIRED_MODELS,
+            "available": available_models,
+            "ready": check_models_available(),
         },
         "config": {
+            "path": CONFIG_PATH,
             "isReady": check_config_ready(),
         },
     }
 
 
 # ------------------------------------------------------------
-# POST /system/fix/config
-# Creates ~/.arc_nexus/config.json if missing.
+# POST /api/system/fix/config
 # ------------------------------------------------------------
 @router.post("/fix/config")
 def fix_config():
@@ -92,28 +114,45 @@ def fix_config():
 
     default_config = {
         "initialized": True,
-        "version": 1,
+        "version": 2,
+        "required_models": REQUIRED_MODELS,
     }
 
-    with open(CONFIG_PATH, "w") as f:
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(default_config, f, indent=2)
 
-    return {"success": True, "configCreated": True}
+    return {
+        "success": True,
+        "configCreated": True,
+        "path": CONFIG_PATH,
+    }
 
 
 # ------------------------------------------------------------
-# POST /system/fix/models
-# Pulls required models using Ollama.
+# POST /api/system/fix/models
 # ------------------------------------------------------------
 @router.post("/fix/models")
 def fix_models():
     pulled = []
+    failed = []
+
+    if not check_ollama_installed():
+        return {
+            "success": False,
+            "error": "Ollama is not installed or not on PATH.",
+            "modelsPulled": pulled,
+            "modelsFailed": REQUIRED_MODELS,
+        }
 
     for model in REQUIRED_MODELS:
         try:
-            subprocess.call(["ollama", "pull", model])
+            subprocess.check_call(["ollama", "pull", model])
             pulled.append(model)
         except Exception:
-            pass
+            failed.append(model)
 
-    return {"success": True, "modelsPulled": pulled}
+    return {
+        "success": len(failed) == 0,
+        "modelsPulled": pulled,
+        "modelsFailed": failed,
+    }

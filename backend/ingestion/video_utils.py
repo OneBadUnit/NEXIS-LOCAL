@@ -19,7 +19,7 @@ from .audio_utils import transcribe_audio_file
 # ------------------------------------------------------------
 FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
 
-SAFE_TMP = r"D:\arc-nexus\tmp"
+SAFE_TMP = r"D:\NEXIS\tmp"
 os.makedirs(SAFE_TMP, exist_ok=True)
 
 

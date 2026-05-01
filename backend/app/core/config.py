@@ -1,8 +1,7 @@
 # ============================================================
-# APPLICATION SETTINGS (Pydantic Settings)
-# Centralized configuration for ARC‑NEXUS. Loads environment
-# variables from .env and provides strongly-typed access to
-# database URLs, API keys, and runtime flags.
+# ARC-NEXUS - APP CONFIG
+# File: app/core/config.py
+# Version: 002 (Minimal + Future-Safe)
 # ============================================================
 
 from pydantic_settings import BaseSettings
@@ -10,28 +9,33 @@ from pydantic_settings import BaseSettings
 
 # ------------------------------------------------------------
 # Settings Model
-# Values can be overridden via environment variables or .env.
 # ------------------------------------------------------------
 class Settings(BaseSettings):
-    # Database connection string (PostgreSQL)
-    DATABASE_URL: str = "postgresql://user:pass@localhost:5432/arcn"
+    # --------------------------------------------------------
+    # CORE FLAGS
+    # --------------------------------------------------------
+    APP_NAME: str = "ARC-NEXUS"
+    DEBUG: bool = True
 
-    # Redis connection (for queues, caching, jobs)
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # --------------------------------------------------------
+    # MODEL CONFIG (matches current services)
+    # --------------------------------------------------------
+    LLM_MODEL: str = "llama3.1:8b"
+    VISION_MODEL: str = "llava:34b"
+    OLLAMA_URL: str = "http://localhost:11434"
 
-    # Optional OpenAI API key (if cloud LLMs are used)
+    # --------------------------------------------------------
+    # FUTURE (not active yet)
+    # --------------------------------------------------------
+    DATABASE_URL: str = ""
+    REDIS_URL: str = ""
     OPENAI_API_KEY: str = ""
 
-    # Global GPU toggle for modules that support CUDA
-    USE_GPU: bool = True
-
     class Config:
-        # Load environment variables from .env file
         env_file = ".env"
 
 
 # ------------------------------------------------------------
-# Global settings instance
-# Imported throughout the backend for configuration access.
+# Global Instance
 # ------------------------------------------------------------
 settings = Settings()

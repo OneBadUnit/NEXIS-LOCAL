@@ -1,17 +1,7 @@
 # ============================================================
-# ARC‑NEXUS VISION SERVICE (Ollama LLaVA Backend)
-# Normalizes image → PNG → base64 and calls Ollama /api/generate
-#
-# IMPORTANT:
-#   Ollama does NOT auto-alias model names.
-#   You MUST use the EXACT model name returned by `ollama list`.
-#
-#   Your installed model:
-#       llava:34b
-#
-#   If the model name does not match exactly, Ollama loads a
-#   non‑vision text model → ignores the image → returns garbage
-#   like "EE nee a".
+# ARC-NEXUS - VISION SERVICE
+# File: app/services/vision_service.py
+# Version: 002 (Stability + Error Handling + Consistency)
 # ============================================================
 
 import base64
@@ -21,66 +11,89 @@ from functools import partial
 from PIL import Image
 import io
 
-# Ollama's default multimodal endpoint
+# ------------------------------------------------------------
+# Ollama Configuration
+# ------------------------------------------------------------
 LLAVA_URL = "http://localhost:11434/api/generate"
+LLAVA_MODEL = "llava:13b"   # MUST match `ollama list` exactly
 
 
 # ------------------------------------------------------------
-# Normalize image bytes → RGB PNG → clean bytes
-# Ensures consistent input for all formats (JPG, HEIC, WEBP, etc.)
+# Normalize image bytes → RGB PNG
+# Ensures consistent input for all formats
 # ------------------------------------------------------------
 def _normalize_image(image_bytes: bytes) -> bytes:
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        raise ValueError("Invalid or unsupported image format.")
 
 
 # ------------------------------------------------------------
-# Synchronous LLaVA call (wrapped by async function below)
+# Synchronous LLaVA call
 # ------------------------------------------------------------
 def _run_llava_sync(image_bytes: bytes) -> str:
     try:
-        # Normalize and encode image
+        # Normalize image
         clean_bytes = _normalize_image(image_bytes)
+
+        # Encode image
         image_b64 = base64.b64encode(clean_bytes).decode("utf-8")
 
-        # ------------------------------------------------------------
-        # OLLAMA PAYLOAD (CRITICAL)
-        # ------------------------------------------------------------
-        # MUST match `ollama list` EXACTLY:
-        #   llava:34b
-        # ------------------------------------------------------------
+        # Payload
         payload = {
-            "model": "llava:34b",
-            "prompt": "Describe this image in clear detail.",
-            "images": [image_b64],   # must be an array
-            "stream": False,         # return full JSON response
+            "model": LLAVA_MODEL,
+            "prompt": "Describe this image in clear, detailed terms.",
+            "images": [image_b64],
+            "stream": False,
         }
 
-        # Send request to Ollama
-        resp = requests.post(LLAVA_URL, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+        # Request
+        resp = requests.post(
+            LLAVA_URL,
+            json=payload,
+            timeout=120
+        )
 
-        # Extract model output
+        resp.raise_for_status()
+
+        data = resp.json()
         output = data.get("response", "")
 
         if isinstance(output, str):
-            return output.strip()
+            cleaned = output.strip()
+            if cleaned:
+                return cleaned
+            return "[VISION ERROR] Empty response from model."
 
         return str(output)
+
+    except ValueError as ve:
+        return f"[VISION ERROR] {str(ve)}"
+
+    except requests.exceptions.Timeout:
+        return "[VISION ERROR] Request timed out."
+
+    except requests.exceptions.ConnectionError:
+        return "[VISION ERROR] Could not connect to Ollama."
+
+    except requests.exceptions.HTTPError as e:
+        return f"[VISION ERROR] HTTP error: {str(e)}"
 
     except Exception as e:
         return f"[VISION ERROR] {str(e)}"
 
 
 # ------------------------------------------------------------
-# Async wrapper so FastAPI can await without blocking
+# Async wrapper
 # ------------------------------------------------------------
 async def run_llava(image_bytes: bytes) -> str:
     loop = asyncio.get_event_loop()
+
     return await loop.run_in_executor(
         None,
-        partial(_run_llava_sync, image_bytes)
+        partial(_run_llava_sync, image_bytes),
     )

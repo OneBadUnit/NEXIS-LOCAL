@@ -1,61 +1,43 @@
 // ============================================================
-// TOPBAR + NAVBAR (Unified ARC‑NEXUS Command Bar)
-// Single fixed header containing brand + module navigation.
+// ARC-NEXUS - TOP BAR
+// File: src/layout/TopBar.jsx
+// Version: 002 (Product UI Navigation)
 // ============================================================
+
+const NAV_ITEMS = [
+  { id: "nexus", label: "NEXUS" },
+  { id: "assimilation", label: "COLLECT" },
+  { id: "reconstruction", label: "CONVERT" },
+  { id: "creation", label: "CREATE" },
+  { id: "settings", label: "SETTINGS" },
+  { id: "help", label: "HELP" },
+];
 
 export default function TopBar({ activePage, setActivePage }) {
   return (
-    <div className="topnav">
+    <header className="topnav">
+      <button
+        className="brand"
+        type="button"
+        onClick={() => setActivePage("nexus")}
+        aria-label="Go to Nexus dashboard"
+      >
+        <span className="brand-acr">ARC</span>
+        <span className="brand-nexus">NEXUS</span>
+      </button>
 
-      {/* -------------------------------------------------------- */}
-      {/* ARC / NEXUS BRANDING */}
-      {/* -------------------------------------------------------- */}
-      <div className="brand" onClick={() => setActivePage("nexus")}>
-        <div className="brand-acr">A R C</div>
-        <div className="brand-nexus">NEXUS</div>
-      </div>
-
-      {/* -------------------------------------------------------- */}
-      {/* MODULE NAVIGATION */}
-      {/* -------------------------------------------------------- */}
-      <div className="nav-items">
-
-        <div
-          className={`nav-item ${activePage === "assimilation" ? "active" : ""}`}
-          onClick={() => setActivePage("assimilation")}
-        >
-          Assimilation
-        </div>
-
-        <div
-          className={`nav-item ${activePage === "reconstruction" ? "active" : ""}`}
-          onClick={() => setActivePage("reconstruction")}
-        >
-          Reconstruction
-        </div>
-
-        <div
-          className={`nav-item ${activePage === "creation" ? "active" : ""}`}
-          onClick={() => setActivePage("creation")}
-        >
-          Creation
-        </div>
-
-        <div
-          className={`nav-item ${activePage === "settings" ? "active" : ""}`}
-          onClick={() => setActivePage("settings")}
-        >
-          Settings
-        </div>
-
-        <div
-          className={`nav-item ${activePage === "help" ? "active" : ""}`}
-          onClick={() => setActivePage("help")}
-        >
-          Help
-        </div>
-
-      </div>
-    </div>
+      <nav className="nav-items" aria-label="Main navigation">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`nav-item ${activePage === item.id ? "active" : ""}`}
+            onClick={() => setActivePage(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+    </header>
   );
 }
