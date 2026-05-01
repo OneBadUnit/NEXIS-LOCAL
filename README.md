@@ -1,9 +1,9 @@
-# ARC‑NEXUS  
+# NEXIS  
 Multimodal Ingestion Engine • Vision + Audio • Document Intelligence
 
-ARC‑NEXUS is a modular, GPU‑aware ingestion and analysis system designed to process images, documents, audio, and video through a unified pipeline. It includes a FastAPI backend, a React frontend, and a clean architecture for multimodal AI workflows.
+NEXIS is a modular, GPU‑aware ingestion and analysis system designed to process images, documents, audio, and video through a unified pipeline. It includes a FastAPI backend, a React frontend, and a clean architecture for multimodal AI workflows.
 
-This repository contains the source‑only version of ARC‑NEXUS — no binaries, no heavy model files, and no external dependencies checked into Git.
+This repository contains the source‑only version of NEXIS — no binaries, no heavy model files, and no external dependencies checked into Git.
 
 ---
 
@@ -34,7 +34,7 @@ This repository contains the source‑only version of ARC‑NEXUS — no binarie
 
 ## 📁 Repository Structure
 
-ARC-NEXUS/  
+NEXIS/  
 ├── backend/        ← FastAPI backend, ingestion utilities, vision pipeline  
 ├── frontend/       ← React frontend (Assimilation UI)  
 └── .gitignore      ← Ignore rules (no binaries, models, caches, or large artifacts)
@@ -84,7 +84,7 @@ Default UI URL:
 
 ## 🧩 Vision Model Integration
 
-ARC‑NEXUS supports local GPU‑hosted multimodal models, such as quantized LLaVA‑style models.  
+NEXIS supports local GPU‑hosted multimodal models, such as quantized LLaVA‑style models.  
 Model weights are not included in this repository and must be downloaded/configured locally.
 
 ---
