@@ -11,7 +11,6 @@ import App from "./ArcNexusApp.jsx";
 
 import "./index.css";
 import "./layout/layout.css";
-import "./components/AIHelper/aiHelper.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 

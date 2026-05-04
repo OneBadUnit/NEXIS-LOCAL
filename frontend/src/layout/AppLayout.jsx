@@ -1,36 +1,25 @@
 // ============================================================
 // ARC-NEXUS - APP LAYOUT
 // File: src/layout/AppLayout.jsx
-// Version: 003 (Clean Page Routing + Product Shell)
+// Version: 004 (Dashboard-only routing)
 // ============================================================
 
 import React, { useState, useEffect } from "react";
 
 import TopBar from "./TopBar";
-import AIHelperButton from "../components/AIHelper/AIHelperButton";
-import AIHelperPanel from "../components/AIHelper/AIHelperPanel";
 
 import NexusDashboard from "../pages/NexusDashboard";
-import Assimilation from "../pages/Assimilation";
-import Creation from "../pages/Creation";
-import Reconstruction from "../pages/Reconstruction";
-import Settings from "../pages/Settings";
 import Help from "../pages/Help";
 
 import "./layout.css";
 
 const PAGES = {
   nexus: <NexusDashboard />,
-  assimilation: <Assimilation />,
-  reconstruction: <Reconstruction />,
-  creation: <Creation />,
-  settings: <Settings />,
   help: <Help />,
 };
 
 export default function AppLayout() {
   const [activePage, setActivePage] = useState("nexus");
-  const [guideOpen, setGuideOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -67,14 +56,11 @@ export default function AppLayout() {
 
   return (
     <div className="layout">
-      <TopBar activePage={activePage} setActivePage={handlePageChange} />
+      <TopBar setActivePage={handlePageChange} />
 
       <main className="arcn-main">
         {PAGES[activePage] || <NexusDashboard />}
       </main>
-
-      <AIHelperButton onClick={() => setGuideOpen((prev) => !prev)} />
-      <AIHelperPanel isOpen={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {showScrollTop && (
         <button

@@ -156,3 +156,30 @@ def fix_models():
         "modelsPulled": pulled,
         "modelsFailed": failed,
     }
+
+
+# ------------------------------------------------------------
+# GET /api/system/gpu
+# Reports whether CUDA/GPU is available on this machine.
+# Uses app/utils/gpu_detection.py (PyTorch-based check).
+# Note: this is a system-level check, separate from Ollama's
+# /api/ps which reports per-model processor usage.
+# ------------------------------------------------------------
+@router.get("/gpu")
+def gpu_status():
+    from app.utils.gpu_detection import get_gpu_info
+
+    info = get_gpu_info()
+    if info.get("available"):
+        return {
+            "ok": True,
+            "processor": "gpu",
+            "message": "GPU acceleration detected",
+            "detail": info,
+        }
+    return {
+        "ok": True,
+        "processor": "cpu",
+        "message": "No CUDA GPU detected — CPU will be used",
+        "detail": info,
+    }

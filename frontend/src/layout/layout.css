@@ -16,27 +16,20 @@
   right: 0;
   z-index: 1000;
 
-  height: 160px;
-  padding: 10px 32px;
+  height: 240px;
+  padding: 0 32px;
 
-  display: grid;
-  grid-template-columns: 1fr auto 1fr; /* 🔥 critical */
+  display: flex;
   align-items: center;
+  justify-content: center;
 
   background: rgba(0, 0, 0, 0.96);
   border-bottom: 0px solid rgba(255, 255, 255, 0.08);
 }
 
-.nav-left {
-  display: flex;
-  gap: 70px;
-  justify-content: flex-start;
-}
-
-.nav-right {
-  display: flex;
-  gap: 70px;
-  justify-content: flex-end;
+.topnav-help {
+  font-size: 0.9rem;
+  padding: 8px 18px;
 }
 
 .brand {
@@ -49,7 +42,7 @@
 }
 
 .brand-logo {
-  height: 180px;
+  height: 280px;
   width: auto;
   display: block;
 }
@@ -86,7 +79,7 @@
 
 .arcn-main {
   min-height: 100vh;
-  padding: 108px 28px 56px;
+  padding: 176px 28px 56px;
   overflow-y: auto;
 }
 
@@ -116,18 +109,10 @@
   .topnav {
     height: auto;
     min-height: 76px;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 16px 18px;
-  }
-
-  .nav-items {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    padding: 12px 18px;
   }
 
   .arcn-main {
-    padding-top: 146px;
+    padding-top: 100px;
   }
 }

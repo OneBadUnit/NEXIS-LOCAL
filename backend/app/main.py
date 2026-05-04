@@ -17,7 +17,6 @@ from app.reconstruction import router as understand_router
 from app.creation import router as create_router
 
 from app.api.routes.system import router as system_router
-from app.api.routes.ai_helper import router as ai_helper_router
 
 
 # ------------------------------------------------------------
@@ -57,10 +56,6 @@ app.include_router(create_router, prefix="/nexis")
 
 # --- SYSTEM ---
 app.include_router(system_router, prefix="/api/system")
-
-# --- OPTIONAL / LEGACY SUPPORT ---
-# Keep this LAST so it doesn't override newer routes
-app.include_router(ai_helper_router)
 
 
 # ------------------------------------------------------------

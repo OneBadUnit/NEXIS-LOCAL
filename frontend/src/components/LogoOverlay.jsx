@@ -7,16 +7,17 @@
 import React, { useEffect, useState } from "react";
 import logo from "../logo.png"; // ✅ correct path for your setup
 
-const LogoOverlay = () => {
+const LogoOverlay = ({ onComplete }) => {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setVisible(false);
+      if (onComplete) onComplete();
     }, 2600);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [onComplete]);
 
   if (!visible) return null;
 

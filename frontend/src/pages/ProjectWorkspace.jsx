@@ -5,13 +5,14 @@
 // ============================================================
 
 import React, { useState, useRef, useEffect } from "react";
-import { collectSource, analyzeImage, nexisUnderstand } from "../api/api";
+import { collectSource, analyzeImage, nexisUnderstand, nexisCreate } from "../api/api";
 import {
   loadRawItems,
   saveRawItemsForProject,
   loadOutputs,
   saveOutputsForProject,
 } from "../utils/projectStorage";
+import ModelConfig from "../components/ModelConfig/ModelConfig";
 
 // ------------------------------------------------------------
 // UI DISPLAY RULE:
@@ -177,6 +178,55 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   };
 
   // ----------------------------------------------------------
+  // Refine handlers
+  // ----------------------------------------------------------
+  const openRefine = (out) => {
+    setRefineTarget(out);
+    setRefineInstruction("");
+    setRefineStatus(null);
+    setRefineResult("");
+  };
+
+  const closeRefine = () => {
+    setRefineTarget(null);
+    setRefineInstruction("");
+    setRefineStatus(null);
+    setRefineResult("");
+  };
+
+  const handleRunRefine = async () => {
+    if (!refineTarget || !refineInstruction.trim()) return;
+    setRefineStatus("running");
+    setRefineResult("");
+    try {
+      const result = await nexisCreate({
+        text: refineTarget.content,
+        mode: "refine",
+        option: refineInstruction.trim(),
+      });
+      setRefineResult(result.output || "");
+      setRefineStatus("done");
+    } catch (err) {
+      setRefineResult("Error: " + (err?.message || "Request failed"));
+      setRefineStatus("error");
+    }
+  };
+
+  const handleSaveRefined = () => {
+    const name = window.prompt("Enter a name for this output:");
+    if (!name || !name.trim()) return;
+    const newOutput = {
+      id: crypto.randomUUID(),
+      projectId: project.id,
+      packageType: name.trim(),
+      content: refineResult,
+      createdAt: Date.now(),
+    };
+    setOutputs((prev) => [newOutput, ...prev]);
+    closeRefine();
+  };
+
+  // ----------------------------------------------------------
   // Collect state
   // ----------------------------------------------------------
   const [collectMode, setCollectMode] = useState("url");
@@ -256,6 +306,18 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   };
 
   // ----------------------------------------------------------
+  // Model config -- loaded from localStorage on mount
+  // ----------------------------------------------------------
+  const [modelConfig, setModelConfig] = useState(() => {
+    try {
+      const raw = localStorage.getItem("nexis_model_config");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // ----------------------------------------------------------
   // Convert state
   // ----------------------------------------------------------
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -267,12 +329,24 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const [expandedOutputId, setExpandedOutputId] = useState(null);
   const [copiedOutputId, setCopiedOutputId] = useState(null);
 
+  // Refine state
+  const [refineTarget, setRefineTarget] = useState(null); // output object | null
+  const [refineInstruction, setRefineInstruction] = useState("");
+  const [refineStatus, setRefineStatus] = useState(null); // null | "running" | "done" | "error"
+  const [refineResult, setRefineResult] = useState("");
+
   // Persist outputs whenever they change
   useEffect(() => {
     saveOutputsForProject(project.id, outputs);
   }, [outputs, project.id]);
 
   const includedItems = rawItems.filter((item) => item.included);
+
+  // True when a usable model is configured
+  // Local config requires a model name to be selected
+  const modelReady =
+    !!modelConfig &&
+    (modelConfig.type === "provider" || (modelConfig.type === "local" && !!modelConfig.model));
 
   const handleCreateClick = (pkg) => {
     if (includedItems.length === 0) return;
@@ -700,17 +774,42 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
             gap: 20,
           }}
         >
+          {/* MODEL STATUS */}
+          <div className="panel" style={{ marginBottom: 0 }}>
+            <div
+              className="subtle"
+              style={{ fontSize: "1.72rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}
+            >
+              3. Model
+            </div>
+            <ModelConfig config={modelConfig} onConfigChange={setModelConfig} />
+          </div>
+
           {/* PACKAGES */}
           <div className="panel" style={{ marginBottom: 0 }}>
-            <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>3. Select Package</div>
+            <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>4. Select Package</div>
             
 
             {includedItems.length === 0 && (
               <p
                 className="subtle"
-                style={{ fontSize: "0.88rem", marginBottom: 16 }}
+                style={{ fontSize: "0.88rem", marginBottom: 4 }}
               >
                 Check at least one raw file to enable convert.
+              </p>
+            )}
+
+            {!modelReady && (
+              <p
+                style={{
+                  fontSize: "0.82rem",
+                  color: "rgba(239,68,68,0.7)",
+                  margin: "0 0 16px",
+                }}
+              >
+                {!modelConfig
+                  ? "Configure a model before creating a package."
+                  : "Select a model before creating a package."}
               </p>
             )}
 
@@ -761,7 +860,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
                   <button
                     className="btn primary"
-                    disabled={includedItems.length === 0 || convertLoading}
+                    disabled={includedItems.length === 0 || convertLoading || !modelReady}
                     onClick={() => handleCreateClick(key)}
                     style={{ alignSelf: "flex-start" }}
                   >
@@ -777,7 +876,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
           {/* OUTPUTS */}
           {outputs.length > 0 && (
             <div className="panel" style={{ marginBottom: 0 }}>
-              <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>4. Review Output</div>
+              <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>5. Review Output</div>
               
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -843,6 +942,13 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                           }}
                         >
                           {copiedOutputId === out.id ? "Copied" : "Copy"}
+                        </button>
+                        <button
+                          className="btn"
+                          style={{ padding: "3px 10px", fontSize: "0.8rem" }}
+                          onClick={() => openRefine(out)}
+                        >
+                          Refine
                         </button>
                         <button
                           className="btn"
@@ -965,6 +1071,133 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
             </button>
           </div>
         </Modal>
+      )}
+
+      {/* --------------------------------------------------------
+          REFINE MODAL
+      -------------------------------------------------------- */}
+      {refineTarget && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10001,
+          }}
+        >
+          <div
+            className="panel"
+            style={{
+              width: 520,
+              margin: 0,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              textAlign: "left",
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <h3 style={{ margin: 0 }}>Refine Output</h3>
+              <button
+                className="btn"
+                style={{ padding: "3px 10px" }}
+                onClick={closeRefine}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Original Output */}
+            <div style={{ marginBottom: 18 }}>
+              <div className="subtle" style={{ fontSize: "0.78rem", marginBottom: 6 }}>
+                Original Output
+              </div>
+              <textarea
+                readOnly
+                value={refineTarget.content}
+                style={{
+                  width: "100%",
+                  minHeight: 140,
+                  maxHeight: 200,
+                  resize: "vertical",
+                  fontSize: "0.82rem",
+                  opacity: 0.7,
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Refine Instructions */}
+            <div style={{ marginBottom: 16 }}>
+              <div className="subtle" style={{ fontSize: "0.78rem", marginBottom: 6 }}>
+                Refine Instructions
+              </div>
+              <textarea
+                value={refineInstruction}
+                onChange={(e) => setRefineInstruction(e.target.value)}
+                placeholder="e.g. Make this shorter, focus on key facts, improve clarity..."
+                style={{
+                  width: "100%",
+                  minHeight: 80,
+                  resize: "vertical",
+                  fontSize: "0.85rem",
+                  boxSizing: "border-box",
+                }}
+                disabled={refineStatus === "running"}
+              />
+            </div>
+
+            {/* Run Refine button */}
+            <button
+              className="btn primary"
+              style={{ marginBottom: 20 }}
+              onClick={handleRunRefine}
+              disabled={!refineInstruction.trim() || refineStatus === "running"}
+            >
+              {refineStatus === "running" ? "Running..." : "Run Refine"}
+            </button>
+
+            {/* Refined Result */}
+            {(refineStatus === "done" || refineStatus === "error") && (
+              <div>
+                <div className="subtle" style={{ fontSize: "0.78rem", marginBottom: 6 }}>
+                  Refined Result
+                </div>
+                <pre
+                  style={{
+                    margin: "0 0 14px",
+                    fontSize: "0.82rem",
+                    maxHeight: 260,
+                    overflow: "auto",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 6,
+                    padding: "10px 12px",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {refineResult}
+                </pre>
+                {refineStatus === "done" && (
+                  <button className="btn" onClick={handleSaveRefined}>
+                    Save As New
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
