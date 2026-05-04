@@ -24,8 +24,15 @@ async function request(path, options = {}) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "API request failed");
+    let message;
+    try {
+      const json = await res.json();
+      // FastAPI wraps errors in { detail: "..." }
+      message = json.detail || JSON.stringify(json);
+    } catch {
+      message = await res.text();
+    }
+    throw new Error(message || "API request failed");
   }
 
   return res.json();
@@ -74,6 +81,15 @@ export async function nexisCreate(payload) {
 // INGESTION - COLLECT
 // (multipart, no JSON header override)
 // ------------------------------------------------------------
+async function parseErrorFromResponse(res) {
+  try {
+    const json = await res.json();
+    return json.detail || JSON.stringify(json);
+  } catch {
+    return await res.text();
+  }
+}
+
 export async function collectSource(formData) {
   const res = await fetch(`${BASE_URL}/collect/process`, {
     method: "POST",
@@ -81,8 +97,8 @@ export async function collectSource(formData) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Collect failed");
+    const msg = await parseErrorFromResponse(res);
+    throw new Error(msg || "Collect failed");
   }
 
   return res.json();
@@ -99,9 +115,47 @@ export async function analyzeImage(formData) {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Vision failed");
+    const msg = await parseErrorFromResponse(res);
+    throw new Error(msg || "Vision failed");
   }
 
   return res.json();
+}
+
+
+// ------------------------------------------------------------
+// USAGE / LIMITS
+// ------------------------------------------------------------
+export async function getUsage() {
+  return request("/api/usage");
+}
+
+export async function syncUsage(counts) {
+  // counts: { projects?, raw_inputs?, outputs? }
+  // Syncs localStorage storage counts to the backend so enforcement
+  // is always based on the real number of saved items.
+  return request("/api/usage/sync", {
+    method: "POST",
+    body: JSON.stringify(counts),
+  });
+}
+
+export async function addOutputUsage() {
+  return request("/api/usage/output/add", { method: "POST" });
+}
+
+export async function removeOutputUsage() {
+  return request("/api/usage/output/remove", { method: "POST" });
+}
+
+export async function removeRawInputUsage() {
+  return request("/api/usage/raw-input/remove", { method: "POST" });
+}
+
+export async function addProjectUsage() {
+  return request("/api/usage/project/add", { method: "POST" });
+}
+
+export async function removeProjectUsage() {
+  return request("/api/usage/project/remove", { method: "POST" });
 }

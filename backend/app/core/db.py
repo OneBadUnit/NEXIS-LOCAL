@@ -1,7 +1,11 @@
-# ============================================================
+﻿# ============================================================
 # ARC-NEXUS - DATABASE CORE
 # File: app/core/db.py
-# Version: 002 (Disabled by Default + Safe Initialization)
+# Version: 003 (Always-on - SQLite default, PostgreSQL ready)
+# ============================================================
+# Defaults to a local SQLite file (nexis.db) when no
+# DATABASE_URL is configured.  Set DATABASE_URL in .env to
+# switch to PostgreSQL for production.
 # ============================================================
 
 from sqlalchemy import create_engine
@@ -11,48 +15,48 @@ from app.core.config import settings
 
 
 # ------------------------------------------------------------
-# Flags
+# Resolved database URL
+# Falls back to SQLite so the app works out of the box.
 # ------------------------------------------------------------
-DB_ENABLED = bool(settings.DATABASE_URL)
+_DATABASE_URL = settings.DATABASE_URL or "sqlite:///./nexis.db"
 
+# SQLite requires check_same_thread=False for multi-threaded use
+_connect_args = {"check_same_thread": False} if _DATABASE_URL.startswith("sqlite") else {}
 
-# ------------------------------------------------------------
-# Engine (only if configured)
-# ------------------------------------------------------------
-engine = None
-SessionLocal = None
+engine = create_engine(
+    _DATABASE_URL,
+    future=True,
+    connect_args=_connect_args,
+)
 
-if DB_ENABLED:
-    try:
-        engine = create_engine(
-            settings.DATABASE_URL,
-            future=True
-        )
-
-        SessionLocal = sessionmaker(
-            bind=engine,
-            autoflush=False,
-            autocommit=False
-        )
-
-    except Exception:
-        engine = None
-        SessionLocal = None
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+)
 
 
 # ------------------------------------------------------------
-# Base (always available for models)
+# Base (always available for model declarations)
 # ------------------------------------------------------------
 Base = declarative_base()
 
 
 # ------------------------------------------------------------
-# Dependency Helper (optional use)
+# Table initialisation
+# Called once at application startup.
+# ------------------------------------------------------------
+def init_db() -> None:
+    """Create all tables that are not yet present in the database."""
+    # Import every model so SQLAlchemy sees their table definitions
+    from app.models import account  # noqa: F401
+    Base.metadata.create_all(bind=engine)
+
+
+# ------------------------------------------------------------
+# FastAPI dependency helper
 # ------------------------------------------------------------
 def get_db():
-    if not SessionLocal:
-        raise RuntimeError("Database is not configured.")
-
     db = SessionLocal()
     try:
         yield db

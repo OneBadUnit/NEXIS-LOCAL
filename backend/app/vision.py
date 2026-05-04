@@ -4,8 +4,12 @@
 # Version: 002 (Stability + Validation + Consistent Output)
 # ============================================================
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from sqlalchemy.orm import Session
 from app.services.vision_service import run_llava
+from app.core.db import get_db
+from app.core import usage as usage_tracker
+from app.core.usage import DEFAULT_USER_ID
 
 
 # ------------------------------------------------------------
@@ -19,7 +23,7 @@ router = APIRouter(tags=["nexis-vision"])
 # Analyze an image using vision model
 # ------------------------------------------------------------
 @router.post("/analyze")
-async def analyze_image(file: UploadFile = File(...)):
+async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
     # -----------------------------
     # Validate file
@@ -29,6 +33,13 @@ async def analyze_image(file: UploadFile = File(...)):
 
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image.")
+
+    # ----------------------------------------------------------
+    # SERVER-SIDE LIMIT CHECK (check only — no increment yet)
+    # ----------------------------------------------------------
+    limit_error = usage_tracker.check_raw_input_limits(db, DEFAULT_USER_ID)
+    if limit_error:
+        raise HTTPException(status_code=429, detail=limit_error)
 
     # -----------------------------
     # Read image
@@ -48,6 +59,11 @@ async def analyze_image(file: UploadFile = File(...)):
         description = await run_llava(image_bytes)
     except Exception:
         raise HTTPException(status_code=500, detail="Vision processing failed.")
+
+    # ----------------------------------------------------------
+    # COMMIT USAGE — only reached after successful vision run
+    # ----------------------------------------------------------
+    usage_tracker.increment_raw_input(db, DEFAULT_USER_ID)
 
     # -----------------------------
     # Return standardized output

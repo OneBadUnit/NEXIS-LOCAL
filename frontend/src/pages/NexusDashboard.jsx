@@ -1,36 +1,114 @@
 // ============================================================
 // ARC-NEXUS - NEXUS DASHBOARD
 // File: src/pages/NexusDashboard.jsx
-// Version: 007 (localStorage persistence)
+// Version: 008 (Tier limits + usage tracking)
 // ============================================================
 
-import React, { memo, useState, useEffect } from "react";
+import React, { memo, useState, useEffect, useCallback } from "react";
 import ProjectWorkspace from "./ProjectWorkspace";
 import {
   loadProjects,
   saveProjects,
   deleteProjectData,
 } from "../utils/projectStorage";
+import {
+  syncUsage,
+  addProjectUsage,
+  removeProjectUsage,
+} from "../api/api.jsx";
 
-const PROJECT_LIMIT = 3;
+
+// ------------------------------------------------------------
+// UsageLine — a single "label: used / limit" row with a bar
+// ------------------------------------------------------------
+function UsageLine({ label, used, limit }) {
+  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  const atCap = used >= limit;
+  const barColor = atCap ? "#ef4444" : pct >= 75 ? "#f59e0b" : "var(--arc-accent, #38bdf8)";
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+        <span className="subtle" style={{ fontSize: "0.82rem" }}>{label}</span>
+        <span
+          style={{
+            fontSize: "0.82rem",
+            fontWeight: 600,
+            color: atCap ? "#ef4444" : "var(--arc-text)",
+          }}
+        >
+          {used} / {limit}
+        </span>
+      </div>
+      <div
+        style={{
+          height: 4,
+          borderRadius: 4,
+          background: "rgba(255,255,255,0.08)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: barColor,
+            borderRadius: 4,
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 const NexusDashboard = () => {
   // Load projects from localStorage on first render
   const [projects, setProjects] = useState(() => loadProjects());
   const [showNewModal, setShowNewModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectError, setNewProjectError] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
+
+  // Usage / tier state
+  const [usage, setUsage] = useState(null);
+
+  const refreshUsage = useCallback(async () => {
+    try {
+      // Sync the actual project count to the backend so enforcement
+      // is based on what's actually in storage, not a stale DB counter.
+      const data = await syncUsage({ projects: projects.length });
+      setUsage(data);
+    } catch {
+      // Backend may not be running; silently ignore
+    }
+  }, [projects.length]);
+
+  // On mount: fetch usage from backend (backend is source of truth)
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
 
   // Persist projects whenever they change
   useEffect(() => {
     saveProjects(projects);
   }, [projects]);
 
-  const atLimit = projects.length >= PROJECT_LIMIT;
+  // Derive limit from live usage (fall back to 0 so button stays disabled until loaded)
+  const projectLimit = usage?.limits?.projects ?? 0;
+  const atLimit = projects.length >= projectLimit;
 
-  const createProject = () => {
+  const createProject = async () => {
     if (!newProjectName.trim()) return;
+    setNewProjectError(null);
+
+    try {
+      await addProjectUsage();
+    } catch (err) {
+      setNewProjectError(err.message || "Could not create project.");
+      return;
+    }
 
     const now = Date.now();
     const newProject = {
@@ -43,6 +121,7 @@ const NexusDashboard = () => {
     setProjects((prev) => [newProject, ...prev]);
     setNewProjectName("");
     setShowNewModal(false);
+    refreshUsage();
   };
 
   const confirmDelete = (e, project) => {
@@ -55,13 +134,19 @@ const NexusDashboard = () => {
     deleteProjectData(deleteTarget.id);
     setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
     setDeleteTarget(null);
+    // Tell backend a project slot was freed (fire-and-forget)
+    removeProjectUsage().catch(() => {});
+    refreshUsage();
   };
 
   if (activeProject) {
     return (
       <ProjectWorkspace
         project={activeProject}
-        onClose={() => setActiveProject(null)}
+        onClose={() => {
+          setActiveProject(null);
+          refreshUsage();
+        }}
         onRename={(title) => {
           const updated = { ...activeProject, title, updatedAt: Date.now() };
           setActiveProject(updated);
@@ -89,15 +174,20 @@ const NexusDashboard = () => {
           <button
             className={`btn${atLimit ? "" : " primary"}`}
             style={{ marginTop: "12px" }}
-            onClick={() => !atLimit && setShowNewModal(true)}
+            onClick={() => {
+              if (!atLimit) {
+                setNewProjectError(null);
+                setShowNewModal(true);
+              }
+            }}
             disabled={atLimit}
           >
-            {atLimit ? "Limit Reached" : "+ New Project"}
+            {atLimit ? "Project Limit Reached" : "+ New Project"}
           </button>
 
           {atLimit && (
             <p className="subtle" style={{ marginTop: 8, fontSize: "0.82rem" }}>
-              Maximum of {PROJECT_LIMIT} projects reached. Delete one to continue.
+              Maximum of {projectLimit} project{projectLimit !== 1 ? "s" : ""} for your plan. Delete one or upgrade.
             </p>
           )}
 
@@ -163,12 +253,51 @@ const NexusDashboard = () => {
         {/* TOP RIGHT — ACCOUNT STATUS */}
         <div className="panel">
           <h3>ACCOUNT STATUS</h3>
-          <p className="subtle">Plan: Free</p>
-          <p className="subtle">Converts remaining: 4</p>
-          <p className="subtle">Refines remaining: 2</p>
-          <button className="btn primary" style={{ marginTop: "12px" }}>
-            View Plans
-          </button>
+          {usage ? (
+            <>
+              <p className="subtle" style={{ marginBottom: 14 }}>
+                Plan: <strong style={{ color: "var(--arc-text)" }}>{usage.tier_name}</strong>
+              </p>
+
+              {/* Storage */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <UsageLine
+                  label="Projects"
+                  used={projects.length}
+                  limit={usage.limits.projects}
+                />
+                <UsageLine
+                  label="Saved Raw Inputs"
+                  used={usage.current.raw_inputs}
+                  limit={usage.limits.saved_raw_inputs}
+                />
+                <UsageLine
+                  label="Saved Outputs"
+                  used={usage.current.outputs}
+                  limit={usage.limits.saved_outputs}
+                />
+              </div>
+
+              {/* Monthly */}
+              <p className="subtle" style={{ fontSize: "0.78rem", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                This Month
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <UsageLine
+                  label="Raw Inputs Added"
+                  used={usage.current.raw_inputs_this_month}
+                  limit={usage.limits.raw_inputs_per_month}
+                />
+                <UsageLine
+                  label="Actions Used"
+                  used={usage.current.actions_this_month}
+                  limit={usage.limits.actions_per_month}
+                />
+              </div>
+            </>
+          ) : (
+            <p className="subtle" style={{ fontSize: "0.85rem" }}>Loading usage…</p>
+          )}
         </div>
 
         {/* BOTTOM LEFT — NEWS */}
@@ -211,8 +340,13 @@ const NexusDashboard = () => {
               onKeyDown={(e) => e.key === "Enter" && createProject()}
               autoFocus
             />
+            {newProjectError && (
+              <p style={{ color: "var(--arc-error, #ef4444)", fontSize: "0.85rem", margin: "8px 0 0" }}>
+                {newProjectError}
+              </p>
+            )}
             <div className="row" style={{ justifyContent: "center" }}>
-              <button className="btn" onClick={() => { setShowNewModal(false); setNewProjectName(""); }}>
+              <button className="btn" onClick={() => { setShowNewModal(false); setNewProjectName(""); setNewProjectError(null); }}>
                 Cancel
               </button>
               <button className="btn primary" onClick={createProject}>

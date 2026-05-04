@@ -4,8 +4,8 @@
 // Version: 002 (localStorage persistence + View/Hide/Copy on raw cards)
 // ============================================================
 
-import React, { useState, useRef, useEffect } from "react";
-import { collectSource, analyzeImage, nexisUnderstand, nexisCreate } from "../api/api";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { collectSource, analyzeImage, nexisUnderstand, nexisCreate, getUsage, syncUsage, addOutputUsage, removeOutputUsage, removeRawInputUsage } from "../api/api.jsx";
 import {
   loadRawItems,
   saveRawItemsForProject,
@@ -69,6 +69,24 @@ function Modal({ children }) {
 // PROJECT WORKSPACE
 // ============================================================
 export default function ProjectWorkspace({ project, onClose, onRename }) {
+  // ----------------------------------------------------------
+  // Usage / limits
+  // ----------------------------------------------------------
+  const [usage, setUsage] = useState(null);
+
+  const refreshUsage = useCallback(async () => {
+    try {
+      const data = await getUsage();
+      setUsage(data);
+    } catch {
+      // Backend may not be running; silently ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUsage();
+  }, [refreshUsage]);
+
   // ----------------------------------------------------------
   // Project name editing
   // ----------------------------------------------------------
@@ -169,12 +187,17 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       // Clean expanded/copied state for deleted item
       setExpandedRawIds((prev) => prev.filter((x) => x !== deleteTarget.id));
       if (copiedRawId === deleteTarget.id) setCopiedRawId(null);
+      // Free storage slot on backend (fire-and-forget; no monthly refund)
+      removeRawInputUsage().catch(() => {});
     } else {
       setOutputs((prev) => prev.filter((o) => o.id !== deleteTarget.id));
       if (expandedOutputId === deleteTarget.id) setExpandedOutputId(null);
       if (copiedOutputId === deleteTarget.id) setCopiedOutputId(null);
+      // Free storage slot on backend (fire-and-forget; no monthly refund)
+      removeOutputUsage().catch(() => {});
     }
     setDeleteTarget(null);
+    refreshUsage();
   };
 
   // ----------------------------------------------------------
@@ -199,6 +222,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     setRefineStatus("running");
     setRefineResult("");
     try {
+      // The backend /nexis/create endpoint enforces the action limit server-side.
       const result = await nexisCreate({
         text: refineTarget.content,
         mode: "refine",
@@ -206,15 +230,24 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       });
       setRefineResult(result.output || "");
       setRefineStatus("done");
+      refreshUsage();
     } catch (err) {
       setRefineResult("Error: " + (err?.message || "Request failed"));
       setRefineStatus("error");
     }
   };
 
-  const handleSaveRefined = () => {
+  const handleSaveRefined = async () => {
     const name = window.prompt("Enter a name for this output:");
     if (!name || !name.trim()) return;
+
+    try {
+      await addOutputUsage();
+    } catch (err) {
+      alert(err.message || "Could not save output: limit reached.");
+      return;
+    }
+
     const newOutput = {
       id: crypto.randomUUID(),
       projectId: project.id,
@@ -224,6 +257,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     };
     setOutputs((prev) => [newOutput, ...prev]);
     closeRefine();
+    refreshUsage();
   };
 
   // ----------------------------------------------------------
@@ -300,6 +334,9 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       if (fileRef.current) fileRef.current.value = "";
     } catch (err) {
       setCollectError(err.message || "Collect failed.");
+      // Re-sync storage counts so the backend stays accurate even if
+      // the request was rejected after a limit check or extraction error.
+      refreshUsage();
     }
 
     setCollectLoading(false);
@@ -340,6 +377,19 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     saveOutputsForProject(project.id, outputs);
   }, [outputs, project.id]);
 
+  // ----------------------------------------------------------
+  // Auto-sync storage counts to the backend whenever raw items
+  // or outputs are added or deleted.  This keeps the DB counters
+  // accurate so server-side limit checks always reflect reality.
+  // Runs on mount (corrects any drift from previous sessions)
+  // and on every count change (prevents exceeding limits).
+  // ----------------------------------------------------------
+  useEffect(() => {
+    syncUsage({ raw_inputs: rawItems.length, outputs: outputs.length })
+      .then((data) => setUsage(data))
+      .catch(() => {});
+  }, [rawItems.length, outputs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const includedItems = rawItems.filter((item) => item.included);
 
   // True when a usable model is configured
@@ -363,6 +413,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     const sections = [];
 
     try {
+      // The backend /nexis/convert endpoint enforces the action + output limits
+      // server-side.  No reservation step needed here.
       for (const item of backendItems) {
         const payload = {
           text: combinedText,
@@ -386,9 +438,12 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         },
         ...prev,
       ]);
+      refreshUsage();
     } catch (err) {
       const detail = err?.message || String(err);
       console.error("[ProjectWorkspace] Convert failed:", detail, err);
+      // If the reservation succeeded but LLM failed, save an error output
+      // so the reserved output slot is not silently abandoned.
       setOutputs((prev) => [
         {
           id: crypto.randomUUID(),
@@ -399,6 +454,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         },
         ...prev,
       ]);
+      refreshUsage();
     }
 
     setConvertLoading(false);
@@ -588,8 +644,22 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
           {/* RAW FILES */}
           <div className="panel" style={{ marginBottom: 0 }}>
-            <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>2. Review &amp; Select Raw</div>
-            
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 15,
+              }}
+            >
+              <div className="subtle" style={{ fontSize: "1.72rem" }}>2. Review &amp; Select Raw</div>
+              <span
+                className="subtle"
+                style={{ fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                {rawItems.length} / {usage?.limits?.saved_raw_inputs ?? "—"}
+              </span>
+            </div>
 
             {rawItems.length === 0 && (
               <p className="subtle" style={{ margin: 0 }}>
@@ -597,7 +667,16 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
               </p>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div
+              style={{
+                maxHeight: 340,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                paddingRight: 2,
+              }}
+            >
               {rawItems.map((item) => {
                 const isExpanded = expandedRawIds.includes(item.id);
                 const isCopied = copiedRawId === item.id;
@@ -874,13 +953,41 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
           </div>
 
           {/* OUTPUTS */}
-          {outputs.length > 0 && (
-            <div className="panel" style={{ marginBottom: 0 }}>
-              <div className="subtle" style={{ fontSize: "1.72rem", marginBottom: 15 }}>5. Review Output</div>
-              
+          <div className="panel" style={{ marginBottom: 0 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                marginBottom: 15,
+              }}
+            >
+              <div className="subtle" style={{ fontSize: "1.72rem" }}>5. Review Output</div>
+              <span
+                className="subtle"
+                style={{ fontSize: "0.85rem", fontWeight: 600 }}
+              >
+                {outputs.length} / {usage?.limits?.saved_outputs ?? "—"}
+              </span>
+            </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {outputs.map((out) => {
+            {outputs.length === 0 && (
+              <p className="subtle" style={{ margin: 0 }}>
+                No outputs yet. Create a package to get started.
+              </p>
+            )}
+
+            <div
+              style={{
+                maxHeight: 400,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                paddingRight: 2,
+              }}
+            >
+              {outputs.map((out) => {
                   const isExpanded = expandedOutputId === out.id;
                   return (
                     <div
@@ -990,7 +1097,6 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                 })}
               </div>
             </div>
-          )}
         </div>
       </div>
 

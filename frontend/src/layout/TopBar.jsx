@@ -1,29 +1,52 @@
 // ============================================================
 // ARC-NEXUS - TOP BAR
 // File: src/layout/TopBar.jsx
-// Version: 006 (Minimal: logo + Help)
+// Version: 007 (Setup left, Help right, overlays)
 // ============================================================
 
 import logo from "../nexis2.png";
 
-export default function TopBar({ setActivePage }) {
+export default function TopBar({ onHome, openOverlay }) {
   return (
     <header className="topnav">
-      {/* LOGO — click to go home */}
-      <button
-        className="brand"
-        onClick={() => setActivePage("nexus")}
+      {/*
+        Three-zone layout:
+          left   — Setup button
+          center — Logo (absolutely centered)
+          right  — Help button
+      */}
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        <img src={logo} alt="ArcNexus" className="brand-logo" />
-      </button>
+        {/* SETUP — left */}
+        <button
+          className="nav-item topnav-help"
+          style={{ position: "absolute", left: 0 }}
+          onClick={() => openOverlay("setup")}
+        >
+          Setup
+        </button>
 
-      {/* HELP */}
-      <button
-        className="nav-item topnav-help"
-        onClick={() => setActivePage("help")}
-      >
-        Help
-      </button>
+        {/* LOGO — center */}
+        <button className="brand" onClick={onHome}>
+          <img src={logo} alt="ArcNexus" className="brand-logo" />
+        </button>
+
+        {/* HELP — right */}
+        <button
+          className="nav-item topnav-help"
+          style={{ position: "absolute", right: 0 }}
+          onClick={() => openOverlay("help")}
+        >
+          Help
+        </button>
+      </div>
     </header>
   );
 }

@@ -89,6 +89,32 @@ export function saveOutputsForProject(projectId, outputs) {
 }
 
 // ------------------------------------------------------------
+// COUNT HELPERS
+// Used to sync storage totals to the backend on startup.
+// ------------------------------------------------------------
+
+export function countAllRawItems() {
+  try {
+    const raw = localStorage.getItem(KEYS.RAW_ITEMS);
+    const all = raw ? JSON.parse(raw) : [];
+    return all.length;
+  } catch {
+    return 0;
+  }
+}
+
+export function countAllOutputs() {
+  try {
+    const raw = localStorage.getItem(KEYS.OUTPUTS);
+    const all = raw ? JSON.parse(raw) : [];
+    return all.length;
+  } catch {
+    return 0;
+  }
+}
+
+
+// ------------------------------------------------------------
 // CLEANUP  (call when a project is deleted)
 // ------------------------------------------------------------
 

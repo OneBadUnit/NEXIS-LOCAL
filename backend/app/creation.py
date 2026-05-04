@@ -4,12 +4,16 @@
 # Version: 010 (Small Normalizers + Output Title)
 # ============================================================
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Literal
 import re
+from sqlalchemy.orm import Session
 
 from app.services.llm_service import run_llm
+from app.core.db import get_db
+from app.core import usage as usage_tracker
+from app.core.usage import DEFAULT_USER_ID
 
 
 router = APIRouter(tags=["nexis-create"])
@@ -422,13 +426,20 @@ REPAIR INSTRUCTIONS:
 
 
 @router.post("/create", response_model=CreationResponse)
-async def create(request: CreationRequest):
-    print("🔥 CREATE ROUTE HIT 🔥", request.mode, request.option)
+async def create(request: CreationRequest, db: Session = Depends(get_db)):
+    print("CREATE ROUTE HIT", request.mode, request.option)
 
     clean_text = sanitize(request.text)
 
     if not clean_text:
         raise HTTPException(400, "Text cannot be empty.")
+
+    # SERVER-SIDE LIMIT CHECK
+    # Check both monthly action limit and saved-output storage limit
+    # before spending time on the LLM.  Neither counter is incremented here.
+    limit_error = usage_tracker.check_create_limits(db, DEFAULT_USER_ID)
+    if limit_error:
+        raise HTTPException(status_code=429, detail=limit_error)
 
     validate(request.mode, request.option)
 
@@ -453,5 +464,9 @@ async def create(request: CreationRequest):
         )
 
     output = normalize_output(output, request.mode, request.option)
+
+    # Increment action counter only after a successful LLM response.
+    # Output storage count is incremented separately when the user saves.
+    usage_tracker.increment_action(db, DEFAULT_USER_ID)
 
     return CreationResponse(output=output)

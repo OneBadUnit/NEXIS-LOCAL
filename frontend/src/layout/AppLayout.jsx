@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - APP LAYOUT
 // File: src/layout/AppLayout.jsx
-// Version: 004 (Dashboard-only routing)
+// Version: 005 (Help + Setup as overlays)
 // ============================================================
 
 import React, { useState, useEffect } from "react";
@@ -9,17 +9,14 @@ import React, { useState, useEffect } from "react";
 import TopBar from "./TopBar";
 
 import NexusDashboard from "../pages/NexusDashboard";
-import Help from "../pages/Help";
+import HelpOverlay from "../components/HelpOverlay";
+import SetupOverlay from "../components/SetupOverlay";
 
 import "./layout.css";
 
-const PAGES = {
-  nexus: <NexusDashboard />,
-  help: <Help />,
-};
-
 export default function AppLayout() {
-  const [activePage, setActivePage] = useState("nexus");
+  // null | "help" | "setup"
+  const [overlay, setOverlay] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
@@ -37,18 +34,8 @@ export default function AppLayout() {
     };
   }, []);
 
-  const handlePageChange = (page) => {
-    setActivePage(page);
-
-    const main = document.querySelector(".arcn-main");
-    if (main) {
-      main.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
   const scrollToTop = () => {
     const main = document.querySelector(".arcn-main");
-
     if (main) {
       main.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -56,10 +43,13 @@ export default function AppLayout() {
 
   return (
     <div className="layout">
-      <TopBar setActivePage={handlePageChange} />
+      <TopBar
+        onHome={() => setOverlay(null)}
+        openOverlay={(name) => setOverlay(name)}
+      />
 
       <main className="arcn-main">
-        {PAGES[activePage] || <NexusDashboard />}
+        <NexusDashboard />
       </main>
 
       {showScrollTop && (
@@ -71,6 +61,14 @@ export default function AppLayout() {
         >
           ↑
         </button>
+      )}
+
+      {/* Overlays — rendered on top of everything */}
+      {overlay === "help" && (
+        <HelpOverlay onClose={() => setOverlay(null)} />
+      )}
+      {overlay === "setup" && (
+        <SetupOverlay onClose={() => setOverlay(null)} />
       )}
     </div>
   );

@@ -17,6 +17,7 @@ from app.reconstruction import router as understand_router
 from app.creation import router as create_router
 
 from app.api.routes.system import router as system_router
+from app.api.routes.usage import router as usage_router
 
 
 # ------------------------------------------------------------
@@ -26,6 +27,15 @@ app = FastAPI(
     title="ARC-NEXUS Backend",
     version="3.0",
 )
+
+
+# ------------------------------------------------------------
+# Startup: create database tables
+# ------------------------------------------------------------
+@app.on_event("startup")
+def startup_event():
+    from app.core.db import init_db
+    init_db()
 
 
 # ------------------------------------------------------------
@@ -56,6 +66,9 @@ app.include_router(create_router, prefix="/nexis")
 
 # --- SYSTEM ---
 app.include_router(system_router, prefix="/api/system")
+
+# --- USAGE / LIMITS ---
+app.include_router(usage_router, prefix="/api")
 
 
 # ------------------------------------------------------------
