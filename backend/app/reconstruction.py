@@ -165,8 +165,12 @@ STRICT OUTPUT RULES:
 - Do NOT include opinions, recommendations, or analysis
 - Keep tone strictly neutral and factual
 - Remove repetition and filler
+- Combine overlapping or repeated information into single, information-dense sentences
+- Preserve important names, numbers, dates, and specifics whenever present
 - Write in full sentences — do NOT use bullet points
 - Do NOT create a conclusion section
+- Do NOT describe the document, source, or structure (e.g., "the source covers", "this document explains")
+- Write as if directly stating the events or information itself
 
 RETURN ONLY:
 
@@ -177,7 +181,7 @@ Coverage:
 <2–3 sentences describing what the source covers, in the order it appears>
 
 Key Information:
-<3–5 sentences capturing the most important facts stated in the source, in order of appearance>
+<a tightly written set of sentences that preserves the most important information while minimizing redundancy; prioritize information density over brevity>
 """
 
     # ------------------------------------------------------------

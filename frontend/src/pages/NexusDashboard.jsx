@@ -1,187 +1,263 @@
 // ============================================================
 // ARC-NEXUS - NEXUS DASHBOARD
 // File: src/pages/NexusDashboard.jsx
-// Version: 003 (ESLint Cleanup)
+// Version: 007 (localStorage persistence)
 // ============================================================
 
-import React, { useEffect, useState, memo, useCallback } from "react";
-import { systemCheck } from "../api/api";
+import React, { memo, useState, useEffect } from "react";
+import ProjectWorkspace from "./ProjectWorkspace";
+import {
+  loadProjects,
+  saveProjects,
+  deleteProjectData,
+} from "../utils/projectStorage";
+
+const PROJECT_LIMIT = 3;
 
 const NexusDashboard = () => {
-  const [systemStatus, setSystemStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Load projects from localStorage on first render
+  const [projects, setProjects] = useState(() => loadProjects());
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeProject, setActiveProject] = useState(null);
 
-  const [fixingConfig, setFixingConfig] = useState(false);
-  const [fixingModels, setFixingModels] = useState(false);
-  const [fixMessage, setFixMessage] = useState("");
-
-  const fetchStatus = useCallback(async (retry = 0) => {
-    try {
-      const data = await systemCheck();
-      setSystemStatus(data);
-      setError(null);
-    } catch (err) {
-      console.error("System status fetch failed:", err);
-
-      if (retry < 3) {
-        setTimeout(() => fetchStatus(retry + 1), 1000);
-        return;
-      }
-
-      setError("Unable to fetch system status");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Persist projects whenever they change
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    saveProjects(projects);
+  }, [projects]);
 
-  const handleFixConfig = async () => {
-    setFixingConfig(true);
-    setFixMessage("");
+  const atLimit = projects.length >= PROJECT_LIMIT;
 
-    try {
-      await fetch("http://127.0.0.1:8000/api/system/fix/config", {
-        method: "POST",
-      });
-      setFixMessage("Config file created successfully.");
-      await fetchStatus();
-    } catch {
-      setFixMessage("Failed to fix config.");
-    } finally {
-      setFixingConfig(false);
-    }
+  const createProject = () => {
+    if (!newProjectName.trim()) return;
+
+    const now = Date.now();
+    const newProject = {
+      id: crypto.randomUUID(),
+      title: newProjectName.trim(),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setProjects((prev) => [newProject, ...prev]);
+    setNewProjectName("");
+    setShowNewModal(false);
   };
 
-  const handleFixModels = async () => {
-    setFixingModels(true);
-    setFixMessage("");
-
-    try {
-      await fetch("http://127.0.0.1:8000/api/system/fix/models", {
-        method: "POST",
-      });
-      setFixMessage("Models pulled successfully.");
-      await fetchStatus();
-    } catch {
-      setFixMessage("Failed to pull models.");
-    } finally {
-      setFixingModels(false);
-    }
+  const confirmDelete = (e, project) => {
+    e.stopPropagation();
+    setDeleteTarget(project);
   };
+
+  const executeDelete = () => {
+    // Remove project data from localStorage before removing from state
+    deleteProjectData(deleteTarget.id);
+    setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
+  };
+
+  if (activeProject) {
+    return (
+      <ProjectWorkspace
+        project={activeProject}
+        onClose={() => setActiveProject(null)}
+        onRename={(title) => {
+          const updated = { ...activeProject, title, updatedAt: Date.now() };
+          setActiveProject(updated);
+          setProjects((prev) =>
+            prev.map((p) => (p.id === activeProject.id ? updated : p))
+          );
+        }}
+      />
+    );
+  }
 
   return (
     <div className="module-container">
-      <h1 className="module-title" style={{ marginBottom: "30px" }}>
-        THE NEXUS
-      </h1>
-
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "2fr 1fr",
           gap: "24px",
         }}
       >
-        {/* LEFT */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <div className="panel">
-            <h3>Quick Start</h3>
+        {/* TOP LEFT — PROJECTS */}
+        <div className="panel">
+          <h3>PROJECTS</h3>
 
-            <p className="subtle">
-              Welcome to your command center. Use Collect → Understand → Create.
+          <button
+            className={`btn${atLimit ? "" : " primary"}`}
+            style={{ marginTop: "12px" }}
+            onClick={() => !atLimit && setShowNewModal(true)}
+            disabled={atLimit}
+          >
+            {atLimit ? "Limit Reached" : "+ New Project"}
+          </button>
+
+          {atLimit && (
+            <p className="subtle" style={{ marginTop: 8, fontSize: "0.82rem" }}>
+              Maximum of {PROJECT_LIMIT} projects reached. Delete one to continue.
             </p>
+          )}
 
-            <p className="subtle">
-              When System Status is green, everything is ready.
-            </p>
-          </div>
+          <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+            {projects.length === 0 && (
+              <p className="subtle">No projects yet.</p>
+            )}
 
-          <div className="panel">
-            <h3>Demo Project</h3>
-            <p className="subtle">Status: Idle</p>
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                onClick={() => setActiveProject(project)}
+                style={{
+                  position: "relative",
+                  padding: "16px",
+                  paddingRight: "48px",
+                  borderRadius: "12px",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.border = "1px solid rgba(56,189,248,0.4)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.border = "1px solid rgba(255,255,255,0.08)")
+                }
+              >
+                <div style={{ fontWeight: "600" }}>{project.title}</div>
+                <div className="subtle" style={{ fontSize: "0.8rem" }}>
+                  Created: {new Date(project.createdAt).toLocaleDateString()}
+                </div>
+
+                <button
+                  onClick={(e) => confirmDelete(e, project)}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    right: "12px",
+                    transform: "translateY(-50%)",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "rgba(255,255,255,0.35)",
+                    fontSize: "16px",
+                    lineHeight: 1,
+                    padding: "4px 6px",
+                    borderRadius: "6px",
+                    transition: "color 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                  aria-label="Delete project"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <div className="panel">
-            <h3>System Status</h3>
+        {/* TOP RIGHT — ACCOUNT STATUS */}
+        <div className="panel">
+          <h3>ACCOUNT STATUS</h3>
+          <p className="subtle">Plan: Free</p>
+          <p className="subtle">Converts remaining: 4</p>
+          <p className="subtle">Refines remaining: 2</p>
+          <button className="btn primary" style={{ marginTop: "12px" }}>
+            View Plans
+          </button>
+        </div>
 
-            {loading && <p>Checking system...</p>}
-            {error && <p className="error">{error}</p>}
+        {/* BOTTOM LEFT — NEWS */}
+        <div className="panel">
+          <h3>NEWS</h3>
+          <p className="subtle">
+            NEXIS is evolving into a project-based workspace for collecting,
+            converting, and refining raw information.
+          </p>
+        </div>
 
-            {systemStatus && (
-              <div
-                style={{
-                  marginTop: "12px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                <StatusRow label="Ollama Installed" ok={systemStatus.ollama?.installed} />
-                <StatusRow label="Ollama Running" ok={systemStatus.ollama?.running} />
-
-                <StatusRow label="Config Ready" ok={systemStatus.config?.isReady}>
-                  {!systemStatus.config?.isReady && (
-                    <button className="btn" onClick={handleFixConfig} disabled={fixingConfig}>
-                      {fixingConfig ? "Fixing..." : "Fix Config"}
-                    </button>
-                  )}
-                </StatusRow>
-
-                <StatusRow label="Models Ready" ok={systemStatus.models?.available}>
-                  {!systemStatus.models?.available && (
-                    <button className="btn" onClick={handleFixModels} disabled={fixingModels}>
-                      {fixingModels ? "Fixing..." : "Fix Models"}
-                    </button>
-                  )}
-                </StatusRow>
-
-                {fixMessage && <p className="success">{fixMessage}</p>}
-              </div>
-            )}
-          </div>
-
-          <div className="panel">
-            <h3>Active Model</h3>
-            <p>Local Ollama Model</p>
-          </div>
+        {/* BOTTOM RIGHT — UPDATES */}
+        <div className="panel">
+          <h3>UPDATES</h3>
+          <p className="subtle">Latest: Project workspace implemented.</p>
+          <p className="subtle">Coming next: output history per project.</p>
         </div>
       </div>
+
+      {/* NEW PROJECT MODAL */}
+      {showNewModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div className="panel" style={{ width: "320px", textAlign: "center" }}>
+            <h3>New Project</h3>
+            <input
+              type="text"
+              placeholder="Project name..."
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createProject()}
+              autoFocus
+            />
+            <div className="row" style={{ justifyContent: "center" }}>
+              <button className="btn" onClick={() => { setShowNewModal(false); setNewProjectName(""); }}>
+                Cancel
+              </button>
+              <button className="btn primary" onClick={createProject}>
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteTarget && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div className="panel" style={{ width: "320px", textAlign: "center" }}>
+            <h3>Delete Project?</h3>
+            <p className="subtle" style={{ marginBottom: 20 }}>
+              This cannot be undone.
+            </p>
+            <div className="row" style={{ justifyContent: "center" }}>
+              <button className="btn" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn"
+                style={{ borderColor: "#ef4444", color: "#ef4444" }}
+                onClick={executeDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-function StatusRow({ label, ok, children }) {
-  return (
-    <div
-      style={{
-        padding: "12px",
-        borderRadius: "6px",
-        background: "rgba(255,255,255,0.05)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        border: ok
-          ? "1px solid var(--arc-green)"
-          : "1px solid rgba(255,0,0,0.4)",
-      }}
-    >
-      <span>
-        {label}:{" "}
-        <strong style={{ color: ok ? "var(--arc-green)" : "red" }}>
-          {ok ? "OK" : "Missing"}
-        </strong>
-      </span>
-
-      {children}
-    </div>
-  );
-}
 
 export default memo(NexusDashboard);

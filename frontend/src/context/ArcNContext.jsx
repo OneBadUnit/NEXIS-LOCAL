@@ -13,7 +13,7 @@ export const ArcNProvider = ({ children }) => {
   // SYSTEM STATUS / NAVIGATION
   // ============================================================
   const [statusMessage, setStatusMessage] = useState("NEXIS ONLINE");
-  const [activePage, setActivePage] = useState("Landing");
+  const [activePage, setActivePage] = useState("nexus");
   const [activeModule, setActiveModule] = useState(null);
 
   useEffect(() => {

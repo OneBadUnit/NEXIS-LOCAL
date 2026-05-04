@@ -19,7 +19,7 @@ const PACKAGES = {
   },
   creator: {
     label: "Creator Package",
-    items: ["Make Engaging", "Hook Script", "Dialogue Script", "Title Suggestions", "Keywords"],
+    items: ["Make Engaging", "Hook Script", "Dialogue Script", "Titles & Keywords"],
   },
 };
 

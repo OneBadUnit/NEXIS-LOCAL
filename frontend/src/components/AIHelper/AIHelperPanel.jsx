@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - NEXIS GUIDE PANEL
 // File: src/components/AIHelper/AIHelperPanel.jsx
-// Version: 004 (Summary + Creator Package — Correct Terminology)
+// Version: 005 (Improved error reporting)
 // ============================================================
 
 import React, { useState } from "react";
@@ -56,8 +56,22 @@ export default function AIHelperPanel({ isOpen, onClose }) {
         }),
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error("NEXIS Guide failed to respond.");
+      if (!response.ok) {
+        // Try to surface the actual error detail from the backend
+        let detail = `NEXIS Guide returned status ${response.status}.`;
+        try {
+          const errBody = await response.json();
+          if (errBody?.detail) detail = errBody.detail;
+        } catch {
+          // backend didn't return JSON — use status text
+          if (response.statusText) detail = response.statusText;
+        }
+        console.error("[NEXIS Guide] Backend error:", response.status, detail);
+        throw new Error(detail);
+      }
+
+      if (!response.body) {
+        throw new Error("NEXIS Guide stream is unavailable.");
       }
 
       const reader = response.body.getReader();

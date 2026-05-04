@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - BACKEND MAIN ENTRYPOINT
 # File: app/main.py
-# Version: 003 (Route Stability + Prefix Consistency)
+# Version: 004 (Removed misplaced frontend CSS)
 # ============================================================
 
 from fastapi import FastAPI

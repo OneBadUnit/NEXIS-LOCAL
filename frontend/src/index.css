@@ -8,7 +8,7 @@
    ROOT THEME
 ------------------------------------------------------------ */
 :root {
-  --arc-bg: #0b0f17;
+  --arc-bg: #000000;
   --arc-panel: #121826;
   --arc-panel-soft: rgba(18, 24, 38, 0.9);
   --arc-border: rgba(255, 255, 255, 0.08);
@@ -53,7 +53,7 @@ body {
 .module-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 28px 80px;
+  padding: 80px 28px 80px;
 }
 
 .module-title {
@@ -215,4 +215,44 @@ pre {
 ::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.25);
   border-radius: 999px;
+}
+/* ------------------------------------------------------------
+   LOGO OVERLAY
+------------------------------------------------------------ */
+.logo-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+
+  /* 🔥 smoother motion */
+  animation: logoFadeShrink 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.logo-overlay-img {
+  width: 440px;
+
+  /* 🔥 CRITICAL for smoothness */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@keyframes logoFadeShrink {
+  0% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+
+  65% {
+    opacity: 0.7;
+    transform: scale(0.85);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
 }

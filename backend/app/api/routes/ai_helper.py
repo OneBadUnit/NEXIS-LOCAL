@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - NEXIS GUIDE ROUTE
 # File: app/api/routes/ai_helper.py
-# Version: 004 (Summary + Creator Package — Correct Terminology)
+# Version: 005 (Sync route — fixes streaming with requests)
 # ============================================================
 
 from fastapi import APIRouter, HTTPException
@@ -94,10 +94,16 @@ Rules:
 
 # ------------------------------------------------------------
 # POST /ai-helper/respond
-# Streams NEXIS Guide response from local Ollama model
+# NOTE: This is a synchronous def route so that the blocking
+# requests.post(..., stream=True) and iter_lines() iteration all
+# run in the same thread (FastAPI dispatches sync routes to a
+# threadpool automatically).  Using async def here caused the
+# streaming generator to run in a separate thread from the one
+# that created the requests.Response object, which produced
+# intermittent 500 errors.
 # ------------------------------------------------------------
 @router.post("/ai-helper/respond")
-async def ai_helper_respond(payload: NEXISGuideRequest):
+def ai_helper_respond(payload: NEXISGuideRequest):
     user_message = payload.message.strip()
 
     if not user_message:
@@ -151,7 +157,8 @@ async def ai_helper_respond(payload: NEXISGuideRequest):
                     continue
 
                 try:
-                    chunk = json.loads(line.decode("utf-8"))
+                    raw_text = line.decode("utf-8") if isinstance(line, bytes) else line
+                    chunk = json.loads(raw_text)
                     delta = chunk.get("message", {}).get("content", "")
 
                     if isinstance(delta, str) and delta:

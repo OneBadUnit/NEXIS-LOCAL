@@ -1,13 +1,18 @@
 // ============================================================
 // ARC-NEXUS - TOP BAR
 // File: src/layout/TopBar.jsx
-// Version: 002 (Product UI Navigation)
+// Version: 005 (Split Nav + Center Logo)
 // ============================================================
 
-const NAV_ITEMS = [
-  { id: "nexus", label: "NEXUS" },
+import logo from "../nexis2.png";
+
+const LEFT_NAV = [
+  { id: "nexus", label: "HOME" },
   { id: "assimilation", label: "COLLECT" },
   { id: "reconstruction", label: "CONVERT" },
+];
+
+const RIGHT_NAV = [
   { id: "creation", label: "CREATE" },
   { id: "settings", label: "SETTINGS" },
   { id: "help", label: "HELP" },
@@ -16,21 +21,12 @@ const NAV_ITEMS = [
 export default function TopBar({ activePage, setActivePage }) {
   return (
     <header className="topnav">
-      <button
-        className="brand"
-        type="button"
-        onClick={() => setActivePage("nexus")}
-        aria-label="Go to Nexus dashboard"
-      >
-        <span className="brand-acr">ARC</span>
-        <span className="brand-nexus">NEXUS</span>
-      </button>
-
-      <nav className="nav-items" aria-label="Main navigation">
-        {NAV_ITEMS.map((item) => (
+      
+      {/* LEFT */}
+      <nav className="nav-left">
+        {LEFT_NAV.map((item) => (
           <button
             key={item.id}
-            type="button"
             className={`nav-item ${activePage === item.id ? "active" : ""}`}
             onClick={() => setActivePage(item.id)}
           >
@@ -38,6 +34,28 @@ export default function TopBar({ activePage, setActivePage }) {
           </button>
         ))}
       </nav>
+
+      {/* CENTER LOGO */}
+      <button
+        className="brand"
+        onClick={() => setActivePage("nexus")}
+      >
+        <img src={logo} alt="ArcNexus" className="brand-logo" />
+      </button>
+
+      {/* RIGHT */}
+      <nav className="nav-right">
+        {RIGHT_NAV.map((item) => (
+          <button
+            key={item.id}
+            className={`nav-item ${activePage === item.id ? "active" : ""}`}
+            onClick={() => setActivePage(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
     </header>
   );
 }
