@@ -465,8 +465,10 @@ async def create(request: CreationRequest, db: Session = Depends(get_db)):
 
     output = normalize_output(output, request.mode, request.option)
 
-    # Increment action counter only after a successful LLM response.
-    # Output storage count is incremented separately when the user saves.
+    # Increment both the action counter and the output storage counter
+    # after a successful LLM response.  The backend is the single source
+    # of truth for usage; the frontend does not call usage endpoints directly.
     usage_tracker.increment_action(db, DEFAULT_USER_ID)
+    usage_tracker.increment_output_count(db, DEFAULT_USER_ID)
 
     return CreationResponse(output=output)

@@ -5,7 +5,7 @@
 // ============================================================
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { collectSource, analyzeImage, nexisUnderstand, nexisCreate, getUsage, syncUsage, addOutputUsage, removeOutputUsage, removeRawInputUsage } from "../api/api.jsx";
+import { collectSource, analyzeImage, nexisUnderstand, nexisCreate, getUsage, syncUsage, removeOutputUsage, removeRawInputUsage, checkConvertLimits, completeConvertPackage } from "../api/api.jsx";
 import {
   loadRawItems,
   saveRawItemsForProject,
@@ -222,7 +222,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     setRefineStatus("running");
     setRefineResult("");
     try {
-      // The backend /nexis/create endpoint enforces the action limit server-side.
+      // Backend enforces action + output limits and increments both counters
+      // after a successful LLM response.  No usage calls needed here.
       const result = await nexisCreate({
         text: refineTarget.content,
         mode: "refine",
@@ -240,13 +241,6 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const handleSaveRefined = async () => {
     const name = window.prompt("Enter a name for this output:");
     if (!name || !name.trim()) return;
-
-    try {
-      await addOutputUsage();
-    } catch (err) {
-      alert(err.message || "Could not save output: limit reached.");
-      return;
-    }
 
     const newOutput = {
       id: crypto.randomUUID(),
@@ -360,6 +354,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [convertConfirmOpen, setConvertConfirmOpen] = useState(false);
   const [convertLoading, setConvertLoading] = useState(false);
+  const [convertError, setConvertError] = useState(null);
 
   // Outputs -- loaded from localStorage on mount
   const [outputs, setOutputs] = useState(() => loadOutputs(project.id));
@@ -400,6 +395,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
   const handleCreateClick = (pkg) => {
     if (includedItems.length === 0) return;
+    setConvertError(null);
     setSelectedPackage(pkg);
     setConvertConfirmOpen(true);
   };
@@ -407,14 +403,17 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const handleConvertConfirm = async () => {
     setConvertConfirmOpen(false);
     setConvertLoading(true);
+    setConvertError(null);
 
     const combinedText = includedItems.map((item) => item.text).join("\n\n");
     const backendItems = BACKEND_ITEMS[selectedPackage];
     const sections = [];
 
     try {
-      // The backend /nexis/convert endpoint enforces the action + output limits
-      // server-side.  No reservation step needed here.
+      // Check action + output limits ONCE before running any sections.
+      // This is the single gate for the entire package run.
+      await checkConvertLimits();
+
       for (const item of backendItems) {
         const payload = {
           text: combinedText,
@@ -427,6 +426,9 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         console.log("[Convert] response ok for:", item);
         sections.push(`=== ${item} ===\n\n${result.output || ""}`);
       }
+
+      // All sections succeeded — claim one action + one output slot.
+      await completeConvertPackage();
 
       setOutputs((prev) => [
         {
@@ -442,18 +444,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     } catch (err) {
       const detail = err?.message || String(err);
       console.error("[ProjectWorkspace] Convert failed:", detail, err);
-      // If the reservation succeeded but LLM failed, save an error output
-      // so the reserved output slot is not silently abandoned.
-      setOutputs((prev) => [
-        {
-          id: crypto.randomUUID(),
-          projectId: project.id,
-          packageType: selectedPackage,
-          content: `Error: ${detail}`,
-          createdAt: Date.now(),
-        },
-        ...prev,
-      ]);
+      // Show the error in the UI — do NOT save an error entry as a real output.
+      setConvertError(detail);
       refreshUsage();
     }
 
@@ -657,7 +649,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                 className="subtle"
                 style={{ fontSize: "0.85rem", fontWeight: 600 }}
               >
-                {rawItems.length} / {usage?.limits?.saved_raw_inputs ?? "—"}
+                {rawItems.length} / {usage?.limits?.max_saved_raw_inputs ?? "—"}
               </span>
             </div>
 
@@ -950,6 +942,18 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                 </div>
               ))}
             </div>
+
+            {convertError && (
+              <p
+                style={{
+                  color: "var(--arc-error)",
+                  margin: "12px 0 0",
+                  fontSize: "0.88rem",
+                }}
+              >
+                {convertError}
+              </p>
+            )}
           </div>
 
           {/* OUTPUTS */}
@@ -967,7 +971,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                 className="subtle"
                 style={{ fontSize: "0.85rem", fontWeight: 600 }}
               >
-                {outputs.length} / {usage?.limits?.saved_outputs ?? "—"}
+                {outputs.length} / {usage?.limits?.max_saved_outputs ?? "—"}
               </span>
             </div>
 

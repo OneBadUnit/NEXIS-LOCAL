@@ -140,10 +140,6 @@ export async function syncUsage(counts) {
   });
 }
 
-export async function addOutputUsage() {
-  return request("/api/usage/output/add", { method: "POST" });
-}
-
 export async function removeOutputUsage() {
   return request("/api/usage/output/remove", { method: "POST" });
 }
@@ -158,4 +154,17 @@ export async function addProjectUsage() {
 
 export async function removeProjectUsage() {
   return request("/api/usage/project/remove", { method: "POST" });
+}
+
+// ------------------------------------------------------------
+// Package-level convert gate + completion
+// checkConvertLimits — call once before running a package
+// completeConvertPackage — call once after all sections succeed
+// ------------------------------------------------------------
+export async function checkConvertLimits() {
+  return request("/api/usage/convert/check");
+}
+
+export async function completeConvertPackage() {
+  return request("/api/usage/convert/complete", { method: "POST" });
 }

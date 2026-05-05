@@ -76,7 +76,7 @@ def load_usage(db: Session, user_id: str = DEFAULT_USER_ID) -> dict:
     limits = get_tier(account.tier)
     return {
         "tier": account.tier,
-        "tier_name": limits["name"],
+        "tier_name": limits["label"],
         "limits": limits,
         "current": {
             "projects": account.project_count,
@@ -100,10 +100,10 @@ def check_and_increment_project(
     account = _get_or_create(db, user_id)
     limits = get_tier(account.tier)
 
-    if account.project_count >= limits["projects"]:
+    if account.project_count >= limits["max_projects"]:
         return (
             f"Project limit reached "
-            f"({account.project_count}/{limits['projects']}). "
+            f"({account.project_count}/{limits['max_projects']}). "
             "Delete a project or upgrade your plan."
         )
 
@@ -120,19 +120,19 @@ def check_and_increment_raw_input(
     _maybe_reset_monthly(account)
     limits = get_tier(account.tier)
 
-    if account.raw_input_count >= limits["saved_raw_inputs"]:
+    if account.raw_input_count >= limits["max_saved_raw_inputs"]:
         db.rollback()
         return (
             f"Saved raw input limit reached "
-            f"({account.raw_input_count}/{limits['saved_raw_inputs']}). "
+            f"({account.raw_input_count}/{limits['max_saved_raw_inputs']}). "
             "Delete a raw input or upgrade your plan."
         )
 
-    if account.raw_inputs_this_month >= limits["raw_inputs_per_month"]:
+    if account.raw_inputs_this_month >= limits["monthly_raw_inputs"]:
         db.rollback()
         return (
             f"Monthly raw input limit reached "
-            f"({account.raw_inputs_this_month}/{limits['raw_inputs_per_month']}). "
+            f"({account.raw_inputs_this_month}/{limits['monthly_raw_inputs']}). "
             "Resets next billing cycle."
         )
 
@@ -153,19 +153,19 @@ def check_and_increment_convert(
     _maybe_reset_monthly(account)
     limits = get_tier(account.tier)
 
-    if account.actions_this_month >= limits["actions_per_month"]:
+    if account.actions_this_month >= limits["monthly_actions"]:
         db.rollback()
         return (
             f"Monthly action limit reached "
-            f"({account.actions_this_month}/{limits['actions_per_month']}). "
+            f"({account.actions_this_month}/{limits['monthly_actions']}). "
             "Resets next billing cycle."
         )
 
-    if account.output_count >= limits["saved_outputs"]:
+    if account.output_count >= limits["max_saved_outputs"]:
         db.rollback()
         return (
             f"Saved output limit reached "
-            f"({account.output_count}/{limits['saved_outputs']}). "
+            f"({account.output_count}/{limits['max_saved_outputs']}). "
             "Delete an output or upgrade your plan."
         )
 
@@ -186,11 +186,11 @@ def check_and_increment_action(
     _maybe_reset_monthly(account)
     limits = get_tier(account.tier)
 
-    if account.actions_this_month >= limits["actions_per_month"]:
+    if account.actions_this_month >= limits["monthly_actions"]:
         db.rollback()
         return (
             f"Monthly action limit reached "
-            f"({account.actions_this_month}/{limits['actions_per_month']}). "
+            f"({account.actions_this_month}/{limits['monthly_actions']}). "
             "Resets next billing cycle."
         )
 
@@ -209,11 +209,11 @@ def check_and_increment_output(
     account = _get_or_create(db, user_id)
     limits = get_tier(account.tier)
 
-    if account.output_count >= limits["saved_outputs"]:
+    if account.output_count >= limits["max_saved_outputs"]:
         db.rollback()
         return (
             f"Saved output limit reached "
-            f"({account.output_count}/{limits['saved_outputs']}). "
+            f"({account.output_count}/{limits['max_saved_outputs']}). "
             "Delete an output or upgrade your plan."
         )
 
@@ -259,7 +259,9 @@ def sync_storage_counts(
     projects: Optional[int] = None,
     raw_inputs: Optional[int] = None,
     outputs: Optional[int] = None,
+    tier: Optional[str] = None,
 ) -> None:
+    from app.core.tiers import PLANS  # local import to avoid circular ref
     account = _get_or_create(db, user_id)
     if projects is not None:
         account.project_count = max(0, projects)
@@ -267,6 +269,9 @@ def sync_storage_counts(
         account.raw_input_count = max(0, raw_inputs)
     if outputs is not None:
         account.output_count = max(0, outputs)
+    # Update tier from Supabase profile when provided and valid
+    if tier is not None and tier in PLANS:
+        account.tier = tier
     db.commit()
 
 
@@ -288,17 +293,17 @@ def check_raw_input_limits(
     db.commit()
     limits = get_tier(account.tier)
 
-    if account.raw_input_count >= limits["saved_raw_inputs"]:
+    if account.raw_input_count >= limits["max_saved_raw_inputs"]:
         return (
             f"Saved raw input limit reached "
-            f"({account.raw_input_count}/{limits['saved_raw_inputs']}). "
+            f"({account.raw_input_count}/{limits['max_saved_raw_inputs']}). "
             "Delete a raw input or upgrade your plan."
         )
 
-    if account.raw_inputs_this_month >= limits["raw_inputs_per_month"]:
+    if account.raw_inputs_this_month >= limits["monthly_raw_inputs"]:
         return (
             f"Monthly raw input limit reached "
-            f"({account.raw_inputs_this_month}/{limits['raw_inputs_per_month']}). "
+            f"({account.raw_inputs_this_month}/{limits['monthly_raw_inputs']}). "
             "Resets next billing cycle."
         )
 
@@ -334,17 +339,17 @@ def check_create_limits(
     db.commit()
     limits = get_tier(account.tier)
 
-    if account.actions_this_month >= limits["actions_per_month"]:
+    if account.actions_this_month >= limits["monthly_actions"]:
         return (
             f"Monthly action limit reached "
-            f"({account.actions_this_month}/{limits['actions_per_month']}). "
+            f"({account.actions_this_month}/{limits['monthly_actions']}). "
             "Resets next billing cycle."
         )
 
-    if account.output_count >= limits["saved_outputs"]:
+    if account.output_count >= limits["max_saved_outputs"]:
         return (
             f"Saved output limit reached "
-            f"({account.output_count}/{limits['saved_outputs']}). "
+            f"({account.output_count}/{limits['max_saved_outputs']}). "
             "Delete an output or upgrade your plan."
         )
 
@@ -365,5 +370,79 @@ def increment_output_count(
 ) -> None:
     """Increment the saved-output storage counter (used by convert)."""
     account = _get_or_create(db, user_id)
+    account.output_count += 1
+    db.commit()
+
+
+# ------------------------------------------------------------
+# Media / content size checks
+# These enforce the type-specific ingestion limits that live
+# in tiers.py (max_file_upload_mb, max_url_extracted_kb,
+# max_audio_video_minutes).  Call before processing; do NOT
+# increment any usage counter here.
+# ------------------------------------------------------------
+
+def check_file_upload_size(
+    db: Session, file_size_mb: float, user_id: str = DEFAULT_USER_ID
+) -> Optional[str]:
+    """Return an error string if file_size_mb exceeds the plan limit."""
+    account = _get_or_create(db, user_id)
+    limits = get_tier(account.tier)
+    max_mb = limits["max_file_upload_mb"]
+    if file_size_mb > max_mb:
+        return (
+            f"File size ({file_size_mb:.1f} MB) exceeds your plan limit "
+            f"({max_mb} MB). Compress the file or upgrade your plan."
+        )
+    return None
+
+
+def check_url_content_size(
+    db: Session, content_kb: float, user_id: str = DEFAULT_USER_ID
+) -> Optional[str]:
+    """Return an error string if extracted URL content exceeds the plan limit."""
+    account = _get_or_create(db, user_id)
+    limits = get_tier(account.tier)
+    max_kb = limits["max_url_extracted_kb"]
+    if content_kb > max_kb:
+        return (
+            f"Extracted content ({content_kb:.0f} KB) exceeds your plan limit "
+            f"({max_kb} KB). Try a shorter article or upgrade your plan."
+        )
+    return None
+
+
+def check_audio_video_duration(
+    db: Session, duration_minutes: float, user_id: str = DEFAULT_USER_ID
+) -> Optional[str]:
+    """Return an error string if media duration exceeds the plan limit."""
+    account = _get_or_create(db, user_id)
+    limits = get_tier(account.tier)
+    max_min = limits["max_audio_video_minutes"]
+    if duration_minutes > max_min:
+        return (
+            f"Media duration ({duration_minutes:.1f} min) exceeds your plan limit "
+            f"({max_min} min). Trim the file or upgrade your plan."
+        )
+    return None
+
+
+# ------------------------------------------------------------
+# Package-level convert helpers
+# Limit check is called once before the package run starts.
+# Completion is called once after all sections succeed.
+# This ensures one package run = one action + one output slot.
+# ------------------------------------------------------------
+
+def complete_package_convert(
+    db: Session, user_id: str = DEFAULT_USER_ID
+) -> None:
+    """
+    Atomically increment the monthly action counter and the saved-output
+    storage counter after a successful package run.
+    Called once per package, never once per section.
+    """
+    account = _get_or_create(db, user_id)
+    account.actions_this_month += 1
     account.output_count += 1
     db.commit()

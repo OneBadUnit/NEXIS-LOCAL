@@ -170,7 +170,7 @@ def gpu_status():
     from app.utils.gpu_detection import get_gpu_info
 
     info = get_gpu_info()
-    if info.get("available"):
+    if info.get("has_gpu_acceleration"):
         return {
             "ok": True,
             "processor": "gpu",
@@ -180,6 +180,6 @@ def gpu_status():
     return {
         "ok": True,
         "processor": "cpu",
-        "message": "No CUDA GPU detected — CPU will be used",
+        "message": "CPU mode: supported, may be slower",
         "detail": info,
     }

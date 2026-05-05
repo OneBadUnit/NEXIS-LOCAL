@@ -61,8 +61,8 @@
   border-radius: 10px;
 
   color: var(--arc-muted);
-  font-size: 1.5rem;
-  font-weight: 650;
+  font-size: .9rem;
+  font-weight: 400;
 
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -105,6 +105,67 @@
   color: #7dd3fc;
 }
 
+/* ── TopBar three-zone flex layout ─────────────────────── */
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+}
+
+.topbar-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar-center {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.topbar-input {
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  width: 100%;
+  max-width: 140px;
+  min-width: 60px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--arc-text);
+}
+
+.topbar-input--pw {
+  max-width: 110px;
+}
+
+.topbar-user-email {
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  min-width: 0;
+}
+
+/* ── Responsive breakpoints ─────────────────────────────── */
+
 @media (max-width: 900px) {
   .topnav {
     height: auto;
@@ -114,5 +175,42 @@
 
   .arcn-main {
     padding-top: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .topbar-left {
+    flex: 0 0 auto;
+  }
+
+  .topbar-center {
+    order: -1;
+    flex: 1 0 100%;
+    justify-content: center;
+  }
+
+  .topbar-right {
+    flex: 1 0 auto;
+    justify-content: flex-end;
+    overflow: visible;
+  }
+
+  .topbar-input {
+    max-width: 120px;
+    font-size: 0.78rem;
+  }
+
+  .topbar-input--pw {
+    max-width: 95px;
+  }
+
+  .nav-item.topnav-help {
+    padding: 6px 10px;
+    font-size: 0.82rem;
   }
 }

@@ -14,6 +14,7 @@ print(">>> AUDIO_UTILS LOADED FROM ingestion/audio_utils.py")
 
 import asyncio
 from faster_whisper import WhisperModel
+from app.utils.gpu_detection import get_whisper_device
 
 
 # ------------------------------------------------------------
@@ -21,18 +22,21 @@ from faster_whisper import WhisperModel
 # ------------------------------------------------------------
 MODEL_NAME = "large-v3"
 
-# Load Whisper model once (GPU)
+# Load Whisper model once (auto-detected device)
 try:
+    _device = get_whisper_device()
+    _compute = "float16" if _device == "cuda" else "int8"
+
     print("\n================ WHISPER INIT ================")
-    print(f"[WHISPER] Requested device: cuda")
+    print(f"[WHISPER] Requested device: {_device}")
 
     model = WhisperModel(
         MODEL_NAME,
-        device="cuda",
-        compute_type="float16"
+        device=_device,
+        compute_type=_compute,
     )
 
-    print(f"[WHISPER] Model loaded successfully on GPU (float16)")
+    print(f"[WHISPER] Model loaded successfully on {_device} ({_compute})")
     print("==============================================\n")
 
 except Exception as e:
@@ -62,7 +66,7 @@ async def transcribe_audio_file(path: str) -> str:
         try:
             print("\n================ WHISPER RUN ================")
             print(f"[WHISPER] Starting transcription for: {path}")
-            print(f"[WHISPER] Runtime device: cuda")
+            print(f"[WHISPER] Runtime device: {_device}")
             print("=============================================\n")
 
             segments, info = model.transcribe(path)

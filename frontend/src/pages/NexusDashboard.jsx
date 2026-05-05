@@ -16,6 +16,7 @@ import {
   addProjectUsage,
   removeProjectUsage,
 } from "../api/api.jsx";
+import { getTierConfig } from "../lib/tiers";
 
 
 // ------------------------------------------------------------
@@ -62,7 +63,7 @@ function UsageLine({ label, used, limit }) {
   );
 }
 
-const NexusDashboard = () => {
+const NexusDashboard = ({ user, profile }) => {
   // Load projects from localStorage on first render
   const [projects, setProjects] = useState(() => loadProjects());
   const [showNewModal, setShowNewModal] = useState(false);
@@ -74,16 +75,23 @@ const NexusDashboard = () => {
   // Usage / tier state
   const [usage, setUsage] = useState(null);
 
+  // Tier resolved from Supabase profile — source of truth for display and limits.
+  // Falls back to "free" if profile is missing or tier is unrecognized.
+  const profileTier = profile?.tier || "free";
+  const tierConfig = getTierConfig(profileTier);
+  console.log("[Tier] profile tier:", profileTier, "| config:", tierConfig);
+
   const refreshUsage = useCallback(async () => {
     try {
-      // Sync the actual project count to the backend so enforcement
-      // is based on what's actually in storage, not a stale DB counter.
-      const data = await syncUsage({ projects: projects.length });
+      // Sync storage count and profile tier to backend so enforcement
+      // matches the Supabase profile tier.
+      const data = await syncUsage({ projects: projects.length, tier: profileTier });
+      console.log("[Usage] sync response:", data);
       setUsage(data);
     } catch {
       // Backend may not be running; silently ignore
     }
-  }, [projects.length]);
+  }, [projects.length, profileTier]);
 
   // On mount: fetch usage from backend (backend is source of truth)
   useEffect(() => {
@@ -95,8 +103,9 @@ const NexusDashboard = () => {
     saveProjects(projects);
   }, [projects]);
 
-  // Derive limit from live usage (fall back to 0 so button stays disabled until loaded)
-  const projectLimit = usage?.limits?.projects ?? 0;
+  // Project limit comes from frontend tier config (profile.tier is source of truth).
+  // Falls back to 0 only when tierConfig hasn't resolved yet (shouldn't happen).
+  const projectLimit = tierConfig?.max_projects ?? 0;
   const atLimit = projects.length >= projectLimit;
 
   const createProject = async () => {
@@ -253,28 +262,33 @@ const NexusDashboard = () => {
         {/* TOP RIGHT — ACCOUNT STATUS */}
         <div className="panel">
           <h3>ACCOUNT STATUS</h3>
+          {/* Plan label and limits come from frontend tier config (profile.tier).
+              Counters come from backend (usage.current.*). */}
+          <p className="subtle" style={{ marginBottom: 6 }}>
+            {profile?.email || user?.email || "—"}
+          </p>
+          <p className="subtle" style={{ marginBottom: 14 }}>
+            Plan: <strong style={{ color: "var(--arc-text)" }}>{tierConfig.label}</strong>
+          </p>
+
           {usage ? (
             <>
-              <p className="subtle" style={{ marginBottom: 14 }}>
-                Plan: <strong style={{ color: "var(--arc-text)" }}>{usage.tier_name}</strong>
-              </p>
-
               {/* Storage */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <UsageLine
                   label="Projects"
                   used={projects.length}
-                  limit={usage.limits.projects}
+                  limit={tierConfig.max_projects}
                 />
                 <UsageLine
                   label="Saved Raw Inputs"
                   used={usage.current.raw_inputs}
-                  limit={usage.limits.saved_raw_inputs}
+                  limit={tierConfig.max_saved_raw_inputs}
                 />
                 <UsageLine
                   label="Saved Outputs"
                   used={usage.current.outputs}
-                  limit={usage.limits.saved_outputs}
+                  limit={tierConfig.max_saved_outputs}
                 />
               </div>
 
@@ -286,12 +300,12 @@ const NexusDashboard = () => {
                 <UsageLine
                   label="Raw Inputs Added"
                   used={usage.current.raw_inputs_this_month}
-                  limit={usage.limits.raw_inputs_per_month}
+                  limit={tierConfig.monthly_raw_inputs}
                 />
                 <UsageLine
                   label="Actions Used"
                   used={usage.current.actions_this_month}
-                  limit={usage.limits.actions_per_month}
+                  limit={tierConfig.monthly_actions}
                 />
               </div>
             </>

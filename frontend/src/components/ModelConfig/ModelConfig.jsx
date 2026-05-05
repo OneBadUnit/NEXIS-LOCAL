@@ -117,19 +117,45 @@ async function detectProcessorStatus(endpoint, modelName) {
 // ----------------------------------------------------------
 // Processor warning shown after detection
 // ----------------------------------------------------------
-function ProcessorWarning({ status }) {
+function ProcessorWarning({ result }) {
+  const status = result?.status ?? "unknown";
+  const backend = result?.backendInfo?.acceleration_backend;
+  const gpuName = result?.backendInfo?.gpu_name;
+
   if (status === "gpu") {
     return (
-      <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: "8px 0 0" }}>
-        GPU acceleration detected.
-      </p>
+      <div style={{ margin: "8px 0 0" }}>
+        <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: 0 }}>
+          GPU acceleration detected.
+        </p>
+        {gpuName && (
+          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
+            GPU: {gpuName}
+          </p>
+        )}
+        {backend && (
+          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
+            Acceleration backend: {backend}
+          </p>
+        )}
+        {!backend && (
+          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
+            Acceleration backend: Unknown GPU
+          </p>
+        )}
+      </div>
     );
   }
   if (status === "cpu") {
     return (
-      <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: "8px 0 0" }}>
-        This model is running on CPU. Processing may be slower.
-      </p>
+      <div style={{ margin: "8px 0 0" }}>
+        <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: 0 }}>
+          Running on CPU.
+        </p>
+        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "3px 0 0" }}>
+          CPU mode: supported, may be slower
+        </p>
+      </div>
     );
   }
   if (status === "mixed") {
@@ -142,7 +168,7 @@ function ProcessorWarning({ status }) {
   // unknown or null
   return (
     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "8px 0 0" }}>
-      Processor not confirmed.
+      Acceleration unknown — local model use may still work.
     </p>
   );
 }
@@ -256,7 +282,7 @@ export default function ModelConfig({ config, onConfigChange }) {
     setSelectedModel(current);
   };
 
-  // ---- Test CPU/GPU: warm selected model, then read /api/ps ----
+  // ---- Test CPU/GPU: warm selected model, then read /api/ps + system GPU ----
   const handleTestProcessor = async () => {
     if (!selectedModel) return;
     setTestStatus("testing");
@@ -264,18 +290,34 @@ export default function ModelConfig({ config, onConfigChange }) {
 
     await warmModel(localEndpoint, selectedModel);
     const proc = await detectProcessorStatus(localEndpoint, selectedModel);
-    setProcessorResult(proc);
+
+    // Enrich with vendor/backend info from the system GPU endpoint
+    let backendInfo = null;
+    try {
+      const gpuRes = await fetch("http://127.0.0.1:8000/api/system/gpu");
+      if (gpuRes.ok) {
+        const gpuData = await gpuRes.json();
+        backendInfo = gpuData.detail || null;
+      }
+    } catch (_) {}
+
+    setProcessorResult({ ...proc, backendInfo });
     setTestStatus("done");
   };
 
   // ---- Save local config ----
   const handleSaveLocal = () => {
+    const backendStr = processorResult?.backendInfo?.acceleration_backend;
+    const procLabel =
+      processorResult?.status === "gpu" && backendStr
+        ? `GPU — ${backendStr}`
+        : processorResult?.label || null;
     const newConfig = {
       type: "local",
       endpoint: localEndpoint,
       model: selectedModel,
       processorStatus: processorResult?.status || null,
-      processorLabel: processorResult?.label || null,
+      processorLabel: procLabel,
     };
     localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
@@ -463,7 +505,7 @@ export default function ModelConfig({ config, onConfigChange }) {
 
                     {/* Show result after test completes */}
                     {testStatus === "done" && (
-                      <ProcessorWarning status={processorResult?.status ?? "unknown"} />
+                      <ProcessorWarning result={processorResult} />
                     )}
 
                     {/* Prompt to test before any test has run */}

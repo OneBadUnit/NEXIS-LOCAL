@@ -4,15 +4,11 @@
 # Version: 015 (Summary + Creator Package Refinement)
 # ============================================================
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Literal
-from sqlalchemy.orm import Session
 
 from app.services.llm_service import run_llm
-from app.core.db import get_db
-from app.core import usage as usage_tracker
-from app.core.usage import DEFAULT_USER_ID
 
 router = APIRouter(tags=["nexis-understand"])
 
@@ -655,7 +651,6 @@ RULES:
 
 async def _run_convert(
     request: ReconstructionRequest,
-    db: Session,
 ) -> ReconstructionResponse:
 
     clean_text = sanitize(request.text)
@@ -663,12 +658,9 @@ async def _run_convert(
     if not clean_text:
         raise HTTPException(400, "Text cannot be empty.")
 
-    # SERVER-SIDE LIMIT CHECK
-    # Check both monthly action limit and saved-output storage limit
-    # before running the LLM.  Neither counter is incremented here.
-    limit_error = usage_tracker.check_create_limits(db, DEFAULT_USER_ID)
-    if limit_error:
-        raise HTTPException(status_code=429, detail=limit_error)
+    # Limit checks and usage increments are handled at the package level
+    # by the frontend via /api/usage/convert/check and /api/usage/convert/complete.
+    # This route runs one section; it does not track usage per section.
 
     validate(request.preset, request.action, request.option)
 
@@ -681,12 +673,6 @@ async def _run_convert(
 
     output = await run_llm(prompt)
 
-    # Increment both counters only after a successful LLM response.
-    # Convert always produces a saved output, so both action and output
-    # storage are committed here.
-    usage_tracker.increment_action(db, DEFAULT_USER_ID)
-    usage_tracker.increment_output_count(db, DEFAULT_USER_ID)
-
     return ReconstructionResponse(output=output)
 
 
@@ -695,8 +681,8 @@ async def _run_convert(
 # ============================================================
 
 @router.post("/convert", response_model=ReconstructionResponse)
-async def convert(request: ReconstructionRequest, db: Session = Depends(get_db)):
-    return await _run_convert(request, db)
+async def convert(request: ReconstructionRequest):
+    return await _run_convert(request)
 
 
 # ------------------------------------------------------------
@@ -704,5 +690,5 @@ async def convert(request: ReconstructionRequest, db: Session = Depends(get_db))
 # ------------------------------------------------------------
 
 @router.post("/understand", response_model=ReconstructionResponse)
-async def understand_legacy(request: ReconstructionRequest, db: Session = Depends(get_db)):
-    return await _run_convert(request, db)
+async def understand_legacy(request: ReconstructionRequest):
+    return await _run_convert(request)

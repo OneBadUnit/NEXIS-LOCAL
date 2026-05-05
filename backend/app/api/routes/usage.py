@@ -105,6 +105,7 @@ class SyncPayload(BaseModel):
     projects: Optional[int] = None
     raw_inputs: Optional[int] = None
     outputs: Optional[int] = None
+    tier: Optional[str] = None
 
 
 @router.post("/sync")
@@ -115,5 +116,32 @@ def sync_usage(payload: SyncPayload, db: Session = Depends(get_db)):
         projects=payload.projects,
         raw_inputs=payload.raw_inputs,
         outputs=payload.outputs,
+        tier=payload.tier,
     )
     return tracker.load_usage(db, DEFAULT_USER_ID)
+
+
+# ------------------------------------------------------------
+# GET /api/usage/convert/check
+# Called once before a package run starts.
+# Verifies that the user has not hit the action or output limit.
+# Does NOT increment any counter — just a gate check.
+# ------------------------------------------------------------
+@router.get("/convert/check")
+def check_convert_limits(db: Session = Depends(get_db)):
+    error = tracker.check_create_limits(db, DEFAULT_USER_ID)
+    if error:
+        raise HTTPException(status_code=429, detail=error)
+    return {"ok": True}
+
+
+# ------------------------------------------------------------
+# POST /api/usage/convert/complete
+# Called once after all package sections succeed.
+# Atomically increments the monthly action counter and the
+# saved-output storage counter (one per package, not per section).
+# ------------------------------------------------------------
+@router.post("/convert/complete")
+def complete_convert(db: Session = Depends(get_db)):
+    tracker.complete_package_convert(db, DEFAULT_USER_ID)
+    return {"ok": True}
