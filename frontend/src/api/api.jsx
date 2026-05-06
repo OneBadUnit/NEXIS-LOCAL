@@ -70,9 +70,63 @@ export async function systemCheck() {
 
 
 // ------------------------------------------------------------
+// LOCAL MODEL HELPERS
+// Read saved model config from localStorage.
+// When type === "local", generation goes directly to the
+// user's Ollama instance in the browser — never to Render.
+// ------------------------------------------------------------
+function getModelConfig() {
+  try {
+    const raw = localStorage.getItem("nexis_model_config");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function runLocalOllama(prompt, modelConfig) {
+  const base = (modelConfig.endpoint || "http://localhost:11434").replace(/\/$/, "");
+  const model = modelConfig.model;
+  console.log("[LOCAL MODE] using browser Ollama endpoint:", base, "| model:", model);
+
+  const res = await fetch(`${base}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model, prompt, stream: false }),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.status);
+    throw new Error(`Ollama request failed (${res.status}): ${msg}`);
+  }
+
+  const data = await res.json();
+  return (data.response || "").trim();
+}
+
+
+// ------------------------------------------------------------
 // NEXIS - CONVERT
+// Routes to local Ollama when a local model is configured,
+// otherwise calls the hosted backend.
 // ------------------------------------------------------------
 export async function nexisConvert(payload) {
+  const modelConfig = getModelConfig();
+
+  if (modelConfig?.type === "local" && modelConfig?.model && modelConfig?.endpoint) {
+    console.log("[LOCAL MODE] using browser Ollama endpoint");
+    const { buildReconstructionPrompt } = await import("../lib/prompts.js");
+    const prompt = buildReconstructionPrompt(
+      payload.text,
+      payload.preset,
+      payload.action,
+      payload.option
+    );
+    const output = await runLocalOllama(prompt, modelConfig);
+    return { output };
+  }
+
+  console.log("[HOSTED MODE] using backend inference endpoint");
   return request("/nexis/convert", {
     method: "POST",
     body: JSON.stringify(payload)
@@ -90,8 +144,21 @@ export async function nexisUnderstand(payload) {
 
 // ------------------------------------------------------------
 // NEXIS - CREATE
+// Routes to local Ollama for "refine" when a local model is
+// configured, otherwise calls the hosted backend.
 // ------------------------------------------------------------
 export async function nexisCreate(payload) {
+  const modelConfig = getModelConfig();
+
+  if (modelConfig?.type === "local" && modelConfig?.model && modelConfig?.endpoint) {
+    console.log("[LOCAL MODE] using browser Ollama endpoint");
+    const { buildCreationPrompt } = await import("../lib/prompts.js");
+    const prompt = buildCreationPrompt(payload.text, payload.mode, payload.option);
+    const output = await runLocalOllama(prompt, modelConfig);
+    return { output };
+  }
+
+  console.log("[HOSTED MODE] using backend inference endpoint");
   return request("/nexis/create", {
     method: "POST",
     body: JSON.stringify(payload)
