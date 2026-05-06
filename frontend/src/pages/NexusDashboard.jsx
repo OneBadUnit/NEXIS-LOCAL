@@ -17,6 +17,7 @@ import {
   removeProjectUsage,
 } from "../api/api.jsx";
 import { getTierConfig } from "../lib/tiers";
+import { supabase } from "../lib/supabase";
 import ViewPlansOverlay from "../components/ViewPlansOverlay";
 import UpgradeOverlay from "../components/UpgradeOverlay";
 
@@ -78,6 +79,37 @@ const NexusDashboard = ({ user, profile }) => {
   const [usage, setUsage] = useState(null);
   const [showViewPlans, setShowViewPlans] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+
+  // Announcements — null = not yet loaded or failed (shows fallback)
+  const [announcements, setAnnouncements] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchAnnouncements() {
+      try {
+        const { data, error } = await supabase
+          .from("app_announcements")
+          .select("id, section, tag, title, body")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+
+        if (cancelled) return;
+        if (error) throw error;
+
+        const news = (data || []).filter((r) => r.section === "news");
+        const updates = (data || []).filter((r) => r.section === "updates");
+        console.log("[DASHBOARD] loaded announcements:", data);
+        console.log("[DASHBOARD] news count:", news.length);
+        console.log("[DASHBOARD] updates count:", updates.length);
+        setAnnouncements({ news, updates });
+      } catch (err) {
+        console.warn("[DASHBOARD] announcements fetch failed — using fallback", err);
+        // Leave announcements as null so fallback renders
+      }
+    }
+    fetchAnnouncements();
+    return () => { cancelled = true; };
+  }, []);
 
   // Tier resolved from Supabase profile — source of truth for display and limits.
   // Falls back to "free" if profile is missing or tier is unrecognized.
@@ -381,17 +413,81 @@ const NexusDashboard = ({ user, profile }) => {
         {/* BOTTOM LEFT — NEWS */}
         <div className="panel">
           <h3>NEWS</h3>
-          <p className="subtle">
-            NEXIS is evolving into a project-based workspace for collecting,
-            converting, and refining raw information.
-          </p>
+          {announcements === null ? (
+            // Fallback: fetch not yet complete or failed
+            <p className="subtle">
+              NEXIS is evolving into a project-based workspace for collecting,
+              converting, and refining raw information.
+            </p>
+          ) : announcements.news.length === 0 ? (
+            <p className="subtle">No news at this time.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {announcements.news.map((item) => (
+                <div key={item.id}>
+                  {item.tag && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "var(--arc-accent, #38bdf8)",
+                        marginBottom: 4,
+                      }}
+                    >
+                      [{item.tag}]
+                    </span>
+                  )}
+                  {item.title && (
+                    <p style={{ fontWeight: 600, margin: "0 0 4px" }}>{item.title}</p>
+                  )}
+                  <p className="subtle" style={{ margin: 0 }}>{item.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* BOTTOM RIGHT — UPDATES */}
         <div className="panel">
           <h3>UPDATES</h3>
-          <p className="subtle">Latest: Project workspace implemented.</p>
-          <p className="subtle">Coming next: output history per project.</p>
+          {announcements === null ? (
+            // Fallback: fetch not yet complete or failed
+            <>
+              <p className="subtle">Latest: Project workspace implemented.</p>
+              <p className="subtle">Coming next: output history per project.</p>
+            </>
+          ) : announcements.updates.length === 0 ? (
+            <p className="subtle">No updates at this time.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {announcements.updates.map((item) => (
+                <div key={item.id}>
+                  {item.tag && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: "var(--arc-accent, #38bdf8)",
+                        marginBottom: 4,
+                      }}
+                    >
+                      [{item.tag}]
+                    </span>
+                  )}
+                  {item.title && (
+                    <p style={{ fontWeight: 600, margin: "0 0 4px" }}>{item.title}</p>
+                  )}
+                  <p className="subtle" style={{ margin: 0 }}>{item.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
