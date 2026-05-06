@@ -7,15 +7,29 @@
 
 // ------------------------------------------------------------
 // Base URL
-// Falls back to localhost for local development.
-// Set REACT_APP_API_BASE_URL in .env for hosted deployments.
+// Resolution order:
+//   1. REACT_APP_API_BASE_URL env var (explicit override)
+//   2. localhost fallback when running on localhost/127.0.0.1
+//   3. Hosted Render backend for all other origins (Vercel etc.)
 // ------------------------------------------------------------
-const BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+const LOCAL_API_BASE = "http://127.0.0.1:8000";
+const HOSTED_API_BASE = "https://nexis-l8oc.onrender.com";
+
+const isLocalHost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+
+export const API_BASE =
+  process.env.REACT_APP_API_BASE_URL ||
+  (isLocalHost ? LOCAL_API_BASE : HOSTED_API_BASE);
+
+// Keep BASE_URL as an internal alias so existing call sites don't change.
+const BASE_URL = API_BASE;
 
 // TEMPORARY DEBUG — remove after confirming hosted env var
+console.log("[NEXIS API] hostname =", window.location.hostname);
 console.log("[NEXIS API] process.env.REACT_APP_API_BASE_URL =", process.env.REACT_APP_API_BASE_URL);
-console.log("[NEXIS API] BASE_URL =", BASE_URL);
+console.log("[NEXIS API] API_BASE =", API_BASE);
 
 // ------------------------------------------------------------
 // Helper
