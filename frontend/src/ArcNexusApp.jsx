@@ -12,7 +12,7 @@ import Layout from "./layout/AppLayout";
 import { ArcNProvider } from "./context/ArcNContext";
 
 const STORAGE_KEY = "arcn_ack_version";
-const CURRENT_VERSION = "1.0.6";
+const CURRENT_VERSION = "1.0.7";
 
 function App() {
   const [logoComplete, setLogoComplete] = useState(false);
