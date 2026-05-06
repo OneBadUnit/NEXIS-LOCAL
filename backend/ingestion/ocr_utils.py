@@ -2,25 +2,31 @@
 # OCR INGESTION MODULE
 # High‑accuracy OCR pipeline using Tesseract with aggressive
 # preprocessing (denoise, threshold, deskew). Fully async.
+#
+# cv2, numpy, PIL, and pytesseract are imported lazily inside
+# functions — NOT at module level — so the backend starts
+# cleanly when OCR_ENABLED is false (hosted mode).
 # ============================================================
 
 import io
-import cv2
-import numpy as np
-from PIL import Image
-import pytesseract
 import asyncio
+
 
 # ------------------------------------------------------------
 # TESSERACT CONFIG
+# Resolved at runtime inside the OCR call, not at import time.
 # ------------------------------------------------------------
-pytesseract.pytesseract.tesseract_cmd = r"D:\NEXIS\Tesseract-OCR\tesseract.exe"
+_TESSERACT_CMD = r"D:\NEXIS\Tesseract-OCR\tesseract.exe"
 
 
 # ------------------------------------------------------------
 # PREPROCESSING PIPELINE
 # ------------------------------------------------------------
-def preprocess_image(pil_img: Image.Image) -> Image.Image:
+def preprocess_image(pil_img):
+    import cv2
+    import numpy as np
+    from PIL import Image
+
     img = np.array(pil_img)
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -54,8 +60,17 @@ def preprocess_image(pil_img: Image.Image) -> Image.Image:
 # OCR EXECUTION (ASYNC)
 # ------------------------------------------------------------
 async def extract_text_from_image(file_bytes: bytes) -> str:
+    from app.core.config import settings
+    if not settings.OCR_ENABLED:
+        return "OCR is not available in hosted beta mode."
+
     def _work():
         try:
+            import pytesseract
+            from PIL import Image
+
+            pytesseract.pytesseract.tesseract_cmd = _TESSERACT_CMD
+
             pil_img = Image.open(io.BytesIO(file_bytes))
             processed = preprocess_image(pil_img)
 

@@ -1,15 +1,17 @@
 # ============================================================
 # ARC-NEXUS - VISION ENGINE
 # File: app/vision.py
-# Version: 002 (Stability + Validation + Consistent Output)
+# Version: 003 (Feature-flagged + Lazy vision_service import)
 # ============================================================
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.services.vision_service import run_llava
 from app.core.db import get_db
 from app.core import usage as usage_tracker
 from app.core.usage import DEFAULT_USER_ID
+
+# vision_service is NOT imported at module level.
+# It is imported lazily inside the route when VISION_ENABLED is true.
 
 
 # ------------------------------------------------------------
@@ -24,6 +26,16 @@ router = APIRouter(tags=["nexis-vision"])
 # ------------------------------------------------------------
 @router.post("/analyze")
 async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+
+    # -----------------------------
+    # Feature flag check
+    # -----------------------------
+    from app.core.config import settings
+    if not settings.VISION_ENABLED:
+        raise HTTPException(
+            status_code=503,
+            detail="Vision analysis is not available in hosted beta mode.",
+        )
 
     # -----------------------------
     # Validate file
@@ -53,9 +65,10 @@ async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_
         raise HTTPException(status_code=400, detail="Empty image file.")
 
     # -----------------------------
-    # Run vision model
+    # Run vision model (lazy import)
     # -----------------------------
     try:
+        from app.services.vision_service import run_llava
         description = await run_llava(image_bytes)
     except Exception:
         raise HTTPException(status_code=500, detail="Vision processing failed.")

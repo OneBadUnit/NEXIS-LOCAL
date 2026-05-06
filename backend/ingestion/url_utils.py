@@ -1,6 +1,6 @@
 # ============================================================
 # URL INGESTION MODULE
-# Version: 003 (SSL Fallback + Robust HTML Fetch)
+# Version: 004 (Lazy YouTube/yt-dlp + Feature Flags)
 # ============================================================
 
 print(">>> URL_UTILS LOADED FROM ingestion/url_utils.py")
@@ -12,8 +12,9 @@ import subprocess
 from bs4 import BeautifulSoup
 from requests.exceptions import SSLError
 
-from .youtube_utils import transcribe_youtube_url
-from .file_router import process_uploaded_file
+# youtube_utils and file_router are imported lazily inside
+# functions — NOT at module level — to prevent cascading into
+# audio_utils and loading WhisperModel at startup.
 
 
 MEDIA_EXT = {
@@ -46,6 +47,10 @@ def safe_get(url: str):
 # YOUTUBE FALLBACK
 # ------------------------------------------------------------
 async def extract_audio_with_ytdlp(url: str) -> str:
+    from app.core.config import settings
+    if not settings.YOUTUBE_INGESTION_ENABLED:
+        return "YouTube/video ingestion is not available in hosted beta mode."
+
     print(">>> YT: Falling back to yt-dlp audio extraction")
 
     try:
@@ -73,6 +78,8 @@ async def extract_audio_with_ytdlp(url: str) -> str:
         if result.returncode != 0:
             print(">>> YT: yt-dlp FAILED:", result.stderr)
             return None
+
+        from .file_router import process_uploaded_file
 
         class TempUpload:
             filename = "youtube_audio.m4a"
@@ -105,11 +112,17 @@ async def process_url_or_youtube(url: str) -> str:
     if not url:
         return "No URL provided."
 
+    from app.core.config import settings
+
     # ---------------- YOUTUBE ----------------
     if "youtube.com" in url or "youtu.be" in url:
         print(">>> YT BRANCH HIT")
 
+        if not settings.YOUTUBE_INGESTION_ENABLED:
+            return "YouTube/video ingestion is not available in hosted beta mode."
+
         try:
+            from .youtube_utils import transcribe_youtube_url
             yt_text = await transcribe_youtube_url(url)
             if yt_text and len(yt_text.strip()) > 20:
                 return yt_text
@@ -128,6 +141,9 @@ async def process_url_or_youtube(url: str) -> str:
         if lower.endswith(ext):
             print(">>> MEDIA BRANCH HIT:", ext)
 
+            if not settings.WHISPER_ENABLED:
+                return "Audio/video transcription is not available in hosted beta mode."
+
             try:
                 resp = safe_get(url)
                 resp.raise_for_status()
@@ -137,6 +153,8 @@ async def process_url_or_youtube(url: str) -> str:
 
                 with open(path, "wb") as f:
                     f.write(resp.content)
+
+                from .file_router import process_uploaded_file
 
                 class TempUpload:
                     filename = f"downloaded{ext}"

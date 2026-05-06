@@ -1,15 +1,17 @@
 # ============================================================
 # ARC-NEXUS - VISION SERVICE
 # File: app/services/vision_service.py
-# Version: 002 (Stability + Error Handling + Consistency)
+# Version: 003 (Lazy PIL import — not loaded at startup)
 # ============================================================
 
 import base64
+import io
 import requests
 import asyncio
 from functools import partial
-from PIL import Image
-import io
+
+# PIL is imported lazily inside _normalize_image so this module
+# can be imported without loading Pillow at startup.
 
 # ------------------------------------------------------------
 # Ollama Configuration
@@ -23,6 +25,7 @@ LLAVA_MODEL = "llava:13b"   # MUST match `ollama list` exactly
 # Ensures consistent input for all formats
 # ------------------------------------------------------------
 def _normalize_image(image_bytes: bytes) -> bytes:
+    from PIL import Image  # lazy import
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         buf = io.BytesIO()

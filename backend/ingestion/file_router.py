@@ -3,17 +3,14 @@
 # Routes uploaded files to the correct extraction/transcription
 # pipeline based on extension. Handles text, PDF, DOCX, images,
 # audio, and video. Uses a safe temp directory for media.
+#
+# All heavy processors are imported lazily inside each branch.
+# Heavy feature paths are gated by feature flags.
 # ============================================================
 
 import os
 import tempfile
 from fastapi import UploadFile
-
-from .pdf_utils import extract_pdf_text
-from .docx_utils import extract_docx_text
-from .ocr_utils import extract_text_from_image
-from .audio_utils import transcribe_audio_file
-from .video_utils import transcribe_video_file
 
 
 # ------------------------------------------------------------
@@ -50,18 +47,30 @@ async def process_uploaded_file(uploaded_file: UploadFile) -> str:
             return f"Text decode error: {str(e)}"
 
     if ext in PDF_EXT:
+        from .pdf_utils import extract_pdf_text
         return await extract_pdf_text(data)
 
     if ext in DOCX_EXT:
+        from .docx_utils import extract_docx_text
         return await extract_docx_text(data)
 
     if ext in IMAGE_EXT:
+        from app.core.config import settings
+        if not settings.OCR_ENABLED:
+            return "OCR is not available in hosted beta mode."
+        from .ocr_utils import extract_text_from_image
         return await extract_text_from_image(data)
 
     if ext in AUDIO_EXT:
+        from app.core.config import settings
+        if not settings.WHISPER_ENABLED:
+            return "Audio/video transcription is not available in hosted beta mode."
         return await _transcribe_audio_bytes(data, ext)
 
     if ext in VIDEO_EXT:
+        from app.core.config import settings
+        if not settings.WHISPER_ENABLED:
+            return "Audio/video transcription is not available in hosted beta mode."
         return await _transcribe_video_bytes(data, ext)
 
     return "Unsupported file type."
@@ -79,6 +88,7 @@ async def _transcribe_audio_bytes(data: bytes, ext: str) -> str:
             f.write(data)
 
         print(">>> DEBUG: Saved audio file size:", os.path.getsize(path))
+        from .audio_utils import transcribe_audio_file
         return await transcribe_audio_file(path)
 
     finally:
@@ -101,6 +111,7 @@ async def _transcribe_video_bytes(data: bytes, ext: str) -> str:
             f.write(data)
 
         print(">>> DEBUG: Saved video file size:", os.path.getsize(path))
+        from .video_utils import transcribe_video_file
         return await transcribe_video_file(path)
 
     finally:

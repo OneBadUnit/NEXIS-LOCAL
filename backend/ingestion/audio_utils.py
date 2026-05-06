@@ -1,7 +1,9 @@
 # ============================================================
 # AUDIO INGESTION MODULE
 # Handles GPU‑accelerated audio transcription using
-# faster‑whisper (Large‑v3). Loaded once at import time.
+# faster‑whisper (Large‑v3). Model is loaded lazily on first
+# use — NOT at import time — so the backend starts cleanly
+# on hosted services that don't have Whisper/GPU available.
 #
 # Provides:
 #   - transcribe_audio_file(path) → str
@@ -13,8 +15,6 @@
 print(">>> AUDIO_UTILS LOADED FROM ingestion/audio_utils.py")
 
 import asyncio
-from faster_whisper import WhisperModel
-from app.utils.gpu_detection import get_whisper_device
 
 
 # ------------------------------------------------------------
@@ -22,26 +22,37 @@ from app.utils.gpu_detection import get_whisper_device
 # ------------------------------------------------------------
 MODEL_NAME = "large-v3"
 
-# Load Whisper model once (auto-detected device)
-try:
-    _device = get_whisper_device()
-    _compute = "float16" if _device == "cuda" else "int8"
+# Lazy cache — populated only on first transcription request.
+_whisper_model = None
+_whisper_device = None
+
+
+def _get_whisper_model():
+    """Load WhisperModel once on first call. Never at import time."""
+    global _whisper_model, _whisper_device
+
+    if _whisper_model is not None:
+        return _whisper_model
+
+    from app.utils.gpu_detection import get_whisper_device
+    from faster_whisper import WhisperModel
+
+    _whisper_device = get_whisper_device()
+    _compute = "float16" if _whisper_device == "cuda" else "int8"
 
     print("\n================ WHISPER INIT ================")
-    print(f"[WHISPER] Requested device: {_device}")
+    print(f"[WHISPER] Requested device: {_whisper_device}")
 
-    model = WhisperModel(
+    _whisper_model = WhisperModel(
         MODEL_NAME,
-        device=_device,
+        device=_whisper_device,
         compute_type=_compute,
     )
 
-    print(f"[WHISPER] Model loaded successfully on {_device} ({_compute})")
+    print(f"[WHISPER] Model loaded successfully on {_whisper_device} ({_compute})")
     print("==============================================\n")
 
-except Exception as e:
-    print(">>> ERROR LOADING WHISPER MODEL:", e)
-    model = None
+    return _whisper_model
 
 
 # ------------------------------------------------------------
@@ -51,22 +62,25 @@ except Exception as e:
 async def transcribe_audio_file(path: str) -> str:
     """
     Transcribe an audio file using faster‑whisper (GPU).
-    Fully instrumented for debugging.
+    Checks WHISPER_ENABLED flag before loading model.
 
     Returns:
-        str: Transcript text or an error message.
+        str: Transcript text or an error/disabled message.
     """
 
-    if model is None:
-        return "[AUDIO TRANSCRIPTION ERROR] Whisper model failed to load."
+    from app.core.config import settings
+    if not settings.WHISPER_ENABLED:
+        return "Audio/video transcription is not available in hosted beta mode."
 
     loop = asyncio.get_event_loop()
 
     def _work():
         try:
+            model = _get_whisper_model()
+
             print("\n================ WHISPER RUN ================")
             print(f"[WHISPER] Starting transcription for: {path}")
-            print(f"[WHISPER] Runtime device: {_device}")
+            print(f"[WHISPER] Runtime device: {_whisper_device}")
             print("=============================================\n")
 
             segments, info = model.transcribe(path)

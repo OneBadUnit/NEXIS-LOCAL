@@ -1,13 +1,14 @@
 # ============================================================
 # ARC-NEXUS - AUDIO TRANSCRIPTION PIPELINE
 # File: app/pipeline/transcription.py
-# Version: 002 (Model Reuse + Cleaner Logging + Stability)
+# Version: 003 (Lazy faster_whisper import — not at startup)
 # ============================================================
 
 import traceback
-from faster_whisper import WhisperModel
 
-from app.utils.gpu_detection import get_whisper_device
+# faster_whisper and gpu_detection are imported lazily inside
+# get_model() so this module can be imported without loading
+# those libraries at startup.
 
 
 # ------------------------------------------------------------
@@ -25,6 +26,9 @@ def get_model():
 
     if _whisper_model is not None:
         return _whisper_model, _whisper_device
+
+    from faster_whisper import WhisperModel          # lazy import
+    from app.utils.gpu_detection import get_whisper_device  # lazy import
 
     device = get_whisper_device()
 

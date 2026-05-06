@@ -1,42 +1,19 @@
 # ============================================================
 # PDF INGESTION MODULE
-# Version: 007 (Path Fix + Auto-Detection + Future Safe)
+# Version: 008 (Lazy imports + OCR feature flag)
 #
 # SEARCH TAGS:
 #   ARC_TESSERACT_PATH
 #   ARC_ENV_SWAP
+#
+# fitz (PyMuPDF), PIL, and pytesseract are imported lazily
+# inside extract_pdf_text so this module can be imported
+# without loading those libraries at startup.
 # ============================================================
 
 import io
 import os
 import asyncio
-import fitz
-from PIL import Image
-import pytesseract
-
-
-# ------------------------------------------------------------
-# 🔥 ARC_TESSERACT_PATH (AUTO-DETECT)
-# ------------------------------------------------------------
-POSSIBLE_PATHS = [
-    r"D:\NEXIS\Tesseract-OCR\tesseract.exe",
-    r"D:\arc-nexus\Tesseract-OCR\tesseract.exe",  # legacy fallback
-]
-
-TESSERACT_PATH = None
-
-for path in POSSIBLE_PATHS:
-    if os.path.exists(path):
-        TESSERACT_PATH = path
-        break
-
-if not TESSERACT_PATH:
-    print(">>> [ARC ERROR] Tesseract NOT FOUND in expected locations")
-    TESSERACT_PATH = "tesseract"  # fallback to system PATH
-
-TESSERACT_DIR = os.path.dirname(TESSERACT_PATH)
-
-print(f">>> [ARC] USING TESSERACT PATH: {TESSERACT_PATH}")
 
 
 # ------------------------------------------------------------
@@ -46,15 +23,36 @@ async def extract_pdf_text(data: bytes) -> str:
 
     def _work():
         try:
+            import fitz                  # lazy — PyMuPDF
+            from PIL import Image        # lazy
+            import pytesseract           # lazy
+
+            from app.core.config import settings
+
+            # ----------------------------------------------------
+            # 🔥 ARC_TESSERACT_PATH (AUTO-DETECT)
+            # ----------------------------------------------------
+            POSSIBLE_PATHS = [
+                r"D:\NEXIS\Tesseract-OCR\tesseract.exe",
+                r"D:\arc-nexus\Tesseract-OCR\tesseract.exe",
+            ]
+            tesseract_path = None
+            for p in POSSIBLE_PATHS:
+                if os.path.exists(p):
+                    tesseract_path = p
+                    break
+            if not tesseract_path:
+                tesseract_path = "tesseract"
+
+            tesseract_dir = os.path.dirname(tesseract_path)
+
             # ----------------------------------------------------
             # 🔥 ARC_ENV_SWAP (runtime path injection)
             # ----------------------------------------------------
-            if TESSERACT_DIR:
-                os.environ["PATH"] += os.pathsep + TESSERACT_DIR
+            if tesseract_dir:
+                os.environ["PATH"] += os.pathsep + tesseract_dir
 
-            pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
-
-            print(">>> [ARC] OCR USING:", pytesseract.pytesseract.tesseract_cmd)
+            pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
             doc = fitz.open(stream=data, filetype="pdf")
             final_output = []
@@ -68,7 +66,11 @@ async def extract_pdf_text(data: bytes) -> str:
                         final_output.append(text.strip())
                         continue
 
-                    # -------- OCR fallback --------
+                    # -------- OCR fallback (only when enabled) --------
+                    if not settings.OCR_ENABLED:
+                        final_output.append(f"[Page {i+1}: OCR not available in hosted beta mode]")
+                        continue
+
                     pix = page.get_pixmap(dpi=300)
                     img_bytes = pix.tobytes("png")
                     pil_img = Image.open(io.BytesIO(img_bytes))
