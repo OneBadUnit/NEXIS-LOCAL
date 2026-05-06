@@ -4,15 +4,41 @@ uvicorn==0.29.0
 python-multipart==0.0.9
 requests==2.31.0
 
+# --- Pydantic Settings ---
+# pydantic_settings is a separate package from pydantic v2
+# Required by app/core/config.py (BaseSettings)
+pydantic-settings==2.2.1
+
+# --- Database / ORM ---
+# SQLAlchemy: used in db.py, usage.py, all models, and multiple routes
+sqlalchemy==2.0.30
+# psycopg2-binary: PostgreSQL driver for SQLAlchemy in Render/production
+# (app falls back to SQLite locally; PostgreSQL dialect types are used in models)
+psycopg2-binary==2.9.9
+
+# --- Task Queue ---
+# Celery: imported in app/workers/tasks.py
+celery==5.3.6
+# redis: Celery Redis broker client (broker="redis://...")
+redis==5.0.3
+
 # --- PDF Extraction ---
 pymupdf==1.23.26
 
 # --- OCR ---
 pytesseract==0.3.10
 Pillow==10.2.0
+# opencv-python-headless: cv2 imported in ingestion/ocr_utils.py
+# headless variant avoids display/GUI dependencies on server (Render)
+opencv-python-headless==4.9.0.80
+# numpy: imported in ingestion/ocr_utils.py (also a cv2 runtime dependency)
+numpy==1.26.4
 
-# --- DOCX / TXT ---
+# --- DOCX ---
+# docx2txt: kept from original
 docx2txt==0.8
+# python-docx: ingestion/docx_utils.py uses `import docx` (python-docx package)
+python-docx==1.1.0
 
 # --- HTML Parsing ---
 beautifulsoup4==4.12.3
@@ -26,8 +52,11 @@ youtube-transcript-api==0.6.1
 # --- Async HTTP ---
 aiohttp==3.9.3
 
-# --- Local GPU Whisper (installed manually, NOT via requirements) ---
-# faster-whisper is installed separately to avoid PyAV dependency
+# --- Whisper / Transcription ---
+# faster-whisper: imported at module level in audio_utils.py,
+# pipeline/transcription.py, and services/assimilation.py
+# Must be in requirements for Render — cannot rely on manual install
+faster-whisper==1.0.3
 ctranslate2==4.7.1
 huggingface-hub==0.36.2
 tokenizers==0.15.2
