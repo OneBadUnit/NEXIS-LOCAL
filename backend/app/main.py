@@ -41,9 +41,17 @@ def startup_event():
 # ------------------------------------------------------------
 # CORS
 # ------------------------------------------------------------
+ALLOWED_ORIGINS = [
+    # Local development
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    # Hosted frontend (Vercel)
+    "https://nexis-td1ezngfa-onebadunits-projects.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # tighten later if needed
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
