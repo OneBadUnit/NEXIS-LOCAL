@@ -156,6 +156,7 @@ export async function syncUsage(counts) {
   // counts: { projects?, raw_inputs?, outputs? }
   // Syncs localStorage storage counts to the backend so enforcement
   // is always based on the real number of saved items.
+  console.log("[NEXIS USAGE DEBUG] syncUsage using BASE:", BASE_URL);
   return request("/api/usage/sync", {
     method: "POST",
     body: JSON.stringify(counts),
@@ -171,6 +172,7 @@ export async function removeRawInputUsage() {
 }
 
 export async function addProjectUsage() {
+  console.log("[NEXIS USAGE DEBUG] addProjectUsage using BASE:", BASE_URL);
   return request("/api/usage/project/add", { method: "POST" });
 }
 
