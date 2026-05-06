@@ -1,10 +1,10 @@
 # ============================================================
 # ARC-NEXUS - BACKEND MAIN ENTRYPOINT
 # File: app/main.py
-# Version: 004 (Removed misplaced frontend CSS)
+# Version: 005 (CORS before routers + preflight debug middleware)
 # ============================================================
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 # ------------------------------------------------------------
@@ -30,16 +30,8 @@ app = FastAPI(
 
 
 # ------------------------------------------------------------
-# Startup: create database tables
-# ------------------------------------------------------------
-@app.on_event("startup")
-def startup_event():
-    from app.core.db import init_db
-    init_db()
-
-
-# ------------------------------------------------------------
-# CORS
+# CORS — registered immediately after app creation,
+# before any routers, so preflight OPTIONS is handled first.
 # ------------------------------------------------------------
 ALLOWED_ORIGINS = [
     # Local development
@@ -49,13 +41,41 @@ ALLOWED_ORIGINS = [
     "https://nexis-td1ezngfa-onebadunits-projects.vercel.app",
 ]
 
+print("[CORS] Allowed origins:", ALLOWED_ORIGINS)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+# ------------------------------------------------------------
+# TEMPORARY REQUEST DEBUG MIDDLEWARE
+# Logs preflight details. Remove after CORS is confirmed.
+# ------------------------------------------------------------
+@app.middleware("http")
+async def _debug_request(request: Request, call_next):
+    print(
+        f"[REQ DEBUG] {request.method} {request.url.path}"
+        f" | origin={request.headers.get('origin')}"
+        f" | acr-method={request.headers.get('access-control-request-method')}"
+        f" | acr-headers={request.headers.get('access-control-request-headers')}"
+    )
+    response = await call_next(request)
+    print(f"[REQ DEBUG] response status={response.status_code}")
+    return response
+
+
+# ------------------------------------------------------------
+# Startup: create database tables
+# ------------------------------------------------------------
+@app.on_event("startup")
+def startup_event():
+    from app.core.db import init_db
+    init_db()
 
 
 # ------------------------------------------------------------
