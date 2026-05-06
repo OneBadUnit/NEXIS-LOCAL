@@ -13,6 +13,8 @@
 const BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
 
+// TEMPORARY DEBUG — remove after confirming hosted env var
+console.log("API BASE URL:", BASE_URL);
 
 // ------------------------------------------------------------
 // Helper
