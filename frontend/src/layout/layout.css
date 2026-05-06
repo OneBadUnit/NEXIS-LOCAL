@@ -118,7 +118,12 @@
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
   min-width: 0;
+  overflow: hidden;
+  padding-right: 48px;
 }
 
 .topbar-center {
@@ -132,11 +137,12 @@
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: center;
+  gap: 18px;
   flex-wrap: wrap;
   min-width: 0;
   overflow: hidden;
+  padding-left: 48px;
 }
 
 .topbar-input {
