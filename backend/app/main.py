@@ -39,6 +39,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     # Hosted frontend (Vercel)
     "https://nexis-td1ezngfa-onebadunits-projects.vercel.app",
+    "https://nexis-psi.vercel.app",
 ]
 
 print("[CORS] Allowed origins:", ALLOWED_ORIGINS)
