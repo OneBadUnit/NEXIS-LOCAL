@@ -110,3 +110,4 @@ All rights reserved unless a license is added.
 
 ARC‑NEXUS is under active development.  
 This repository represents the clean, source‑only baseline for ongoing work.
+Thanks!
