@@ -14,13 +14,16 @@ const BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
 
 // TEMPORARY DEBUG — remove after confirming hosted env var
-console.log("API BASE URL:", BASE_URL);
+console.log("[NEXIS API] process.env.REACT_APP_API_BASE_URL =", process.env.REACT_APP_API_BASE_URL);
+console.log("[NEXIS API] BASE_URL =", BASE_URL);
 
 // ------------------------------------------------------------
 // Helper
 // ------------------------------------------------------------
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const url = `${BASE_URL}${path}`;
+  console.log("[NEXIS API] request URL =", url);
+  const res = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {})
