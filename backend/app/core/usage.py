@@ -276,6 +276,22 @@ def sync_storage_counts(
 
 
 # ------------------------------------------------------------
+# Manual monthly reset (dev/support only)
+# Resets ONLY monthly counters.
+# Storage counts (projects, raw_inputs, outputs) are NOT touched.
+# Use for development or manual support resets — not exposed publicly.
+# ------------------------------------------------------------
+
+def reset_monthly_usage(db: Session, user_id: str = DEFAULT_USER_ID) -> None:
+    """Reset monthly counters only. Does NOT affect storage counts."""
+    account = _get_or_create(db, user_id)
+    account.raw_inputs_this_month = 0
+    account.actions_this_month = 0
+    account.billing_cycle_start = date.today().isoformat()
+    db.commit()
+
+
+# ------------------------------------------------------------
 # Two-phase helpers: check-only, then increment-only.
 # This separates the gate check from the commit so monthly
 # counters are only incremented after a successful operation.

@@ -15,7 +15,7 @@ export const TIERS = {
     monthly_actions: 4,
   },
   base: {
-    label: "Base",
+    label: "Core",
     max_projects: 2,
     max_saved_raw_inputs: 8,
     max_saved_outputs: 8,
@@ -23,7 +23,7 @@ export const TIERS = {
     monthly_actions: 12,
   },
   middle: {
-    label: "Middle",
+    label: "Pro",
     max_projects: 3,
     max_saved_raw_inputs: 12,
     max_saved_outputs: 12,
@@ -31,7 +31,7 @@ export const TIERS = {
     monthly_actions: 36,
   },
   high: {
-    label: "High",
+    label: "Max",
     max_projects: 5,
     max_saved_raw_inputs: 36,
     max_saved_outputs: 36,

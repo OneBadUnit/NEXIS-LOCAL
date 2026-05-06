@@ -110,7 +110,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   };
 
   // ----------------------------------------------------------
-  // Raw items â€” loaded from localStorage on mount
+  // Raw items - loaded from localStorage on mount
   // ----------------------------------------------------------
   const [rawItems, setRawItems] = useState(() => loadRawItems(project.id));
   const [editingItemId, setEditingItemId] = useState(null);
@@ -472,9 +472,9 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       -------------------------------------------------------- */}
       <div
         style={{
-          height: 56,
-          background: "#080808",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          height: 65,
+          background: "#000000",
+          borderBottom: "0px solid rgba(255,255,255,0.08)",
           display: "flex",
           alignItems: "center",
           padding: "0 20px",
@@ -523,7 +523,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
               onClick={() => setEditingName(true)}
               style={{
                 fontWeight: 700,
-                fontSize: "1rem",
+                fontSize: "1.75rem",
                 cursor: "text",
                 padding: "4px 10px",
                 borderRadius: 8,
@@ -548,7 +548,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       </div>
 
       {/* --------------------------------------------------------
-          MAIN â€” TWO-PANEL LAYOUT
+          MAIN - TWO-PANEL LAYOUT
       -------------------------------------------------------- */}
       <div
         style={{
@@ -560,7 +560,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         }}
       >
         {/* ======================================================
-            LEFT PANEL â€” COLLECT + RAW FILES
+            LEFT PANEL - COLLECT + RAW FILES
         ====================================================== */}
         <div
           style={{
@@ -661,7 +661,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
             <div
               style={{
-                maxHeight: 340,
+                maxHeight: 420,
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
@@ -983,7 +983,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
             <div
               style={{
-                maxHeight: 400,
+                maxHeight: 540,
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",

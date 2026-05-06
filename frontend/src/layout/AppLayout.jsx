@@ -95,10 +95,19 @@ export default function AppLayout() {
     };
   }, []);
 
-  // Raw signUp — overlay handles its own result display; also updates user if session active
-  const handleSignUp = async (email, password) => {
+  // Raw signUp — overlay handles its own result display; also updates user if session active.
+  // profileInfo is collected in step 2 of the signup overlay and stored in the profiles table.
+  const handleSignUp = async (email, password, profileInfo = {}) => {
     const result = await signUp(email, password);
-    // onAuthStateChange will handle setUser if Supabase creates a session
+    const newUser = result?.data?.user;
+    if (newUser) {
+      // Seed the profile immediately (works even if email confirmation is pending —
+      // the user row exists in auth.users, so the profiles insert will succeed).
+      ensureProfile(newUser, profileInfo)
+        .then((p) => { if (p) setProfile(p); })
+        .catch((e) => console.error("[Profile] post-signUp profile error:", e));
+    }
+    // onAuthStateChange will handle setUser once a session is established
     return result;
   };
 
@@ -218,6 +227,7 @@ export default function AppLayout() {
           onClose={() => setShowAccount(false)}
           user={user}
           profile={profile}
+          onProfileUpdate={(updated) => setProfile(updated)}
         />
       )}
       {showPasswordRecovery && (

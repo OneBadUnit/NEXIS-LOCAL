@@ -44,15 +44,22 @@ export async function getProfile(userId) {
   return data ?? null;
 }
 
-export async function ensureProfile(user) {
+export async function ensureProfile(user, extraFields = {}) {
   if (!user) return null;
 
   let profile = await getProfile(user.id);
 
   if (!profile) {
+    const insert = {
+      id: user.id,
+      email: user.email,
+      tier: "free",
+      ...extraFields,
+    };
+
     const { data, error } = await supabase
       .from("profiles")
-      .insert({ id: user.id, email: user.email, tier: "free" })
+      .insert(insert)
       .select()
       .single();
 

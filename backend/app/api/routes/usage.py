@@ -145,3 +145,16 @@ def check_convert_limits(db: Session = Depends(get_db)):
 def complete_convert(db: Session = Depends(get_db)):
     tracker.complete_package_convert(db, DEFAULT_USER_ID)
     return {"ok": True}
+
+
+# ------------------------------------------------------------
+# POST /api/usage/dev/reset-monthly
+# DEV/SUPPORT ONLY — resets monthly usage counters for the
+# default user.  Does NOT touch storage counts (projects,
+# raw inputs, outputs).
+# Do NOT expose publicly to end users.
+# ------------------------------------------------------------
+@router.post("/dev/reset-monthly")
+def dev_reset_monthly_usage(db: Session = Depends(get_db)):
+    tracker.reset_monthly_usage(db, DEFAULT_USER_ID)
+    return tracker.load_usage(db, DEFAULT_USER_ID)

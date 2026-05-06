@@ -37,7 +37,7 @@ PLANS: dict[str, dict] = {
     },
 
     "base": {
-        "label": "Base",
+        "label": "Core",
         "price": 9.99,
 
         "max_projects": 2,
@@ -53,7 +53,7 @@ PLANS: dict[str, dict] = {
     },
 
     "middle": {
-        "label": "Middle",
+        "label": "Pro",
         "price": 14.99,
 
         "max_projects": 3,
@@ -69,7 +69,7 @@ PLANS: dict[str, dict] = {
     },
 
     "high": {
-        "label": "High",
+        "label": "Max",
         "price": 19.99,
 
         "max_projects": 5,

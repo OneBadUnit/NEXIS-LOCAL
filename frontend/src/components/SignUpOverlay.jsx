@@ -81,17 +81,45 @@ function Field({ label, type, value, onChange, placeholder, autoFocus }) {
   );
 }
 
-// ── States ───────────────────────────────────────────────────
+// ── Checkbox component ───────────────────────────────────────
 
-function FormState({ onSubmit, onClose, loading }) {
+function CheckboxField({ id, checked, onChange, children }) {
+  return (
+    <label
+      htmlFor={id}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        cursor: "pointer",
+        fontSize: "0.82rem",
+        color: "rgba(255,255,255,0.65)",
+        lineHeight: 1.5,
+      }}
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        style={{ marginTop: 2, flexShrink: 0, accentColor: "#38bdf8" }}
+      />
+      {children}
+    </label>
+  );
+}
+
+// ── Step 1: Credentials ──────────────────────────────────────
+
+function StepOneState({ onNext, onClose }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState("");
 
-  const handleCreate = () => {
+  const handleNext = () => {
     if (!email.trim() || !password.trim() || !confirm.trim()) {
-      setErr("Enter an email and password first.");
+      setErr("Enter your email and password.");
       return;
     }
     if (password !== confirm) {
@@ -99,14 +127,17 @@ function FormState({ onSubmit, onClose, loading }) {
       return;
     }
     setErr("");
-    onSubmit(email.trim(), password);
+    onNext({ email: email.trim(), password });
   };
 
   return (
     <>
-      <h2 style={{ margin: "0 0 24px", fontSize: "1.15rem", fontWeight: 700 }}>
+      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 700 }}>
         Create your NEXIS account
       </h2>
+      <p style={{ margin: "0 0 24px", fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>
+        Step 1 of 2
+      </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <Field
@@ -138,6 +169,120 @@ function FormState({ onSubmit, onClose, loading }) {
       )}
 
       <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+        <button style={btnPrimary} onClick={handleNext}>
+          Next →
+        </button>
+        <button style={btnSecondary} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ── Step 2: Profile info + agreements ───────────────────────
+
+function StepTwoState({ onSubmit, onBack, loading }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeModel, setAgreeModel] = useState(false);
+  const [agreeMistakes, setAgreeMistakes] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleCreate = () => {
+    if (!firstName.trim() || !lastName.trim()) {
+      setErr("First name and last name are required.");
+      return;
+    }
+    if (!agreeTerms || !agreeModel || !agreeMistakes) {
+      setErr("Please check all required agreements before continuing.");
+      return;
+    }
+    setErr("");
+    onSubmit({
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      phone: phone.trim() || null,
+      company: company.trim() || null,
+    });
+  };
+
+  return (
+    <>
+      <h2 style={{ margin: "0 0 6px", fontSize: "1.15rem", fontWeight: 700 }}>
+        A little about you
+      </h2>
+      <p style={{ margin: "0 0 24px", fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>
+        Step 2 of 2
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field
+            label="First Name *"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="First"
+            autoFocus
+          />
+          <Field
+            label="Last Name *"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Last"
+          />
+        </div>
+        <Field
+          label="Phone (optional)"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+1 555 000 0000"
+        />
+        <Field
+          label="Company (optional)"
+          type="text"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="Your company or organization"
+        />
+      </div>
+
+      {/* Agreements */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
+        <CheckboxField
+          id="agree-terms"
+          checked={agreeTerms}
+          onChange={(e) => setAgreeTerms(e.target.checked)}
+        >
+          I agree to the Terms of Service.
+        </CheckboxField>
+        <CheckboxField
+          id="agree-model"
+          checked={agreeModel}
+          onChange={(e) => setAgreeModel(e.target.checked)}
+        >
+          I understand NEXIS uses my selected local model or my own API key.
+        </CheckboxField>
+        <CheckboxField
+          id="agree-mistakes"
+          checked={agreeMistakes}
+          onChange={(e) => setAgreeMistakes(e.target.checked)}
+        >
+          I understand NEXIS can make mistakes and important work should be checked.
+        </CheckboxField>
+      </div>
+
+      {err && (
+        <p style={{ margin: "14px 0 0", fontSize: "0.82rem", color: "#f87171" }}>{err}</p>
+      )}
+
+      <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
         <button
           style={{ ...btnPrimary, opacity: loading ? 0.6 : 1 }}
           onClick={handleCreate}
@@ -145,8 +290,8 @@ function FormState({ onSubmit, onClose, loading }) {
         >
           {loading ? "Creating…" : "Create Account"}
         </button>
-        <button style={btnSecondary} onClick={onClose}>
-          Cancel
+        <button style={btnSecondary} onClick={onBack} disabled={loading}>
+          ← Back
         </button>
       </div>
     </>
@@ -235,17 +380,26 @@ function GeneralErrorState({ message, onTryAgain, onClose }) {
 // ── Main overlay ─────────────────────────────────────────────
 
 export default function SignUpOverlay({ onClose, onSignUpSuccess, onGoToSignIn }) {
-  // "form" | "sent" | "duplicate" | "error"
-  const [view, setView] = useState("form");
+  // "step1" | "step2" | "sent" | "duplicate" | "error"
+  const [view, setView] = useState("step1");
+  const [credentials, setCredentials] = useState(null); // { email, password }
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (email, password) => {
+  // Called when step 1 passes validation — move to step 2
+  const handleStepOne = (creds) => {
+    setCredentials(creds);
+    setView("step2");
+  };
+
+  // Called when step 2 passes validation — actually create the account
+  const handleSubmit = async (profileInfo) => {
+    if (!credentials) return;
     setLoading(true);
-    const { data, error } = await onSignUpSuccess(email, password);
+    const { data, error } = await onSignUpSuccess(credentials.email, credentials.password, profileInfo);
     setLoading(false);
-    setSubmittedEmail(email);
+    setSubmittedEmail(credentials.email);
 
     console.log("Supabase signUp response:", data, error);
 
@@ -342,10 +496,16 @@ export default function SignUpOverlay({ onClose, onSignUpSuccess, onGoToSignIn }
         </button>
 
         {/* Content by state */}
-        {view === "form" && (
-          <FormState
-            onSubmit={handleSubmit}
+        {view === "step1" && (
+          <StepOneState
+            onNext={handleStepOne}
             onClose={onClose}
+          />
+        )}
+        {view === "step2" && (
+          <StepTwoState
+            onSubmit={handleSubmit}
+            onBack={() => setView("step1")}
             loading={loading}
           />
         )}

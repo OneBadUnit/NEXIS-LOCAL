@@ -17,6 +17,8 @@ import {
   removeProjectUsage,
 } from "../api/api.jsx";
 import { getTierConfig } from "../lib/tiers";
+import ViewPlansOverlay from "../components/ViewPlansOverlay";
+import UpgradeOverlay from "../components/UpgradeOverlay";
 
 
 // ------------------------------------------------------------
@@ -74,11 +76,15 @@ const NexusDashboard = ({ user, profile }) => {
 
   // Usage / tier state
   const [usage, setUsage] = useState(null);
+  const [showViewPlans, setShowViewPlans] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Tier resolved from Supabase profile — source of truth for display and limits.
   // Falls back to "free" if profile is missing or tier is unrecognized.
   const profileTier = profile?.tier || "free";
   const tierConfig = getTierConfig(profileTier);
+  const bonusActions = profile?.bonus_actions || 0;
+  const monthlyActionAllowance = tierConfig.monthly_actions + bonusActions;
   console.log("[Tier] profile tier:", profileTier, "| config:", tierConfig);
 
   const refreshUsage = useCallback(async () => {
@@ -261,7 +267,36 @@ const NexusDashboard = ({ user, profile }) => {
 
         {/* TOP RIGHT — ACCOUNT STATUS */}
         <div className="panel">
-          <h3>ACCOUNT STATUS</h3>
+          {/* Header row: title + View Plans link */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginBottom: 18,
+              paddingBottom: 12,
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <h3 style={{ margin: 0, padding: 0, border: "none" }}>ACCOUNT STATUS</h3>
+            <button
+              onClick={() => setShowViewPlans(true)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: "0.75rem",
+                color: "rgba(255,255,255,0.35)",
+                transition: "color 0.15s",
+                whiteSpace: "nowrap",
+                marginTop: 2,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#7dd3fc")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            >
+              View Plans →
+            </button>
+          </div>
+
           {/* Plan label and limits come from frontend tier config (profile.tier).
               Counters come from backend (usage.current.*). */}
           <p className="subtle" style={{ marginBottom: 6 }}>
@@ -305,13 +340,42 @@ const NexusDashboard = ({ user, profile }) => {
                 <UsageLine
                   label="Actions Used"
                   used={usage.current.actions_this_month}
-                  limit={tierConfig.monthly_actions}
+                  limit={monthlyActionAllowance}
                 />
+                {bonusActions > 0 && (
+                  <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#4ade80" }}>
+                    Bonus Actions: +{bonusActions}
+                  </p>
+                )}
               </div>
             </>
           ) : (
             <p className="subtle" style={{ fontSize: "0.85rem" }}>Loading usage…</p>
           )}
+
+          {/* Upgrade link — separated at bottom */}
+          <div
+            style={{
+              marginTop: 20,
+              paddingTop: 14,
+              borderTop: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <button
+              onClick={() => setShowUpgrade(true)}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                color: "rgba(255,255,255,0.35)",
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#7dd3fc")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+            >
+              Upgrade Plan →
+            </button>
+          </div>
         </div>
 
         {/* BOTTOM LEFT — NEWS */}
@@ -369,6 +433,17 @@ const NexusDashboard = ({ user, profile }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {showViewPlans && (
+        <ViewPlansOverlay
+          onClose={() => setShowViewPlans(false)}
+          currentTier={profileTier}
+        />
+      )}
+
+      {showUpgrade && (
+        <UpgradeOverlay onClose={() => setShowUpgrade(false)} />
       )}
 
       {/* DELETE CONFIRMATION MODAL */}
