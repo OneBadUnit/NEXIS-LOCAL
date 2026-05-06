@@ -113,67 +113,7 @@ export default function HelpOverlay({ onClose }) {
         </Step>
       </div>
 
-      {/* LOCAL MODEL SETUP */}
-      <div className="panel">
-        <SectionTitle>Local Model Setup</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          Use a model running on your own computer. Local AI processing happens entirely on your own machine.
-        </p>
-
-        <Step number="1" title="Install Ollama">
-          <p style={{ marginTop: 0 }}>
-            Download and install Ollama from{" "}
-            <a
-              href="https://ollama.com/download"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: "var(--arc-accent)" }}
-            >
-              ollama.com/download
-            </a>
-            . Once installed, Ollama runs in the background automatically.
-          </p>
-        </Step>
-
-        <Step number="2" title="Open Command Prompt">
-          <p style={{ marginTop: 0 }}>
-            On Windows, press <strong>Win + R</strong>, type <code>cmd</code>, and press Enter.
-            On macOS or Linux, open Terminal.
-          </p>
-        </Step>
-
-        <Step number="3" title="Download and Run a Model">
-          <p style={{ marginTop: 0 }}>In the command prompt, run:</p>
-          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
-          <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
-        </Step>
-
-        <Step number="4" title="Confirm Installed Models">
-          <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
-          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
-        </Step>
-
-        <Step number="5" title="Return to NEXIS and Detect Models">
-          <p style={{ marginTop: 0 }}>
-            Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
-            NEXIS will find models running on your computer.
-          </p>
-        </Step>
-
-        <Step number="6" title="Select Your Model">
-          <p style={{ marginTop: 0, marginBottom: 0 }}>
-            Once models are detected, select the one you want to use from the dropdown.
-            NEXIS will use that model for all package creation and refine operations.
-          </p>
-        </Step>
-
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "16px 0 0" }}>
-          NEXIS can also connect to your local Ollama from the hosted site. Your browser communicates
-          with Ollama directly — no data leaves your computer. Browser security may require you to
-          allow the NEXIS domain in Ollama first. See the fix instructions below if Detect Models fails.
-        </p>
-      </div>
-
+      
       {/* IF DETECT MODELS FAILS */}
       <div className="panel">
         <SectionTitle>If Detect Models Fails</SectionTitle>
