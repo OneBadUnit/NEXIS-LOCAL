@@ -294,7 +294,9 @@ export default function ModelConfig({ config, onConfigChange }) {
     // Enrich with vendor/backend info from the system GPU endpoint
     let backendInfo = null;
     try {
-      const gpuRes = await fetch("http://127.0.0.1:8000/api/system/gpu");
+      const API_BASE =
+        process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+      const gpuRes = await fetch(`${API_BASE}/api/system/gpu`);
       if (gpuRes.ok) {
         const gpuData = await gpuRes.json();
         backendInfo = gpuData.detail || null;

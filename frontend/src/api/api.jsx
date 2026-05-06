@@ -7,8 +7,11 @@
 
 // ------------------------------------------------------------
 // Base URL
+// Falls back to localhost for local development.
+// Set REACT_APP_API_BASE_URL in .env for hosted deployments.
 // ------------------------------------------------------------
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
 
 
 // ------------------------------------------------------------
