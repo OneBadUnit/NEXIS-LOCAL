@@ -113,23 +113,148 @@ export default function HelpOverlay({ onClose }) {
         </Step>
       </div>
 
-      {/* MODEL SETUP */}
+      {/* LOCAL MODEL SETUP */}
       <div className="panel">
-        <SectionTitle>Model Setup</SectionTitle>
+        <SectionTitle>Local Model Setup</SectionTitle>
         <p style={{ marginTop: 0 }}>
-          NEXIS requires a configured model before packages can be created.
+          Use a model running on your own computer. Local AI processing happens entirely on your own machine.
         </p>
-        <p style={{ fontWeight: 600, marginBottom: 4 }}>Local Model:</p>
-        <p style={{ marginTop: 0, marginBottom: 16 }}>
-          Use a model running on your own computer.
+
+        <Step number="1" title="Install Ollama">
+          <p style={{ marginTop: 0 }}>
+            Download and install Ollama from{" "}
+            <a
+              href="https://ollama.com/download"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "var(--arc-accent)" }}
+            >
+              ollama.com/download
+            </a>
+            . Once installed, Ollama runs in the background automatically.
+          </p>
+        </Step>
+
+        <Step number="2" title="Open Command Prompt">
+          <p style={{ marginTop: 0 }}>
+            On Windows, press <strong>Win + R</strong>, type <code>cmd</code>, and press Enter.
+            On macOS or Linux, open Terminal.
+          </p>
+        </Step>
+
+        <Step number="3" title="Download and Run a Model">
+          <p style={{ marginTop: 0 }}>In the command prompt, run:</p>
+          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+          <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
+        </Step>
+
+        <Step number="4" title="Confirm Installed Models">
+          <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
+          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
+        </Step>
+
+        <Step number="5" title="Return to NEXIS and Detect Models">
+          <p style={{ marginTop: 0 }}>
+            Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
+            NEXIS will find models running on your computer.
+          </p>
+        </Step>
+
+        <Step number="6" title="Select Your Model">
+          <p style={{ marginTop: 0, marginBottom: 0 }}>
+            Once models are detected, select the one you want to use from the dropdown.
+            NEXIS will use that model for all package creation and refine operations.
+          </p>
+        </Step>
+
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "16px 0 0" }}>
+          NEXIS can also connect to your local Ollama from the hosted site. Your browser communicates
+          with Ollama directly — no data leaves your computer. Browser security may require you to
+          allow the NEXIS domain in Ollama first. See the fix instructions below if Detect Models fails.
         </p>
-        <p style={{ fontWeight: 600, marginBottom: 4 }}>Provider Key:</p>
-        <p style={{ marginTop: 0, marginBottom: 16 }}>
-          Use your own provider account and key.
+      </div>
+
+      {/* IF DETECT MODELS FAILS */}
+      <div className="panel">
+        <SectionTitle>If Detect Models Fails</SectionTitle>
+        <p style={{ marginTop: 0 }}>Try these steps in order:</p>
+
+        <Step number="1" title="Restart Ollama">
+          <p style={{ marginTop: 0 }}>
+            Fully close Ollama — on Windows, right-click the Ollama icon in the system tray and choose Quit.
+            Then reopen Ollama.
+          </p>
+        </Step>
+
+        <Step number="2" title="Restart Your Browser">
+          <p style={{ marginTop: 0 }}>
+            Close all browser windows completely, then reopen NEXIS and try Detect Models again.
+          </p>
+        </Step>
+
+        <Step number="3" title="Verify Ollama Is Running">
+          <p style={{ marginTop: 0 }}>Open a new browser tab and visit:</p>
+          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>http://localhost:11434/api/tags</pre>
+          <p style={{ margin: 0 }}>
+            If you see a list of models, Ollama is running. If you see an error, Ollama is not
+            running — start it and try again.
+          </p>
+        </Step>
+
+        <Step number="4" title="Allow NEXIS in Ollama Origins (Hosted Site)">
+          <p style={{ marginTop: 0 }}>
+            If you are using NEXIS from the hosted site and Ollama is still not responding,
+            your browser is blocking the connection. Ollama only accepts requests from specific
+            origins by default.
+          </p>
+          <p>Run this command in Command Prompt:</p>
+          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{`setx OLLAMA_ORIGINS "https://nexis-psi.vercel.app,http://localhost:3000,http://127.0.0.1:3000"`}</pre>
+          <p>Then:</p>
+          <ol style={{ margin: 0, paddingLeft: 20, lineHeight: "2" }}>
+            <li>Fully close Ollama (system tray &#8594; Quit)</li>
+            <li>Restart Ollama</li>
+            <li>Return to NEXIS and click Detect Models</li>
+          </ol>
+        </Step>
+      </div>
+
+      {/* WINDOWS FIX SCRIPT */}
+      <div className="panel">
+        <SectionTitle>Windows Quick Fix Script</SectionTitle>
+        <p style={{ marginTop: 0 }}>
+          Copy the script below into a file named <code>fix-ollama.bat</code> and run it as Administrator.
+          It configures Ollama for NEXIS and stops any running Ollama processes so you can restart cleanly.
+        </p>
+        <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px", whiteSpace: "pre" }}>{`@echo off
+echo Configuring Ollama for NEXIS...
+
+setx OLLAMA_ORIGINS "https://nexis-psi.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
+
+echo.
+echo Stopping Ollama...
+taskkill /F /IM "ollama app.exe" 2>nul
+taskkill /F /IM ollama.exe 2>nul
+taskkill /F /IM ollama_llama_server.exe 2>nul
+
+echo.
+echo Done.
+echo Restart Ollama, then return to NEXIS and click Detect Models.
+pause`}</pre>
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "12px 0 0" }}>
+          After running the script, restart Ollama manually, then click Detect Models in NEXIS.
+        </p>
+      </div>
+
+      {/* PROVIDER / API KEYS */}
+      <div className="panel">
+        <SectionTitle>Provider API Keys</SectionTitle>
+        <p style={{ marginTop: 0 }}>
+          You can also use your own provider account (such as OpenAI or Anthropic) instead of a local model.
+          Enter your API key in <strong>Settings &#8594; Model</strong>.
         </p>
         <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: 0 }}>
           NEXIS does not automatically call a hosted model unless you configure one.
-          Whoever owns the model or provider account is responsible for any usage costs.
+          Whoever owns the provider account is responsible for any usage costs.
         </p>
       </div>
 
