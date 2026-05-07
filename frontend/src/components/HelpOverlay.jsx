@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ARC-NEXUS - HELP OVERLAY
 // File: src/components/HelpOverlay.jsx
 // Version: 002 (navigation outline + Local AI Setup section)
