@@ -1,113 +1,309 @@
-# NEXIS  
-Multimodal Ingestion Engine • Vision + Audio • Document Intelligence
+# NEXIS
 
-NEXIS is a modular, GPU‑aware ingestion and analysis system designed to process images, documents, audio, and video through a unified pipeline. It includes a FastAPI backend, a React frontend, and a clean architecture for multimodal AI workflows.
+Local-First AI Workspace • Document Intelligence • Creator & Understanding Packages
 
-This repository contains the source‑only version of NEXIS — no binaries, no heavy model files, and no external dependencies checked into Git.
+NEXIS is a modular, local-AI-first workspace designed to collect, understand, transform, and refine information through a unified pipeline. It combines a FastAPI backend, a React frontend, local AI integration through the NEXIS Companion, and structured package workflows built for real-world creator and analysis tasks.
 
----
+NEXIS is designed around one core idea:
 
-## 🚀 Features
+> Your AI should work for you — locally when possible, privately when desired, and without forcing users into complex technical workflows.
 
-### Multimodal Ingestion
-• Images (vision models, OCR, scene analysis)  
-• Audio (transcription, metadata extraction)  
-• Video (frame sampling, OCR, metadata)  
-• Documents (PDF, DOCX, TXT, URLs)
-
-### GPU‑Optimized Vision Pipeline
-• Designed for local GPU inference (RTX‑class cards)  
-• Supports quantized multimodal models  
-• Modular adapters for swapping model backends
-
-### Frontend UI
-• React‑based “Assimilation” interface  
-• Clean transcript‑style output panel  
-• No thumbnails, no clutter — intentional UX
-
-### Backend Architecture
-• FastAPI application  
-• Modular ingestion utilities (audio, video, OCR, PDF, DOCX, URLs, vision)  
-• Clear separation of routes, services, schemas, and models
+This repository contains the source-only version of NEXIS — no model weights, binaries, caches, or external AI models are stored in Git.
 
 ---
 
-## 📁 Repository Structure
+# 🚀 Features
 
-NEXIS/  
-├── backend/        ← FastAPI backend, ingestion utilities, vision pipeline  
-├── frontend/       ← React frontend (Assimilation UI)  
-└── .gitignore      ← Ignore rules (no binaries, models, caches, or large artifacts)
+## Local-First AI Architecture
 
----
-
-## 🛠️ Requirements
-
-### Backend
-• Python 3.11+  
-• FastAPI  
-• Uvicorn  
-• PyTorch (with CUDA for GPU vision models)  
-• OCR stack (EasyOCR / Tesseract installed locally, not in repo)
-
-### Frontend
-• Node.js 18+  
-• npm or yarn
+• Designed primarily for local AI usage through Ollama
+• NEXIS Companion bridges the frontend to local AI safely
+• No browser-to-raw-Ollama communication
+• Provider/API mode supported as a secondary option
+• Structured local model management and diagnostics
 
 ---
 
-## ⚙️ Setup
+## Collect → Understand → Create Workflow
 
-### Backend
+### Collect
+
+Ingest and organize information from:
+
+• Documents (PDF, DOCX, TXT)
+• URLs and web content
+• Images and OCR
+• Notes and raw text
+• Audio/video pipelines (in development)
+
+---
+
+### Understand Packages
+
+Structured analysis packages that transform raw information into organized outputs:
+
+• Summaries
+• Timelines
+• Key Points
+• Outlines
+• Source-aware document processing
+• Multi-document workflows with preserved source boundaries
+
+---
+
+### Creator Packages
+
+Transform source material into creator-ready outputs:
+
+• Hook Scripts
+• Dialogue Scripts
+• Title Suggestions
+• Keywords
+• Engaging rewrites
+• Structured creator workflows
+
+---
+
+### Refinement Layer
+
+Refine generated outputs without regenerating entire projects:
+
+Examples:
+• Professional tone cleanup
+• Shortening/expanding
+• Educational tone
+• Creator-style optimization
+• SEO-focused rewrites
+• Future preset-based refinement workflows
+
+---
+
+# 🧠 Local AI Integration
+
+NEXIS currently supports:
+
+• Windows via NEXIS Companion
+• Linux / WSL2 via nexis-bridge-linux
+
+The local bridge system provides:
+
+• Safe local AI communication
+• Ollama detection and startup
+• Model detection
+• Diagnostics and troubleshooting
+• Local endpoint abstraction
+• Future-friendly companion architecture
+
+---
+
+# 🧩 Frontend UI
+
+## React-Based Workspace
+
+• Project-oriented workflow
+• Clean focused UI
+• Overlay-driven design system
+• Package-based processing flows
+• Integrated diagnostics/help system
+• Local AI status monitoring
+
+---
+
+## Tested Models Overlay
+
+NEXIS includes guided recommendations for tested local AI models, helping users choose models appropriate for:
+
+• Structured extraction
+• Summaries
+• Creator workflows
+• Lower-end systems
+• General-purpose generation
+
+---
+
+# ⚙️ Backend Architecture
+
+## FastAPI Backend
+
+Modular architecture with separation between:
+
+• Routes
+• Services
+• AI integration
+• Schemas
+• Storage
+• Ingestion pipelines
+• Package processing
+
+---
+
+## Companion Architecture
+
+Local AI communication is intentionally separated from the hosted backend.
+
+This allows:
+
+• Local privacy
+• Reduced hosted AI costs
+• Better GPU utilization
+• Offline/local workflows
+• Cleaner browser security handling
+
+---
+
+# 📁 Repository Structure
+
+```text
+NEXIS/
+├── backend/        ← FastAPI backend and package processing
+├── bridge/         ← NEXIS Companion / local AI bridge
+├── frontend/       ← React frontend workspace
+├── docs/           ← Documentation and references
+└── .gitignore      ← Ignore rules for binaries/models/caches
+```
+
+---
+
+# 🛠️ Requirements
+
+## Backend
+
+• Python 3.11+
+• FastAPI
+• Uvicorn
+• Ollama (for local AI workflows)
+
+---
+
+## Frontend
+
+• Node.js 18+
+• npm
+
+---
+
+## Local AI (Recommended)
+
+• Ollama
+• qwen2.5:7b recommended for structured workflows
+• llama3.1:8b supported for conversational/creative workflows
+
+---
+
+# ⚙️ Setup
+
+## Backend
+
 Run the API:
 
-    cd backend
-    pip install -r requirements.txt
-    uvicorn app.main:app --reload
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
 Default API URL:
 
-    http://localhost:8000
+```text
+http://localhost:8000
+```
 
-### Frontend
+---
+
+## Frontend
+
 Run the UI:
 
-    cd frontend
-    npm install
-    npm run dev
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 Default UI URL:
 
-    http://localhost:5173
+```text
+http://localhost:3000
+```
 
 ---
 
-## 🧩 Vision Model Integration
+## NEXIS Companion (Windows)
 
-NEXIS supports local GPU‑hosted multimodal models, such as quantized LLaVA‑style models.  
-Model weights are not included in this repository and must be downloaded/configured locally.
+Build the companion:
+
+```bash
+cd bridge
+build.bat
+```
+
+Result:
+
+```text
+dist/windows/NEXIS Companion.exe
+```
+
+Run by double-clicking the executable.
 
 ---
 
-## 🧱 Design Principles
+## Linux / WSL2 Bridge
 
-• Modular — each ingestion path is isolated and replaceable  
-• GPU‑aware — optimized for RTX‑class cards  
-• Clean UI — focused, minimal, task‑oriented  
-• Source‑only Git — no binaries, no large artifacts, no model weights  
-• Reproducible — clone → install → run
+Build:
+
+```bash
+cd bridge
+bash build.sh
+```
+
+Run:
+
+```bash
+./dist/linux/nexis-bridge-linux
+```
 
 ---
 
-## 📝 License
+# 🧱 Design Principles
 
-This repository is private and unlicensed.  
+• Local-first AI workflows
+• Beginner-friendly UX
+• Modular architecture
+• Structured AI packages
+• Source-aware document handling
+• Minimal technical friction
+• Clean, focused UI
+• Reproducible setup
+• No model weights stored in Git
+
+---
+
+# 🔒 Privacy Philosophy
+
+NEXIS is designed to minimize unnecessary data exposure.
+
+Local AI workflows are prioritized whenever possible.
+
+Diagnostic reporting is user-controlled and designed to avoid collecting personal content or unrelated user information.
+
+---
+
+# 📝 License
+
+This repository is private and currently unlicensed.
 All rights reserved unless a license is added.
 
 ---
 
-## 📌 Status
+# 📌 Status
 
-ARC‑NEXUS is under active development.  
-This repository represents the clean, source‑only baseline for ongoing work.
-Thanks!
+NEXIS is under active development.
+
+Current major focus areas:
+
+• Local AI reliability
+• Package workflows
+• Creator/refinement systems
+• Source-aware document intelligence
+• Companion stability
+• User-friendly onboarding
