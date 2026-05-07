@@ -11,20 +11,20 @@
 // machine and manages Ollama on their behalf.
 //
 // Error codes from the companion:
-//   COMPANION_NOT_RUNNING â€” companion process not found
-//   OLLAMA_NOT_INSTALLED  â€” ollama binary not found
-//   OLLAMA_NOT_RUNNING    â€” ollama installed but not started
-//   NO_MODELS             â€” ollama running but no models
-//   MODEL_NOT_AVAILABLE   â€” requested model not in Ollama
-//   GENERATION_FAILED     â€” LLM call errored or returned empty
+//   COMPANION_NOT_RUNNING  companion process not found
+//   OLLAMA_NOT_INSTALLED   ollama binary not found
+//   OLLAMA_NOT_RUNNING     ollama installed but not started
+//   NO_MODELS              ollama running but no models
+//   MODEL_NOT_AVAILABLE    requested model not in Ollama
+//   GENERATION_FAILED      LLM call errored or returned empty
 // ============================================================
 
-// â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Constants ??????????????????????????????????????????????????????????????
 
 export const BRIDGE_DEFAULT_URL = "http://localhost:8765";
 export const RECOMMENDED_MODEL  = "llama3.1:8b";
 
-// Release asset URLs — update the tag here for each new release.
+// Release asset URLs ? update the tag here for each new release.
 // Supported platforms: Windows and Linux (including WSL2).
 export const COMPANION_DOWNLOAD_URLS = {
   windows: "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/NEXIS.Companion.exe",
@@ -32,9 +32,9 @@ export const COMPANION_DOWNLOAD_URLS = {
 };
 
 // Returns { url, label, platform, supported } for the current user's OS.
-// Windows  → NEXIS Companion.exe
-// Linux    → nexis-bridge-linux
-// Other    → unsupported (no download URL)
+// Windows  ? NEXIS Companion.exe
+// Linux    ? nexis-bridge-linux
+// Other    ? unsupported (no download URL)
 export function getCompanionDownload() {
   const ua = (navigator.userAgent || "").toLowerCase();
   if (ua.includes("win")) {
@@ -50,7 +50,7 @@ const DETECT_TIMEOUT_MS  = 6000;
 const GENERATE_TIMEOUT_MS = 180_000;
 const START_TIMEOUT_MS   = 25_000; // ollama start can take ~20s
 
-// â”€â”€ Legacy endpoint migration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Legacy endpoint migration ???????????????????????????????????????????????
 
 const RAW_OLLAMA_PATTERNS = [
   "http://localhost:11434",
@@ -80,7 +80,7 @@ export function getModelConfigWithMigration() {
   }
 }
 
-// â”€â”€ Low-level fetch helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Low-level fetch helpers ?????????????????????????????????????????????????
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = DETECT_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -92,7 +92,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DETECT_TIMEOUT_MS
   }
 }
 
-// Safe JSON POST â€” never throws. Returns { data } or { error, code }.
+// Safe JSON POST  never throws. Returns { data } or { error, code }.
 async function postJSON(url, body, timeoutMs = DETECT_TIMEOUT_MS) {
   try {
     const res = await fetchWithTimeout(
@@ -120,7 +120,7 @@ function _networkErrorCode(err) {
   return "UNKNOWN";
 }
 
-// â”€â”€ Core health / diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Core health / diagnostics ???????????????????????????????????????????????
 
 /**
  * Full system state snapshot from the companion.
@@ -139,7 +139,7 @@ export async function getDiagnostics(bridgeUrl = BRIDGE_DEFAULT_URL) {
 }
 
 /**
- * Lightweight health check â€” returns { reachable, ollamaReachable, version }.
+ * Lightweight health check  returns { reachable, ollamaReachable, version }.
  * Never throws.
  */
 export async function checkBridge(bridgeUrl = BRIDGE_DEFAULT_URL) {
@@ -160,7 +160,7 @@ export async function checkBridge(bridgeUrl = BRIDGE_DEFAULT_URL) {
   }
 }
 
-// â”€â”€ Ollama management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Ollama management ???????????????????????????????????????????????????????
 
 /**
  * Ask the companion to find the Ollama installation path.
@@ -210,7 +210,7 @@ export async function restartOllama(bridgeUrl = BRIDGE_DEFAULT_URL) {
   };
 }
 
-// â”€â”€ Model management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Model management ????????????????????????????????????????????????????????
 
 /**
  * Fetch the list of available models.
@@ -301,7 +301,7 @@ export function subscribePullProgress(jobId, bridgeUrl = BRIDGE_DEFAULT_URL, onP
               ev.total > 0 ? Math.round((ev.completed / ev.total) * 100) : null;
             onProgress({ status: ev.status, completed: ev.completed, total: ev.total, percent });
           } catch {
-            /* malformed line â€” skip */
+            /* malformed line  skip */
           }
         }
       }
@@ -316,7 +316,7 @@ export function subscribePullProgress(jobId, bridgeUrl = BRIDGE_DEFAULT_URL, onP
   return () => controller.abort();
 }
 
-// â”€â”€ Generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Generation ??????????????????????????????????????????????????????????????
 
 /**
  * Send a generation request through the companion to Ollama.
@@ -349,7 +349,7 @@ export async function generateViaBridge(prompt, model, bridgeUrl = BRIDGE_DEFAUL
   }
 }
 
-// â”€â”€ System info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? System info ?????????????????????????????????????????????????????????????
 
 /**
  * Fetch basic system info (CPU, GPU, platform) from the companion.
@@ -366,11 +366,11 @@ export async function getBridgeSystem(bridgeUrl = BRIDGE_DEFAULT_URL) {
   }
 }
 
-// â”€â”€ Last-resort terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Last-resort terminal ????????????????????????????????????????????????????
 
 /**
  * Ask the companion to open the OS default terminal window.
- * LAST RESORT â€” only call from the Advanced > Troubleshooting section.
+ * LAST RESORT  only call from the Advanced > Troubleshooting section.
  * Returns { opened, shell } or { error, code }. Never throws.
  */
 export async function openTerminal(bridgeUrl = BRIDGE_DEFAULT_URL) {
@@ -380,7 +380,7 @@ export async function openTerminal(bridgeUrl = BRIDGE_DEFAULT_URL) {
   return { opened: !!data.opened, shell: data.shell || "" };
 }
 
-// â”€â”€ Error classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ?? Error classification ????????????????????????????????????????????????????
 
 /**
  * Map a raw Error or bridge error-code into a user-facing plain-English message.

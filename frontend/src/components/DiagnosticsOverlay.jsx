@@ -27,7 +27,7 @@ import {
 // Increment when the NEXIS app version changes.
 const NEXIS_APP_VERSION = "1.0.0";
 
-// ── Helpers ─────────────────────────────────────────────────
+// ?? Helpers ?????????????????????????????????????????????????
 
 function modeLabel(cfg) {
   if (!cfg?.type) return "Not configured";
@@ -39,8 +39,8 @@ function modeLabel(cfg) {
 }
 
 async function buildReport(advanced) {
-  // ── 1. Fetch companion diagnostics ──────────────────────
-  // getDiagnostics never throws — returns null when companion unreachable.
+  // ?? 1. Fetch companion diagnostics ??????????????????????
+  // getDiagnostics never throws ? returns null when companion unreachable.
   const modelConfig = getModelConfigWithMigration();
   const bridgeUrl = (modelConfig?.endpoint || BRIDGE_DEFAULT_URL).replace(/\/$/, "");
 
@@ -50,12 +50,12 @@ async function buildReport(advanced) {
     diag = await getDiagnostics(bridgeUrl);
     companionReachable = diag !== null;
   } catch {
-    // Defensive — getDiagnostics should never throw, but guard anyway.
+    // Defensive ? getDiagnostics should never throw, but guard anyway.
     companionReachable = false;
     diag = null;
   }
 
-  // ── 2. Browser-sourced system info (no sensitive data) ──
+  // ?? 2. Browser-sourced system info (no sensitive data) ??
   // navigator.deviceMemory: available in Chrome, not in Firefox/Safari.
   const ramValue =
     typeof navigator.deviceMemory !== "undefined"
@@ -68,8 +68,8 @@ async function buildReport(advanced) {
       ? String(navigator.hardwareConcurrency)
       : "Unknown");
 
-  // ── 3. Assemble report lines ────────────────────────────
-  const sep = "─".repeat(52);
+  // ?? 3. Assemble report lines ????????????????????????????
+  const sep = "?".repeat(52);
   const timestamp = new Date().toISOString();
 
   const pad = (label) => label.padEnd(24, " ");
@@ -79,18 +79,18 @@ async function buildReport(advanced) {
     `Generated : ${timestamp}`,
     sep,
     "",
-    "▸ NEXIS",
+    "? NEXIS",
     `  ${pad("App Version")} ${NEXIS_APP_VERSION}`,
     `  ${pad("AI Mode")} ${modeLabel(modelConfig)}`,
     `  ${pad("Selected Model")} ${modelConfig?.model || "None"}`,
     "",
-    "▸ NEXIS COMPANION",
+    "? NEXIS COMPANION",
     `  ${pad("Status")} ${companionReachable ? "Connected" : "Not reachable"}`,
     `  ${pad("Version")} ${
-      diag?.bridge_version || (companionReachable ? "Unknown" : "—")
+      diag?.bridge_version || (companionReachable ? "Unknown" : "?")
     }`,
     "",
-    "▸ SYSTEM",
+    "? SYSTEM",
     `  ${pad("Platform")} ${diag?.platform || navigator.platform || "Unknown"}`,
     `  ${pad("CPU Cores")} ${cpuCores}`,
     `  ${pad("GPU (NVIDIA)")} ${
@@ -100,12 +100,12 @@ async function buildReport(advanced) {
     }`,
     `  ${pad("RAM")} ${ramValue}`,
     "",
-    "▸ OLLAMA",
+    "? OLLAMA",
   ];
 
   if (!companionReachable) {
     lines.push(
-      `  ${pad("Status")} Unknown — Companion not reachable`,
+      `  ${pad("Status")} Unknown ? Companion not reachable`,
       `  ${pad("Note")} Start the NEXIS Companion to get full Ollama diagnostics.`
     );
   } else {
@@ -116,7 +116,7 @@ async function buildReport(advanced) {
       `  ${pad("Running")} ${diag.ollama_running ? "Yes" : "No"}`,
       `  ${pad("Version")} ${
         diag.ollama_version
-          || (diag.ollama_installed ? "Installed (version unknown)" : "—")
+          || (diag.ollama_installed ? "Installed (version unknown)" : "?")
       }`,
       `  ${pad("Installed Models")} ${modelList}`
     );
@@ -129,21 +129,21 @@ async function buildReport(advanced) {
 
   lines.push(
     "",
-    "▸ CONNECTION STATUS",
+    "? CONNECTION STATUS",
     `  ${pad("Companion Reachable")} ${companionReachable ? "Yes" : "No"}`,
     `  ${pad("Local AI Ready")} ${
       localReady ? "Yes" : (companionReachable ? "No" : "Unknown")
     }`,
     "",
-    "▸ SESSION DATA",
+    "? SESSION DATA",
     `  ${pad("Recent Error Codes")} None recorded in this session`,
     `  ${pad("Response Timing")} Not tracked in this session`
   );
 
-  // ── 4. Optional advanced fields (user-selected only) ────
+  // ?? 4. Optional advanced fields (user-selected only) ????
   const hasAdvanced = Object.values(advanced).some(Boolean);
   if (hasAdvanced) {
-    lines.push("", sep, "▸ ADVANCED DIAGNOSTICS (user-selected fields)", "");
+    lines.push("", sep, "? ADVANCED DIAGNOSTICS (user-selected fields)", "");
 
     if (advanced.ollamaPath) {
       lines.push(
@@ -160,14 +160,14 @@ async function buildReport(advanced) {
       lines.push(`  ${pad("Companion Endpoint")} ${ep}`);
     }
     if (advanced.hostname) {
-      // Browser cannot expose device hostname — report app origin instead.
+      // Browser cannot expose device hostname ? report app origin instead.
       lines.push(
         `  ${pad("App Origin")} ${window.location.origin}`,
         `  ${pad("Note")} Device hostname is not accessible from the browser.`
       );
     }
     if (advanced.envDetails) {
-      // Sanitized browser environment — no cookies, no storage dump.
+      // Sanitized browser environment ? no cookies, no storage dump.
       // Browser user-agent and screen resolution omitted (not needed for troubleshooting).
       lines.push(
         `  ${pad("Language")} ${navigator.language}`
@@ -191,7 +191,7 @@ async function buildReport(advanced) {
   return lines.join("\n");
 }
 
-// ── Sub-components ───────────────────────────────────────────
+// ?? Sub-components ???????????????????????????????????????????
 
 function SectionLabel({ children, color = "rgba(255,255,255,0.4)" }) {
   return (
@@ -222,7 +222,7 @@ const btnBase = {
   transition: "all 0.15s ease",
 };
 
-// ── Main component ───────────────────────────────────────────
+// ?? Main component ???????????????????????????????????????????
 
 export default function DiagnosticsOverlay({ onClose }) {
   const [acknowledged, setAcknowledged] = useState(false);
@@ -254,7 +254,7 @@ export default function DiagnosticsOverlay({ onClose }) {
       setReport(`Error generating report:\n${err.message}`);
     }
     setGenerating(false);
-    // Reset acknowledgement — user must re-check to generate again.
+    // Reset acknowledgement ? user must re-check to generate again.
     setAcknowledged(false);
   };
 
@@ -265,7 +265,7 @@ export default function DiagnosticsOverlay({ onClose }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Clipboard API unavailable — selection fallback not needed;
+      // Clipboard API unavailable ? selection fallback not needed;
       // textarea is readOnly and the user can select manually.
     }
   };
@@ -280,7 +280,7 @@ export default function DiagnosticsOverlay({ onClose }) {
   return (
     <PageOverlay title="Diagnostics" onClose={onClose}>
 
-      {/* ── Intro ─────────────────────────────────────────── */}
+      {/* ?? Intro ??????????????????????????????????????????? */}
       <div className="panel">
         <p style={{ margin: "0 0 6px", fontSize: "0.92rem", fontWeight: 600 }}>
           Local AI diagnostic report
@@ -288,11 +288,11 @@ export default function DiagnosticsOverlay({ onClose }) {
         <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.52)", lineHeight: 1.6 }}>
           NEXIS can generate a diagnostic report to help troubleshoot NEXIS Companion
           or Ollama issues. The report is shown to you before you copy it.
-          NEXIS will not upload it automatically — you decide whether to copy or share it.
+          NEXIS will not upload it automatically ? you decide whether to copy or share it.
         </p>
       </div>
 
-      {/* ── Will be included / Never included ─────────────── */}
+      {/* ?? Will be included / Never included ??????????????? */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, margin: "16px 0 0" }}>
 
         {/* WILL BE INCLUDED */}
@@ -342,7 +342,7 @@ export default function DiagnosticsOverlay({ onClose }) {
         </div>
       </div>
 
-      {/* ── Optional advanced diagnostics ─────────────────── */}
+      {/* ?? Optional advanced diagnostics ??????????????????? */}
       <div className="panel" style={{ marginTop: 16 }}>
         <SectionLabel>Optional advanced diagnostics</SectionLabel>
         <p style={{ margin: "0 0 14px", fontSize: "0.82rem", color: "rgba(255,255,255,0.38)", lineHeight: 1.5 }}>
@@ -381,7 +381,7 @@ export default function DiagnosticsOverlay({ onClose }) {
         </div>
       </div>
 
-      {/* ── Acknowledgement + generate button ─────────────── */}
+      {/* ?? Acknowledgement + generate button ??????????????? */}
       <div className="panel" style={{ marginTop: 16 }}>
         <label
           style={{
@@ -427,11 +427,11 @@ export default function DiagnosticsOverlay({ onClose }) {
             transition: "background 0.15s ease, color 0.15s ease",
           }}
         >
-          {generating ? "Generating…" : "Create Diagnostic Report"}
+          {generating ? "Generating?" : "Create Diagnostic Report"}
         </button>
       </div>
 
-      {/* ── Report output ─────────────────────────────────── */}
+      {/* ?? Report output ??????????????????????????????????? */}
       {report && (
         <div className="panel" style={{ marginTop: 16 }}>
 
@@ -450,7 +450,7 @@ export default function DiagnosticsOverlay({ onClose }) {
               fontWeight: 600,
               color: "rgba(255,255,255,0.55)",
             }}>
-              Diagnostic report — review before sharing
+              Diagnostic report ? review before sharing
             </p>
 
             <div style={{ display: "flex", gap: 8 }}>
@@ -465,7 +465,7 @@ export default function DiagnosticsOverlay({ onClose }) {
                   color: copied ? "var(--arc-accent)" : "rgba(255,255,255,0.7)",
                 }}
               >
-                {copied ? "Copied ✓" : "Copy Report"}
+                {copied ? "Copied ?" : "Copy Report"}
               </button>
               <button
                 onClick={handleClear}

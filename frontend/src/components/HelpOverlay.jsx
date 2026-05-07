@@ -14,7 +14,7 @@ import React, { useState, useEffect } from "react";
 import PageOverlay from "./PageOverlay";
 import { getCompanionDownload } from "../lib/bridge.js";
 
-// ── Navigation items ────────────────────────────────────────
+// ?? Navigation items ????????????????????????????????????????
 
 const NAV = [
   { id: "help-overview",        label: "Overview" },
@@ -30,7 +30,7 @@ const NAV = [
   { id: "help-about",           label: "About" },
 ];
 
-// ── Primitive components ────────────────────────────────────
+// ?? Primitive components ????????????????????????????????????
 
 function SectionAnchor({ id }) {
   return <div id={id} style={{ scrollMarginTop: 24 }} />;
@@ -96,7 +96,7 @@ function Collapsible({ label, children }) {
           boxSizing: "border-box",
         }}
       >
-        <span style={{ fontSize: "0.7rem" }}>{open ? "▾" : "▸"}</span>
+        <span style={{ fontSize: "0.7rem" }}>{open ? "?" : "?"}</span>
         {label}
       </button>
       {open && (
@@ -148,12 +148,12 @@ function TroubleBlock({ title, children }) {
   );
 }
 
-// ── Main component ──────────────────────────────────────────
+// ?? Main component ??????????????????????????????????????????
 
 export default function HelpOverlay({ onClose }) {
   const [activeSection, setActiveSection] = useState("help-overview");
 
-  // IntersectionObserver — highlight whichever section is topmost in viewport
+  // IntersectionObserver ? highlight whichever section is topmost in viewport
   useEffect(() => {
     const visible = new Set();
 
@@ -189,10 +189,10 @@ export default function HelpOverlay({ onClose }) {
   return (
     <PageOverlay title="Help &amp; Documentation" onClose={onClose} maxWidth={1040}>
 
-      {/* ── Two-column layout ── */}
+      {/* ?? Two-column layout ?? */}
       <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}>
 
-        {/* ── Left nav ── */}
+        {/* ?? Left nav ?? */}
         <nav style={{
           width: 168,
           flexShrink: 0,
@@ -237,10 +237,10 @@ export default function HelpOverlay({ onClose }) {
           })}
         </nav>
 
-        {/* ── Right content ── */}
+        {/* ?? Right content ?? */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
-          {/* ════ OVERVIEW ════ */}
+          {/* ???? OVERVIEW ???? */}
           <SectionAnchor id="help-overview" />
           <div className="panel">
             <SectionTitle>What NEXIS Does</SectionTitle>
@@ -249,11 +249,11 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0 }}>
               A project holds your collected sources, package outputs, and refined versions.
-              The workflow: collect sources → review → create a package → refine if needed.
+              The workflow: collect sources ? review ? create a package ? refine if needed.
             </p>
           </div>
 
-          {/* ════ COLLECT ════ */}
+          {/* ???? COLLECT ???? */}
           <SectionAnchor id="help-collect" />
           <div className="panel">
             <SectionTitle>Collect</SectionTitle>
@@ -264,7 +264,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
           </div>
 
-          {/* ════ REVIEW & SELECT ════ */}
+          {/* ???? REVIEW & SELECT ???? */}
           <SectionAnchor id="help-review" />
           <div className="panel">
             <SectionTitle>Review &amp; Select</SectionTitle>
@@ -275,7 +275,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
           </div>
 
-          {/* ════ CREATE PACKAGE ════ */}
+          {/* ???? CREATE PACKAGE ???? */}
           <SectionAnchor id="help-create" />
           <div className="panel">
             <SectionTitle>Create Package</SectionTitle>
@@ -302,17 +302,17 @@ export default function HelpOverlay({ onClose }) {
             </div>
           </div>
 
-          {/* ════ REFINE ════ */}
+          {/* ???? REFINE ???? */}
           <SectionAnchor id="help-refine" />
           <div className="panel">
             <SectionTitle>Refine</SectionTitle>
             <p style={{ marginTop: 0 }}>
               After creating a package, you can refine any output by providing an instruction.
-              The refined version is saved as a new output — the original is not replaced.
+              The refined version is saved as a new output ? the original is not replaced.
             </p>
           </div>
 
-          {/* ════ LOCAL AI SETUP ════ */}
+          {/* ???? LOCAL AI SETUP ???? */}
           <SectionAnchor id="help-local-ai" />
           <div className="panel">
             <SectionTitle>Local AI Setup</SectionTitle>
@@ -339,23 +339,23 @@ export default function HelpOverlay({ onClose }) {
                   <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem", color: "var(--arc-accent)" }}>NEXIS Local Companion</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                     A small program you download once. It runs quietly in the background and lets NEXIS
-                    communicate with your local AI. You only need to start it — NEXIS handles the rest.
+                    communicate with your local AI. You only need to start it ? NEXIS handles the rest.
                   </p>
                 </div>
                 <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Ollama</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                     A free, open-source program that runs AI models on your computer. NEXIS can open
-                    Ollama and download models for you automatically — no terminal needed.
+                    Ollama and download models for you automatically ? no terminal needed.
                   </p>
                 </div>
               </div>
 
               {/* Flow diagram */}
               <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {["NEXIS (browser)", "→", "NEXIS Companion", "→", "Ollama", "→", "AI Model"].map((item, i) => (
-                  item === "→" ? (
-                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>→</span>
+                {["NEXIS (browser)", "?", "NEXIS Companion", "?", "Ollama", "?", "AI Model"].map((item, i) => (
+                  item === "?" ? (
+                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>?</span>
                   ) : (
                     <span key={i} style={{
                       padding: "4px 12px",
@@ -372,7 +372,7 @@ export default function HelpOverlay({ onClose }) {
                 ))}
               </div>
               <p style={{ textAlign: "center", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", margin: "8px 0 0" }}>
-                You never need to understand the details — NEXIS manages this flow for you.
+                You never need to understand the details ? NEXIS manages this flow for you.
               </p>
             </div>
 
@@ -425,7 +425,7 @@ export default function HelpOverlay({ onClose }) {
                   Go to <strong>AI Model Settings</strong> in NEXIS. If Ollama is not installed,
                   NEXIS will show an "Install Ollama" button. If it is installed but not open,
                   NEXIS will offer to start it. If no model is downloaded, NEXIS will offer to
-                  download one. Follow the buttons — no terminal needed.
+                  download one. Follow the buttons ? no terminal needed.
                 </p>
               </Step>
             </div>
@@ -445,9 +445,9 @@ export default function HelpOverlay({ onClose }) {
               </div>
 
               <StateRow
-                state="Checking your local AI…"
+                state="Checking your local AI?"
                 meaning="NEXIS is detecting the Companion, Ollama, and available models."
-                action="Wait — this takes a few seconds."
+                action="Wait ? this takes a few seconds."
               />
               <StateRow
                 state="NEXIS Companion is not running."
@@ -457,30 +457,30 @@ export default function HelpOverlay({ onClose }) {
               <StateRow
                 state="Ollama is not installed."
                 meaning="The Ollama program needs to be downloaded and installed."
-                action='Click "Install Ollama" — NEXIS will open the download page.'
+                action='Click "Install Ollama" ? NEXIS will open the download page.'
               />
               <StateRow
                 state="Ollama is installed but not open."
                 meaning="Ollama is on your computer but not currently running."
-                action='Click "Start Ollama" — NEXIS will open it for you automatically.'
+                action='Click "Start Ollama" ? NEXIS will open it for you automatically.'
               />
               <StateRow
-                state="Ollama is starting…"
+                state="Ollama is starting?"
                 meaning="NEXIS opened Ollama and is waiting for it to be ready."
-                action="Wait — usually takes 5–20 seconds."
+                action="Wait ? usually takes 5?20 seconds."
               />
               <StateRow
                 state="Ollama appears to be stuck."
                 meaning="Ollama was started but did not become ready in time."
-                action='Click "Restart Ollama" — NEXIS will close and reopen it.'
+                action='Click "Restart Ollama" ? NEXIS will close and reopen it.'
               />
               <StateRow
                 state="No AI model found."
                 meaning="Ollama is running but no AI model has been downloaded yet."
-                action='Click "Download Recommended Model" — NEXIS handles the download.'
+                action='Click "Download Recommended Model" ? NEXIS handles the download.'
               />
               <StateRow
-                state="Downloading AI model… X%"
+                state="Downloading AI model? X%"
                 meaning="A model is being downloaded. This may take several minutes."
                 action="Wait for the download to finish. You can cancel if needed."
               />
@@ -522,14 +522,14 @@ export default function HelpOverlay({ onClose }) {
             {/* Collapsible: what cannot be automated */}
             <Collapsible label="Things NEXIS cannot do for you (one-time only)">
               <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "1.9", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)" }}>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> — requires an installer that needs system permission. NEXIS provides the download link.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> — you must run it once per session. After the first time, it is quick.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> — if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> ? requires an installer that needs system permission. NEXIS provides the download link.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> ? you must run it once per session. After the first time, it is quick.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> ? if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
               </ul>
             </Collapsible>
           </div>
 
-          {/* ════ PROVIDER MODE ════ */}
+          {/* ???? PROVIDER MODE ???? */}
           <SectionAnchor id="help-provider" />
           <div className="panel">
             <SectionTitle>Provider Mode</SectionTitle>
@@ -539,12 +539,12 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0, fontSize: "0.88rem", color: "rgba(255,255,255,0.55)" }}>
               Provider mode sends your text to the provider's cloud servers. The provider's
-              usage costs apply — NEXIS does not cover them. Local AI mode is recommended
+              usage costs apply ? NEXIS does not cover them. Local AI mode is recommended
               for privacy and offline use.
             </p>
           </div>
 
-          {/* ════ PROJECTS & LIMITS ════ */}
+          {/* ???? PROJECTS & LIMITS ???? */}
           <SectionAnchor id="help-limits" />
           <div className="panel">
             <SectionTitle>Projects &amp; Limits</SectionTitle>
@@ -558,7 +558,7 @@ export default function HelpOverlay({ onClose }) {
             <p style={{ marginBottom: 0 }}>Your account level may limit the number of active projects available.</p>
           </div>
 
-          {/* ════ TROUBLESHOOTING ════ */}
+          {/* ???? TROUBLESHOOTING ???? */}
           <SectionAnchor id="help-troubleshooting" />
           <div className="panel">
             <SectionTitle>Troubleshooting</SectionTitle>
@@ -585,7 +585,7 @@ export default function HelpOverlay({ onClose }) {
 
             <TroubleBlock title='3. "Ollama is installed but not open."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                Click <strong>Start Ollama</strong> — NEXIS will open it automatically.
+                Click <strong>Start Ollama</strong> ? NEXIS will open it automatically.
                 If it does not respond within 20 seconds, click <strong>Restart Ollama</strong>.
               </p>
             </TroubleBlock>
@@ -603,7 +603,7 @@ export default function HelpOverlay({ onClose }) {
             <TroubleBlock title='5. Download was interrupted or failed.'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 Click <strong>Try Again</strong>. Ollama resumes interrupted downloads where
-                they left off — it does not restart from zero.
+                they left off ? it does not restart from zero.
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                 If it keeps failing, make sure Ollama is still open and your internet is connected.
@@ -627,9 +627,9 @@ export default function HelpOverlay({ onClose }) {
                 <li>If Ollama shows as stuck, click <strong>Restart Ollama</strong>.</li>
                 <li>If the problem persists, restart your computer and try again.</li>
               </ol>
-              <Collapsible label="Advanced — manual commands (only if asked by support)">
+              <Collapsible label="Advanced ? manual commands (only if asked by support)">
                 <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)" }}>
-                  Open a terminal from AI Model Settings → Advanced → Troubleshooting, or
+                  Open a terminal from AI Model Settings ? Advanced ? Troubleshooting, or
                   open Command Prompt manually.
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
@@ -658,7 +658,7 @@ export default function HelpOverlay({ onClose }) {
             </div>
           </div>
 
-          {/* ════ FAQ ════ */}
+          {/* ???? FAQ ???? */}
           <SectionAnchor id="help-faq" />
           <div className="panel">
             <SectionTitle>Frequently Asked Questions</SectionTitle>
@@ -701,7 +701,7 @@ export default function HelpOverlay({ onClose }) {
             />
           </div>
 
-          {/* ════ ABOUT ════ */}
+          {/* ???? ABOUT ???? */}
           <SectionAnchor id="help-about" />
           <div className="panel">
             <SectionTitle>About NEXIS</SectionTitle>
