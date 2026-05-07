@@ -1,6 +1,6 @@
 # NEXIS
 
-Local-First AI Workspace • Document Intelligence • Creator & Understanding Packages
+Local-First AI Workspace • Document Intelligence • Creator & Summary Packages
 
 NEXIS is a modular, local-AI-first workspace designed to collect, understand, transform, and refine information through a unified pipeline. It combines a FastAPI backend, a React frontend, local AI integration through the NEXIS Companion, and structured package workflows built for real-world creator and analysis tasks.
 
@@ -38,7 +38,7 @@ Ingest and organize information from:
 
 ---
 
-### Understand Packages
+### Summary Packages
 
 Structured analysis packages that transform raw information into organized outputs:
 
