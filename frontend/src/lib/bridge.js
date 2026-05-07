@@ -24,6 +24,26 @@
 export const BRIDGE_DEFAULT_URL = "http://localhost:8765";
 export const RECOMMENDED_MODEL  = "llama3.1:8b";
 
+// Release asset URLs — update the tag here for each new release.
+export const COMPANION_DOWNLOAD_URLS = {
+  windows: "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/NEXIS.Companion.exe",
+  mac:     "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/nexis-bridge-mac",
+  linux:   "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/nexis-bridge-linux",
+};
+
+// Returns { url, label, platform } for the current user's OS.
+// Windows → "NEXIS Companion"  Mac/Linux → "NEXIS Bridge"
+export function getCompanionDownload() {
+  const ua = (navigator.userAgent || "").toLowerCase();
+  if (ua.includes("win")) {
+    return { url: COMPANION_DOWNLOAD_URLS.windows, label: "Download NEXIS Companion", platform: "Windows" };
+  }
+  if (ua.includes("macintosh") || ua.includes("darwin")) {
+    return { url: COMPANION_DOWNLOAD_URLS.mac, label: "Download NEXIS Bridge", platform: "macOS" };
+  }
+  return { url: COMPANION_DOWNLOAD_URLS.linux, label: "Download NEXIS Bridge", platform: "Linux" };
+}
+
 const DETECT_TIMEOUT_MS  = 6000;
 const GENERATE_TIMEOUT_MS = 180_000;
 const START_TIMEOUT_MS   = 25_000; // ollama start can take ~20s

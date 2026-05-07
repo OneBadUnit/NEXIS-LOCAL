@@ -12,6 +12,7 @@
 
 import React, { useState, useEffect } from "react";
 import PageOverlay from "./PageOverlay";
+import { getCompanionDownload } from "../lib/bridge.js";
 
 // ── Navigation items ────────────────────────────────────────
 
@@ -379,10 +380,34 @@ export default function HelpOverlay({ onClose }) {
             <div style={{ marginBottom: 24 }}>
               <SubTitle>First-time setup (two steps)</SubTitle>
               <Step number="1" title="Download and run the NEXIS Local Companion">
-                <p style={{ marginTop: 0, marginBottom: 6 }}>
-                  Download <strong>nexis-bridge.exe</strong> (Windows) or <strong>nexis-bridge</strong> (Mac/Linux)
-                  and double-click it. A small window will appear — keep it open while using NEXIS.
+                <p style={{ marginTop: 0, marginBottom: 10 }}>
+                  Download <strong>NEXIS Companion</strong> (Windows) or <strong>nexis-bridge</strong> (Mac/Linux)
+                  and double-click it. A small window will appear -- keep it open while using NEXIS.
                 </p>
+                {(() => { const dl = getCompanionDownload(); return (
+                  <div style={{ marginBottom: 10 }}>
+                    <a
+                      href={dl.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-block",
+                        padding: "5px 14px",
+                        background: "var(--arc-accent)",
+                        color: "#fff",
+                        borderRadius: 6,
+                        textDecoration: "none",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {dl.label}
+                    </a>
+                    <span style={{ marginLeft: 10, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
+                      Detected: {dl.platform}
+                    </span>
+                  </div>
+                ); })()}
                 <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                   You only need to do this once. After that, start it whenever you want to use local AI.
                 </p>

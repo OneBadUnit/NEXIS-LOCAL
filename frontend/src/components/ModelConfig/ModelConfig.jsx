@@ -38,6 +38,7 @@ import {
   openTerminal,
   BRIDGE_DEFAULT_URL,
   RECOMMENDED_MODEL,
+  getCompanionDownload,
   isLegacyOllamaEndpoint,
 } from "../../lib/bridge.js";
 
@@ -131,6 +132,8 @@ function SystemBadge({ diag }) {
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function ModelConfig({ config, onConfigChange }) {
+  const companionDl = getCompanionDownload();
+
   const [modalOpen, setModalOpen]   = useState(false);
   const [tab, setTab]               = useState("local");
 
@@ -460,19 +463,22 @@ export default function ModelConfig({ config, onConfigChange }) {
                     </p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
                       <a
-                        href="https://github.com/arc-nexus/nexis-companion/releases"
+                        href={companionDl.url}
                         target="_blank"
                         rel="noreferrer"
                         className="btn primary"
                         style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
                       >
-                        Download NEXIS Companion
+                        {companionDl.label}
                       </a>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
                         onClick={() => runDetection(localEndpoint, selectedModel)}>
                         Recheck
                       </button>
                     </div>
+                    <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
+                      Detected platform: {companionDl.platform}
+                    </p>
                   </div>
                 )}
 
