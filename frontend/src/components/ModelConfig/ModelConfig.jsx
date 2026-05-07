@@ -42,6 +42,137 @@ import {
   isLegacyOllamaEndpoint,
 } from "../../lib/bridge.js";
 
+// ── Tested models data ────────────────────────────────────────────────────
+
+const TESTED_MODELS = [
+  {
+    name: "qwen2.5:7b",
+    tag: "Recommended",
+    tagColor: "#38bdf8",
+    bestFor: ["Summaries", "Timelines", "Extraction", "Structured outputs"],
+    notes: [
+      "Performs well with NEXIS Summary Packages",
+      "Good at preserving structure and formatting",
+    ],
+    hardware: "Mid-range GPU recommended",
+  },
+  {
+    name: "llama3.1:8b",
+    tag: "Popular",
+    tagColor: "rgba(255,255,255,0.25)",
+    bestFor: ["Conversation", "Brainstorming", "Creative generation"],
+    notes: [
+      "Strong conversational model",
+      "May struggle with large mixed-document summarization",
+    ],
+    hardware: "Mid / high-range GPU recommended",
+  },
+  {
+    name: "phi-3-mini",
+    tag: "Low-end",
+    tagColor: "rgba(255,255,255,0.2)",
+    bestFor: ["Low-end systems", "CPU / light GPU usage"],
+    notes: [
+      "Faster but less detailed outputs",
+    ],
+    hardware: "Low-end GPU or CPU systems",
+  },
+];
+
+// ── Tested Models Overlay ───────────────────────────────────────────────────
+
+function TestedModelsOverlay({ onClose }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 10002,
+    }}>
+      <div className="panel" style={{
+        width: 520, margin: 0, maxHeight: "88vh",
+        overflowY: "auto", display: "flex", flexDirection: "column", gap: 0,
+      }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <h3 style={{ margin: 0 }}>Tested Models</h3>
+          <button className="btn" style={{ padding: "3px 10px" }} onClick={onClose}>&times;</button>
+        </div>
+
+        {/* Intro */}
+        <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.45)", margin: "0 0 20px", lineHeight: 1.6 }}>
+          NEXIS supports many local AI models. These are tested starting points.
+          Results may vary depending on your hardware, quantization, and context size.
+        </p>
+
+        {/* Model cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
+          {TESTED_MODELS.map((m) => (
+            <div key={m.name} style={{
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.03)",
+              padding: "14px 16px",
+            }}>
+              {/* Name + tag row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, fontSize: "0.95rem", fontFamily: "monospace" }}>{m.name}</span>
+                <span style={{
+                  fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.06em",
+                  textTransform: "uppercase", padding: "2px 7px", borderRadius: 4,
+                  background: "rgba(255,255,255,0.08)", color: m.tagColor,
+                  border: `1px solid ${m.tagColor}33`,
+                }}>{m.tag}</span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+                {/* Best for */}
+                <div>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Best for</div>
+                  <ul style={{ margin: 0, paddingLeft: 14, lineHeight: 1.8, fontSize: "0.83rem" }}>
+                    {m.bestFor.map((b) => <li key={b}>{b}</li>)}
+                  </ul>
+                </div>
+                {/* Notes */}
+                <div>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Notes</div>
+                  <ul style={{ margin: 0, paddingLeft: 14, lineHeight: 1.8, fontSize: "0.83rem" }}>
+                    {m.notes.map((n) => <li key={n}>{n}</li>)}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Hardware */}
+              <div style={{ marginTop: 10, fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
+                Hardware: {m.hardware}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Explore more */}
+        <div style={{
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          paddingTop: 16,
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Explore more models</div>
+          <a href="https://ollama.com/library" target="_blank" rel="noreferrer"
+            style={{ fontSize: "0.85rem", color: "var(--arc-accent)", textDecoration: "none" }}>
+            Ollama Model Library &rarr;
+          </a>
+          <a href="https://huggingface.co/models" target="_blank" rel="noreferrer"
+            style={{ fontSize: "0.85rem", color: "var(--arc-accent)", textDecoration: "none" }}>
+            Hugging Face Models &rarr;
+          </a>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ── Workspace status row (outside modal) ──────────────────────────────────
 
 function workspaceLabel(config, liveState) {
@@ -134,8 +265,9 @@ function SystemBadge({ diag }) {
 export default function ModelConfig({ config, onConfigChange }) {
   const companionDl = getCompanionDownload();
 
-  const [modalOpen, setModalOpen]   = useState(false);
-  const [tab, setTab]               = useState("local");
+  const [modalOpen, setModalOpen]           = useState(false);
+  const [testedModelsOpen, setTestedModelsOpen] = useState(false);
+  const [tab, setTab]                       = useState("local");
 
   // State machine
   const [uiState, setUiState]       = useState(null); // null = not yet checked this session
@@ -389,7 +521,7 @@ export default function ModelConfig({ config, onConfigChange }) {
   return (
     <>
       {/* ── Workspace status row ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>⬤</span>
         <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>
           {workspaceLabel(config, uiState)}
@@ -400,6 +532,13 @@ export default function ModelConfig({ config, onConfigChange }) {
           onClick={handleOpen}
         >
           {config ? "Edit Model" : "Configure Model"}
+        </button>
+        <button
+          className="btn"
+          style={{ padding: "3px 12px", fontSize: "0.8rem" }}
+          onClick={() => setTestedModelsOpen(true)}
+        >
+          Tested Models
         </button>
       </div>
 
@@ -838,6 +977,11 @@ export default function ModelConfig({ config, onConfigChange }) {
 
           </div>
         </div>
+      )}
+
+      {/* ── Tested Models overlay ── */}
+      {testedModelsOpen && (
+        <TestedModelsOverlay onClose={() => setTestedModelsOpen(false)} />
       )}
     </>
   );
