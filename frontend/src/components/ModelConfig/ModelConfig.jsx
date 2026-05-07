@@ -601,22 +601,28 @@ export default function ModelConfig({ config, onConfigChange }) {
                       Download and run it once, then come back here.
                     </p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-                      <a
-                        href={companionDl.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn primary"
-                        style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
-                      >
-                        {companionDl.label}
-                      </a>
+                      {companionDl.supported ? (
+                        <a
+                          href={companionDl.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn primary"
+                          style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
+                        >
+                          {companionDl.label}
+                        </a>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                          NEXIS Local Companion currently supports Windows and Linux/WSL2.
+                        </p>
+                      )}
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
                         onClick={() => runDetection(localEndpoint, selectedModel)}>
                         Recheck
                       </button>
                     </div>
                     <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-                      Detected platform: {companionDl.platform}
+                      {companionDl.supported ? `Detected platform: ${companionDl.platform}` : "Unsupported platform"}
                     </p>
                   </div>
                 )}

@@ -381,31 +381,39 @@ export default function HelpOverlay({ onClose }) {
               <SubTitle>First-time setup (two steps)</SubTitle>
               <Step number="1" title="Download and run the NEXIS Local Companion">
                 <p style={{ marginTop: 0, marginBottom: 10 }}>
-                  Download <strong>NEXIS Companion</strong> (Windows) or <strong>nexis-bridge</strong> (Mac/Linux)
+                  Download <strong>NEXIS Companion</strong> (Windows) or <strong>nexis-bridge-linux</strong> (Linux / WSL2)
                   and double-click it. A small window will appear -- keep it open while using NEXIS.
                 </p>
                 {(() => { const dl = getCompanionDownload(); return (
                   <div style={{ marginBottom: 10 }}>
-                    <a
-                      href={dl.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: "inline-block",
-                        padding: "5px 14px",
-                        background: "var(--arc-accent)",
-                        color: "#fff",
-                        borderRadius: 6,
-                        textDecoration: "none",
-                        fontSize: "0.82rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {dl.label}
-                    </a>
-                    <span style={{ marginLeft: 10, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
-                      Detected: {dl.platform}
-                    </span>
+                    {dl.supported ? (
+                      <>
+                        <a
+                          href={dl.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: "inline-block",
+                            padding: "5px 14px",
+                            background: "var(--arc-accent)",
+                            color: "#fff",
+                            borderRadius: 6,
+                            textDecoration: "none",
+                            fontSize: "0.82rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {dl.label}
+                        </a>
+                        <span style={{ marginLeft: 10, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
+                          Detected: {dl.platform}
+                        </span>
+                      </>
+                    ) : (
+                      <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                        NEXIS Local Companion currently supports Windows and Linux/WSL2.
+                      </p>
+                    )}
                   </div>
                 ); })()}
                 <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
@@ -560,8 +568,8 @@ export default function HelpOverlay({ onClose }) {
 
             <TroubleBlock title='1. "NEXIS Companion is not running."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                Start the NEXIS Local Companion by double-clicking <strong>nexis-bridge.exe</strong>
-                (Windows) or <strong>./nexis-bridge</strong> (Mac/Linux).
+                Start the NEXIS Local Companion by double-clicking <strong>NEXIS Companion.exe</strong>
+                (Windows) or running <strong>./nexis-bridge-linux</strong> (Linux / WSL2).
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                 Keep the window open while you use NEXIS. You can minimise it.
