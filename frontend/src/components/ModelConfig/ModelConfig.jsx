@@ -1,34 +1,34 @@
 // ============================================================
 // ARC-NEXUS - MODEL CONFIG
 // File: src/components/ModelConfig/ModelConfig.jsx
-// Version: 003 (user-first state machine — NEXIS Local Companion)
+// Version: 004 (appliance-style: Companion Ã¢â€ â€™ Tested Models Ã¢â€ â€™ Edit Model)
 //
 // Design principles:
+//   - MODEL section answers "Is my Local AI system ready?" at a glance
+//   - NEXIS Companion is the primary control (Running / Start / Configure)
+//   - Tested Models is second
+//   - Edit Model (full AI settings modal) is last
 //   - Normal users never see "localhost", "port", or terminal commands
-//   - Every problem state has a plain-language label and a next-step button
-//   - Terminal access is buried under Advanced > Troubleshooting only
-//   - Local AI is the primary/default path; provider mode is secondary
-//   - The companion handles Ollama start, restart, and model downloads
+//   - Terminal access buried under Advanced > Troubleshooting only
 //
-// UI states (uiState):
-//   COMPANION_NOT_RUNNING — companion exe not found at bridge URL
-//   CHECKING              — currently running detection
-//   OLLAMA_NOT_INSTALLED  — companion found but Ollama not on machine
-//   OLLAMA_NOT_RUNNING    — Ollama installed but not started
-//   OLLAMA_STARTING       — companion is starting Ollama (polling)
-//   OLLAMA_HUNG           — start was attempted, timed out
-//   NO_MODELS             — Ollama confirmed running, models list empty
-//   PULLING_MODEL         — async model download in progress
-//   PULL_FAILED           — model download failed
-//   MODEL_READY           — connected, model selected, ready to save
-//   CHECK_FAILED_TEMP     — had a saved config but temporary check failed
+// Companion status states (companionStatus):
+//   "checking"   Ã¢â‚¬â€ currently pinging the bridge
+//   "running"    Ã¢â‚¬â€ bridge reachable (green)
+//   "start"      Ã¢â‚¬â€ saved exe path exists but bridge not reachable (yellow)
+//   "configure"  Ã¢â‚¬â€ no saved exe path and bridge not reachable (red)
+//
+// AI uiState (inside Edit Model modal):
+//   COMPANION_NOT_RUNNING, CHECKING, OLLAMA_NOT_INSTALLED,
+//   OLLAMA_NOT_RUNNING, OLLAMA_STARTING, OLLAMA_HUNG,
+//   NO_MODELS, PULLING_MODEL, PULL_FAILED, MODEL_READY,
+//   CHECK_FAILED_TEMP
 //
 // Props:
-//   config         — saved model config object or null
-//   onConfigChange — called with new config or null on save/clear
+//   config         Ã¢â‚¬â€ saved model config object or null
+//   onConfigChange Ã¢â‚¬â€ called with new config or null on save/clear
 // ============================================================
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   getDiagnostics,
   startOllama,
@@ -42,7 +42,20 @@ import {
   isLegacyOllamaEndpoint,
 } from "../../lib/bridge.js";
 
-// ── Tested models data ────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ localStorage key for saved companion exe path Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const COMPANION_PATH_KEY = "nexis_companion_path";
+
+function getSavedCompanionPath() {
+  try { return localStorage.getItem(COMPANION_PATH_KEY) || ""; } catch { return ""; }
+}
+function saveCompanionPath(path) {
+  try { localStorage.setItem(COMPANION_PATH_KEY, path); } catch {}
+}
+function clearCompanionPath() {
+  try { localStorage.removeItem(COMPANION_PATH_KEY); } catch {}
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬ Tested models data Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 const TESTED_MODELS = [
   {
@@ -79,7 +92,34 @@ const TESTED_MODELS = [
   },
 ];
 
-// ── Tested Models Overlay ───────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Collapsible helper Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+
+function Collapsible({ label, children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginTop: 10, borderRadius: 6, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          all: "unset", display: "flex", alignItems: "center", gap: 8,
+          width: "100%", padding: "9px 14px", cursor: "pointer",
+          fontSize: "0.8rem", color: "rgba(255,255,255,0.35)",
+          background: "rgba(255,255,255,0.03)", userSelect: "none", boxSizing: "border-box",
+        }}
+      >
+        <span style={{ fontSize: "0.7rem" }}>{open ? "Ã¢â€“Â¾" : "Ã¢â€“Â¸"}</span>
+        {label}
+      </button>
+      {open && (
+        <div style={{ padding: "12px 16px", background: "rgba(0,0,0,0.18)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬ Tested Models Overlay Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function TestedModelsOverlay({ onClose }) {
   return (
@@ -93,29 +133,22 @@ function TestedModelsOverlay({ onClose }) {
         width: 520, margin: 0, maxHeight: "88vh",
         overflowY: "auto", display: "flex", flexDirection: "column", gap: 0,
       }}>
-
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <h3 style={{ margin: 0 }}>Tested Models</h3>
           <button className="btn" style={{ padding: "3px 10px" }} onClick={onClose}>&times;</button>
         </div>
 
-        {/* Intro */}
         <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.45)", margin: "0 0 20px", lineHeight: 1.6 }}>
           NEXIS supports many local AI models. These are tested starting points.
           Results may vary depending on your hardware, quantization, and context size.
         </p>
 
-        {/* Model cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 24 }}>
           {TESTED_MODELS.map((m) => (
             <div key={m.name} style={{
-              borderRadius: 10,
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "rgba(255,255,255,0.03)",
-              padding: "14px 16px",
+              borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.03)", padding: "14px 16px",
             }}>
-              {/* Name + tag row */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                 <span style={{ fontWeight: 700, fontSize: "0.95rem", fontFamily: "monospace" }}>{m.name}</span>
                 <span style={{
@@ -125,16 +158,13 @@ function TestedModelsOverlay({ onClose }) {
                   border: `1px solid ${m.tagColor}33`,
                 }}>{m.tag}</span>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
-                {/* Best for */}
                 <div>
                   <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Best for</div>
                   <ul style={{ margin: 0, paddingLeft: 14, lineHeight: 1.8, fontSize: "0.83rem" }}>
                     {m.bestFor.map((b) => <li key={b}>{b}</li>)}
                   </ul>
                 </div>
-                {/* Notes */}
                 <div>
                   <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Notes</div>
                   <ul style={{ margin: 0, paddingLeft: 14, lineHeight: 1.8, fontSize: "0.83rem" }}>
@@ -142,8 +172,6 @@ function TestedModelsOverlay({ onClose }) {
                   </ul>
                 </div>
               </div>
-
-              {/* Hardware */}
               <div style={{ marginTop: 10, fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
                 Hardware: {m.hardware}
               </div>
@@ -151,12 +179,7 @@ function TestedModelsOverlay({ onClose }) {
           ))}
         </div>
 
-        {/* Explore more */}
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.08)",
-          paddingTop: 16,
-          display: "flex", flexDirection: "column", gap: 8,
-        }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Explore more models</div>
           <a href="https://ollama.com/library" target="_blank" rel="noreferrer"
             style={{ fontSize: "0.85rem", color: "var(--arc-accent)", textDecoration: "none" }}>
@@ -167,76 +190,300 @@ function TestedModelsOverlay({ onClose }) {
             Hugging Face Models &rarr;
           </a>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬ NEXIS Companion Overlay Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+
+function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, onRecheck }) {
+  const companionDl = getCompanionDownload();
+  const [pathInput, setPathInput]   = useState(savedPath || "");
+  const [pathSaved, setPathSaved]   = useState(false);
+
+  const handleSavePath = () => {
+    const trimmed = pathInput.trim();
+    if (!trimmed) return;
+    saveCompanionPath(trimmed);
+    setPathSaved(true);
+    onPathSaved(trimmed);
+    setTimeout(() => setPathSaved(false), 2000);
+  };
+
+  const handleClearPath = () => {
+    clearCompanionPath();
+    setPathInput("");
+    onPathSaved("");
+  };
+
+  const statusDot = companionStatus === "running"
+    ? "var(--arc-accent)"
+    : companionStatus === "start"
+      ? "#f59e0b"
+      : "rgba(239,68,68,0.7)";
+  const statusText = companionStatus === "running"
+    ? "Running"
+    : companionStatus === "start"
+      ? "Not running"
+      : "Not configured";
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 10002,
+    }}>
+      <div className="panel" style={{
+        width: 520, margin: 0, maxHeight: "92vh",
+        overflowY: "auto", display: "flex", flexDirection: "column", gap: 0,
+      }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <h3 style={{ margin: 0 }}>NEXIS Companion</h3>
+          <button className="btn" style={{ padding: "3px 10px" }} onClick={onClose}>&times;</button>
+        </div>
+
+        {/* Current status */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 20,
+          padding: "8px 12px", borderRadius: 8,
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+        }}>
+          <span style={{ fontSize: "0.72rem", color: statusDot }}>Ã¢Â¬Â¤</span>
+          <span style={{ fontSize: "0.82rem", fontWeight: 600, color: statusDot }}>{statusText}</span>
+          <button
+            className="btn"
+            style={{ padding: "2px 10px", fontSize: "0.75rem", marginLeft: "auto" }}
+            onClick={onRecheck}
+          >
+            Recheck
+          </button>
+        </div>
+
+        {/* What / Why */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 6px" }}>What is the NEXIS Companion?</p>
+          <p style={{ margin: "0 0 10px", fontSize: "0.83rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+            NEXIS Companion is a small program that runs on your computer and lets NEXIS
+            communicate with your local AI. Without it, NEXIS cannot use any local AI model.
+          </p>
+          <p style={{ margin: 0, fontSize: "0.83rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+            You download it once, keep it open while using NEXIS, and it works silently in
+            the background. No internet connection is needed once a model is downloaded.
+          </p>
+        </div>
+
+        {/* Recommended install location */}
+        <div style={{
+          marginBottom: 20, padding: "12px 14px", borderRadius: 8,
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
+        }}>
+          <p style={{ fontWeight: 700, fontSize: "0.82rem", margin: "0 0 4px" }}>Recommended save location</p>
+          <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+            Save the companion to a permanent location you can easily find:
+          </p>
+          <div style={{
+            margin: "8px 0 0", padding: "7px 12px", borderRadius: 6,
+            background: "rgba(0,0,0,0.3)", fontFamily: "monospace", fontSize: "0.82rem",
+            color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.08)",
+          }}>
+            Documents\NEXIS Companion\
+          </div>
+        </div>
+
+        {/* Download */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 8px" }}>Step 1 Ã¢â‚¬â€ Download</p>
+          {companionDl.supported ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <a
+                href={companionDl.url}
+                target="_blank"
+                rel="noreferrer"
+                className="btn primary"
+                style={{ textDecoration: "none", padding: "7px 16px", fontSize: "0.85rem" }}
+              >
+                {companionDl.label}
+              </a>
+              <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
+                {companionDl.platform}
+              </span>
+            </div>
+          ) : (
+            <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+              NEXIS Local Companion currently supports Windows and Linux/WSL2.
+            </p>
+          )}
+        </div>
+
+        {/* Set location */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 2 Ã¢â‚¬â€ Save the location</p>
+          <p style={{ margin: "0 0 10px", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+            After downloading, copy the full file path and paste it below. NEXIS uses this
+            to remind you where to find the companion when you need to start it.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              value={pathInput}
+              onChange={(e) => setPathInput(e.target.value)}
+              placeholder="e.g. C:\Users\You\Documents\NEXIS Companion\NEXIS Companion.exe"
+              style={{ flex: 1, minWidth: 200, fontSize: "0.82rem" }}
+            />
+            <button
+              className="btn primary"
+              style={{ padding: "6px 14px", fontSize: "0.82rem", flexShrink: 0 }}
+              onClick={handleSavePath}
+              disabled={!pathInput.trim()}
+            >
+              {pathSaved ? "Saved!" : "Save Location"}
+            </button>
+          </div>
+          {savedPath && (
+            <div style={{ marginTop: 8, display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <div style={{
+                flex: 1, padding: "6px 10px", borderRadius: 6,
+                background: "rgba(0,0,0,0.25)", fontFamily: "monospace", fontSize: "0.75rem",
+                color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.07)",
+                wordBreak: "break-all",
+              }}>
+                {savedPath}
+              </div>
+              <button
+                className="btn"
+                style={{ padding: "4px 10px", fontSize: "0.75rem", flexShrink: 0, color: "rgba(239,68,68,0.65)", borderColor: "rgba(239,68,68,0.3)" }}
+                onClick={handleClearPath}
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Step 3 Ã¢â‚¬â€ Start */}
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 3 Ã¢â‚¬â€ Start the Companion</p>
+          <p style={{ margin: "0 0 10px", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+            Navigate to the saved location and double-click the file to start it. A small window
+            will open Ã¢â‚¬â€ keep it open while using NEXIS. You can minimise it.
+          </p>
+          {savedPath && (
+            <div style={{
+              padding: "10px 14px", borderRadius: 8,
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+              fontSize: "0.82rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.5,
+            }}>
+              <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.75rem" }}>Your saved path:</span>
+              <br />
+              <span style={{ fontFamily: "monospace", wordBreak: "break-all" }}>{savedPath}</span>
+            </div>
+          )}
+          <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+            <button className="btn" style={{ padding: "6px 14px", fontSize: "0.82rem" }} onClick={onRecheck}>
+              After starting Ã¢â‚¬â€ click Recheck
+            </button>
+          </div>
+          <p style={{ margin: "6px 0 0", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", lineHeight: 1.5 }}>
+            Note: For security reasons, browsers cannot start programs on your computer directly.
+            You must start the companion manually. NEXIS will detect it automatically once running.
+          </p>
+        </div>
+
+        {/* Troubleshooting */}
+        <Collapsible label="Troubleshooting / Advanced">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div>
+              <p style={{ fontWeight: 600, fontSize: "0.82rem", margin: "0 0 4px" }}>Companion window opened but status shows not running</p>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                Wait a few seconds, then click Recheck. The companion may still be starting up.
+              </p>
+            </div>
+            <div>
+              <p style={{ fontWeight: 600, fontSize: "0.82rem", margin: "0 0 4px" }}>Companion closes immediately when opened</p>
+              <p style={{ margin: 0, fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                On Windows, right-click the file and choose "Run as administrator". If it still closes,
+                check that your antivirus is not blocking it.
+              </p>
+            </div>
+            <div>
+              <p style={{ fontWeight: 600, fontSize: "0.82rem", margin: "0 0 4px" }}>Default companion address</p>
+              <p style={{ margin: "0 0 4px", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)" }}>
+                The companion listens on:
+              </p>
+              <div style={{
+                padding: "6px 10px", borderRadius: 6,
+                background: "rgba(0,0,0,0.3)", fontFamily: "monospace", fontSize: "0.8rem",
+                color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)",
+              }}>
+                {BRIDGE_DEFAULT_URL}
+              </div>
+            </div>
+          </div>
+        </Collapsible>
 
       </div>
     </div>
   );
 }
 
-// ── Workspace status row (outside modal) ──────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Companion status pill Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-function workspaceLabel(config, liveState) {
-  if (!config) return "No model configured";
-  if (config.type === "provider") {
-    return `Provider configured (${config.providerName || "unknown"})`;
-  }
-  if (!config.model) return "No model selected";
-  switch (liveState) {
-    case "MODEL_READY": return `Local AI is ready — ${config.model}`;
-    case "CHECKING":    return "Checking your local AI…";
-    case "COMPANION_NOT_RUNNING": return "NEXIS Companion is not running";
-    case "OLLAMA_NOT_RUNNING":    return "Ollama is installed but not open";
-    case "OLLAMA_NOT_INSTALLED":  return "Ollama is not installed";
-    default:            return "Saved — not checked";
-  }
+function CompanionPill({ status, onClick }) {
+  const colors = {
+    running:   { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.35)", dot: "#22c55e",  text: "Running" },
+    start:     { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", dot: "#f59e0b", text: "Start" },
+    configure: { bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.35)",  dot: "rgba(239,68,68,0.8)", text: "Configure" },
+    checking:  { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", dot: "rgba(255,255,255,0.25)", text: "CheckingÃ¢â‚¬Â¦" },
+  };
+  const c = colors[status] || colors.checking;
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={status === "checking"}
+      style={{
+        all: "unset",
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "3px 10px", borderRadius: 20,
+        background: c.bg, border: `1px solid ${c.border}`,
+        cursor: status === "checking" ? "default" : "pointer",
+        fontSize: "0.78rem", fontWeight: 600,
+        color: c.dot,
+        transition: "opacity 0.15s",
+        userSelect: "none",
+      }}
+    >
+      <span style={{ fontSize: "0.6rem" }}>Ã¢Â¬Â¤</span>
+      {c.text}
+    </button>
+  );
 }
 
-function workspaceDot(config, liveState) {
-  if (!config) return "rgba(239,68,68,0.7)";
-  if (config.type === "provider") return "var(--arc-accent)";
-  switch (liveState) {
-    case "MODEL_READY": return "var(--arc-accent)";
-    case "CHECKING":    return "#f59e0b";
-    case "COMPANION_NOT_RUNNING":
-    case "OLLAMA_NOT_INSTALLED":
-    case "OLLAMA_HUNG":
-    case "PULL_FAILED": return "rgba(239,68,68,0.7)";
-    case "OLLAMA_NOT_RUNNING":
-    case "NO_MODELS":
-    case "PULLING_MODEL": return "#f59e0b";
-    default:            return "#f59e0b"; // amber = saved but unchecked
-  }
-}
-
-// ── Pull progress bar ─────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Pull progress bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function PullProgressBar({ percent, status }) {
   const pct = percent != null ? percent : null;
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{
-        height: 6,
-        borderRadius: 3,
-        background: "rgba(255,255,255,0.1)",
-        overflow: "hidden",
-      }}>
+      <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.1)", overflow: "hidden" }}>
         <div style={{
-          height: "100%",
-          borderRadius: 3,
-          background: "var(--arc-accent)",
+          height: "100%", borderRadius: 3, background: "var(--arc-accent)",
           width: pct != null ? `${pct}%` : "30%",
           transition: pct != null ? "width 0.4s ease" : "none",
           animation: pct == null ? "pulse 1.5s ease-in-out infinite" : "none",
         }} />
       </div>
       <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", margin: "5px 0 0" }}>
-        {pct != null ? `${pct}% — ${status || "downloading…"}` : (status || "Preparing download…")}
+        {pct != null ? `${pct}% \u2014 ${status || "downloading\u2026"}` : (status || "Preparing download\u2026")}
       </p>
     </div>
   );
 }
 
-// ── System badge ──────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ System badge Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function SystemBadge({ diag }) {
   if (!diag) return null;
@@ -244,57 +491,78 @@ function SystemBadge({ diag }) {
     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
       {diag.has_nvidia_gpu ? (
         <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: 0 }}>
-          NVIDIA GPU detected — AI will run fast.
+          NVIDIA GPU detected \u2014 AI will run fast.
         </p>
       ) : (
         <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: 0 }}>
-          No NVIDIA GPU — AI will run on CPU (slower but supported).
+          No NVIDIA GPU \u2014 AI will run on CPU (slower but supported).
         </p>
       )}
       {diag.cpu_count > 0 && (
         <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.35)", margin: 0 }}>
-          {diag.cpu_count} CPU threads · {diag.platform}
+          {diag.cpu_count} CPU threads &middot; {diag.platform}
         </p>
       )}
     </div>
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬ Main component Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 export default function ModelConfig({ config, onConfigChange }) {
   const companionDl = getCompanionDownload();
 
-  const [modalOpen, setModalOpen]           = useState(false);
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Companion status (workspace-level) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const [companionStatus, setCompanionStatus] = useState("checking"); // checking|running|start|configure
+  const [savedCompanionPath, setSavedCompanionPath] = useState(getSavedCompanionPath());
+  const [companionOverlayOpen, setCompanionOverlayOpen] = useState(false);
+
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Overlays Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const [modalOpen, setModalOpen]               = useState(false);
   const [testedModelsOpen, setTestedModelsOpen] = useState(false);
-  const [tab, setTab]                       = useState("local");
+  const [tab, setTab]                           = useState("local");
 
-  // State machine
-  const [uiState, setUiState]       = useState(null); // null = not yet checked this session
-  const [statusMsg, setStatusMsg]   = useState("");    // secondary explanation line
-
-  // Local AI data
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Edit Model state machine Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const [uiState, setUiState]       = useState(null);
+  const [statusMsg, setStatusMsg]   = useState("");
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel]     = useState("");
-  const [diagInfo, setDiagInfo]               = useState(null); // full /diagnostics snapshot
-
-  // Pull state
+  const [diagInfo, setDiagInfo]               = useState(null);
   const [pullPercent, setPullPercent]   = useState(null);
   const [pullStatus, setPullStatus]     = useState("");
   const [pullModel_, setPullModel_]     = useState(RECOMMENDED_MODEL);
   const cancelPullRef = useRef(null);
-
-  // Advanced / troubleshooting
   const [showAdvanced, setShowAdvanced]         = useState(false);
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
   const [localEndpoint, setLocalEndpoint]       = useState(BRIDGE_DEFAULT_URL);
   const [terminalOpening, setTerminalOpening]   = useState(false);
 
-  // Provider
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Provider Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   const [providerName, setProviderName] = useState("");
   const [providerKey, setProviderKey]   = useState("");
 
-  // ── Open modal ────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Companion status check Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const checkCompanionStatus = useCallback(async () => {
+    setCompanionStatus("checking");
+    const diag = await getDiagnostics(BRIDGE_DEFAULT_URL);
+    if (diag) {
+      setCompanionStatus("running");
+    } else {
+      const path = getSavedCompanionPath();
+      setCompanionStatus(path ? "start" : "configure");
+    }
+  }, []);
+
+  // Check on mount
+  useEffect(() => { checkCompanionStatus(); }, [checkCompanionStatus]);
+
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Companion pill click Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const handleCompanionPillClick = () => {
+    // All states open the companion overlay for full context
+    setCompanionOverlayOpen(true);
+  };
+
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Edit Model: open modal Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const handleOpen = async () => {
     if (config?.type === "provider") {
@@ -318,21 +586,18 @@ export default function ModelConfig({ config, onConfigChange }) {
     await runDetection(ep, config?.model || "");
   };
 
-  // ── Full detection flow ───────────────────────────────────────────────────
-  // Calls /diagnostics → derives uiState → sets available models.
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Full detection flow Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const runDetection = async (endpoint = localEndpoint, currentModel = selectedModel) => {
     const base = endpoint.replace(/\/$/, "");
     setUiState("CHECKING");
-    setStatusMsg("Checking your local AI…");
+    setStatusMsg("Checking your local AI\u2026");
     setAvailableModels([]);
     setDiagInfo(null);
 
     const diag = await getDiagnostics(base);
 
-    // Companion not running
     if (!diag) {
-      // If user had a previously saved + working config, show temp failure
       if (config?.type === "local" && config?.model) {
         setUiState("CHECK_FAILED_TEMP");
         setStatusMsg("Could not reach the NEXIS Companion right now.");
@@ -340,26 +605,27 @@ export default function ModelConfig({ config, onConfigChange }) {
         setUiState("COMPANION_NOT_RUNNING");
         setStatusMsg("Start the NEXIS Companion to use local AI.");
       }
+      // Also refresh companion pill status
+      checkCompanionStatus();
       return;
     }
 
     setDiagInfo(diag);
+    // Companion is reachable Ã¢â‚¬â€ update pill
+    setCompanionStatus("running");
 
-    // Ollama not installed
     if (!diag.ollama_installed) {
       setUiState("OLLAMA_NOT_INSTALLED");
       setStatusMsg("Ollama needs to be installed on your computer.");
       return;
     }
 
-    // Ollama not running
     if (!diag.ollama_running) {
       setUiState("OLLAMA_NOT_RUNNING");
       setStatusMsg("Ollama is installed but not open. NEXIS can open it for you.");
       return;
     }
 
-    // Ollama running — check models
     const models = Array.isArray(diag.models) ? diag.models : [];
     if (models.length === 0) {
       setUiState("NO_MODELS");
@@ -369,76 +635,54 @@ export default function ModelConfig({ config, onConfigChange }) {
     }
 
     setAvailableModels(models);
-
-    // Restore or pick model
     let chosen = currentModel;
-    if (chosen && !models.includes(chosen)) {
-      chosen = models[0];
-    }
+    if (chosen && !models.includes(chosen)) chosen = models[0];
     if (!chosen) chosen = models[0];
     setSelectedModel(chosen);
     setUiState("MODEL_READY");
     setStatusMsg("");
   };
 
-  // ── Action: Start Ollama ──────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Action handlers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   const handleStartOllama = async () => {
     setUiState("OLLAMA_STARTING");
-    setStatusMsg("Opening Ollama… this may take up to 20 seconds.");
-
+    setStatusMsg("Opening Ollama\u2026 this may take up to 20 seconds.");
     const result = await startOllama(localEndpoint);
-
     if (result.error || !result.ollamaNowRunning) {
       setUiState("OLLAMA_HUNG");
       setStatusMsg("Ollama did not start in time. Try restarting it.");
       return;
     }
-
-    // Re-run full detection now that Ollama is up
     await runDetection(localEndpoint, selectedModel);
   };
 
-  // ── Action: Restart Ollama ────────────────────────────────────────────────
-
   const handleRestartOllama = async () => {
     setUiState("OLLAMA_STARTING");
-    setStatusMsg("Restarting Ollama…");
-
+    setStatusMsg("Restarting Ollama\u2026");
     const result = await restartOllama(localEndpoint);
-
     if (result.error || !result.ollamaNowRunning) {
       setUiState("OLLAMA_HUNG");
       setStatusMsg("Restart did not complete. Try closing Ollama manually, then click Recheck.");
       return;
     }
-
     await runDetection(localEndpoint, selectedModel);
   };
-
-  // ── Action: Download recommended model ───────────────────────────────────
 
   const handleDownloadModel = async () => {
     setUiState("PULLING_MODEL");
     setPullPercent(null);
-    setPullStatus("Starting download…");
-
+    setPullStatus("Starting download\u2026");
     const model = pullModel_ || RECOMMENDED_MODEL;
     const result = await pullModel(model, localEndpoint);
-
     if (result.error || !result.started) {
       setUiState("PULL_FAILED");
       setStatusMsg(result.error || "Download could not start. Make sure Ollama is open.");
       return;
     }
-
     cancelPullRef.current = subscribePullProgress(
-      result.jobId,
-      localEndpoint,
-      ({ status, percent }) => {
-        setPullPercent(percent);
-        setPullStatus(status || "Downloading…");
-      },
+      result.jobId, localEndpoint,
+      ({ status, percent }) => { setPullPercent(percent); setPullStatus(status || "Downloading\u2026"); },
       async ({ success, error }) => {
         cancelPullRef.current = null;
         if (!success) {
@@ -446,49 +690,31 @@ export default function ModelConfig({ config, onConfigChange }) {
           setStatusMsg(error || "Download failed. Check that Ollama is open and try again.");
           return;
         }
-        // Re-run detection to pick up the new model
         await runDetection(localEndpoint, model);
       }
     );
   };
 
   const handleCancelPull = () => {
-    if (cancelPullRef.current) {
-      cancelPullRef.current();
-      cancelPullRef.current = null;
-    }
-    // Return to NO_MODELS — don't re-detect so we don't re-show "no models"
-    // if pull was partially complete. Let user recheck manually.
+    if (cancelPullRef.current) { cancelPullRef.current(); cancelPullRef.current = null; }
     setUiState("NO_MODELS");
     setStatusMsg("Download cancelled.");
   };
 
-  // Cleanup on unmount
-  useEffect(() => () => {
-    if (cancelPullRef.current) cancelPullRef.current();
-  }, []);
-
-  // ── Action: Open terminal (last resort) ───────────────────────────────────
+  useEffect(() => () => { if (cancelPullRef.current) cancelPullRef.current(); }, []);
 
   const handleOpenTerminal = async () => {
     if (!window.confirm(
       "This will open a Command Prompt window on your computer.\n\n" +
       "Only do this if you have been asked to by NEXIS support. Continue?"
     )) return;
-
     setTerminalOpening(true);
     await openTerminal(localEndpoint);
     setTerminalOpening(false);
   };
 
-  // ── Save / Clear ──────────────────────────────────────────────────────────
-
   const handleSaveLocal = () => {
-    const newConfig = {
-      type: "local",
-      endpoint: localEndpoint,
-      model: selectedModel,
-    };
+    const newConfig = { type: "local", endpoint: localEndpoint, model: selectedModel };
     localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
     setModalOpen(false);
@@ -496,11 +722,7 @@ export default function ModelConfig({ config, onConfigChange }) {
 
   const handleSaveProvider = () => {
     if (!providerName.trim() || !providerKey.trim()) return;
-    const newConfig = {
-      type: "provider",
-      providerName: providerName.trim(),
-      providerKey: providerKey.trim(),
-    };
+    const newConfig = { type: "provider", providerName: providerName.trim(), providerKey: providerKey.trim() };
     localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
     setModalOpen(false);
@@ -512,27 +734,36 @@ export default function ModelConfig({ config, onConfigChange }) {
     setModalOpen(false);
   };
 
-  // ── Derived helpers ───────────────────────────────────────────────────────
-
   const isBusy = uiState === "CHECKING" || uiState === "OLLAMA_STARTING" || uiState === "PULLING_MODEL";
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Derive model summary for workspace row Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  const modelSummary = (() => {
+    if (config?.type === "provider") return `Provider \u2014 ${config.providerName || "unknown"}`;
+    if (config?.type === "local" && config?.model) return config.model;
+    return null;
+  })();
+
+  // Ã¢â€â‚¬Ã¢â€â‚¬ Render Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
   return (
     <>
-      {/* ── Workspace status row ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>⬤</span>
-        <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>
-          {workspaceLabel(config, uiState)}
-        </span>
-        <button
-          className="btn"
-          style={{ padding: "3px 12px", fontSize: "0.8rem", marginLeft: 4 }}
-          onClick={handleOpen}
-        >
-          {config ? "Edit Model" : "Configure Model"}
-        </button>
+      {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+          WORKSPACE STATUS ROW
+          Priority: 1. NEXIS Companion  2. Tested Models  3. Edit Model
+          Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+
+        {/* 1 Ã¢â‚¬â€ NEXIS Companion */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
+            Companion
+          </span>
+          <CompanionPill status={companionStatus} onClick={handleCompanionPillClick} />
+        </div>
+
+        <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "0.9rem" }}>|</span>
+
+        {/* 2 Ã¢â‚¬â€ Tested Models */}
         <button
           className="btn"
           style={{ padding: "3px 12px", fontSize: "0.8rem" }}
@@ -540,9 +771,49 @@ export default function ModelConfig({ config, onConfigChange }) {
         >
           Tested Models
         </button>
+
+        {/* 3 Ã¢â‚¬â€ Edit Model (with optional model name) */}
+        <button
+          className="btn"
+          style={{ padding: "3px 12px", fontSize: "0.8rem" }}
+          onClick={handleOpen}
+        >
+          {config ? "Edit Model" : "Configure Model"}
+        </button>
+
+        {/* Model name summary (subtle, when configured) */}
+        {modelSummary && (
+          <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.28)", marginLeft: 2 }}>
+            {modelSummary}
+          </span>
+        )}
       </div>
 
-      {/* ── Config modal ── */}
+      {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+          NEXIS COMPANION OVERLAY
+          Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
+      {companionOverlayOpen && (
+        <CompanionOverlay
+          onClose={() => setCompanionOverlayOpen(false)}
+          companionStatus={companionStatus}
+          savedPath={savedCompanionPath}
+          onPathSaved={(path) => setSavedCompanionPath(path)}
+          onRecheck={async () => {
+            await checkCompanionStatus();
+          }}
+        />
+      )}
+
+      {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+          TESTED MODELS OVERLAY
+          Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
+      {testedModelsOpen && (
+        <TestedModelsOverlay onClose={() => setTestedModelsOpen(false)} />
+      )}
+
+      {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+          EDIT MODEL MODAL (AI Model Settings)
+          Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
       {modalOpen && (
         <div style={{
           position: "fixed", inset: 0,
@@ -552,7 +823,6 @@ export default function ModelConfig({ config, onConfigChange }) {
         }}>
           <div className="panel" style={{ width: 460, margin: 0, maxHeight: "90vh", overflowY: "auto" }}>
 
-            {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <h3 style={{ margin: 0 }}>AI Model Settings</h3>
               <button className="btn" style={{ padding: "3px 10px" }} onClick={() => setModalOpen(false)}>
@@ -560,7 +830,6 @@ export default function ModelConfig({ config, onConfigChange }) {
               </button>
             </div>
 
-            {/* Tabs */}
             <div className="row" style={{ marginBottom: 20 }}>
               <button className={`btn${tab === "local" ? " active" : ""}`} onClick={() => setTab("local")}>
                 Local AI
@@ -574,23 +843,19 @@ export default function ModelConfig({ config, onConfigChange }) {
               </button>
             </div>
 
-            {/* ══ LOCAL AI TAB ══ */}
+            {/* Ã¢â€¢ÂÃ¢â€¢Â LOCAL AI TAB Ã¢â€¢ÂÃ¢â€¢Â */}
             {tab === "local" && (
               <div>
 
-                {/* ── State: CHECKING ── */}
                 {uiState === "CHECKING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", margin: "0 0 6px" }}>
-                      Checking your local AI…
+                      Checking your local AI&hellip;
                     </p>
-                    <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>{statusMsg}</p>
                   </div>
                 )}
 
-                {/* ── State: COMPANION_NOT_RUNNING ── */}
                 {uiState === "COMPANION_NOT_RUNNING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -601,21 +866,13 @@ export default function ModelConfig({ config, onConfigChange }) {
                       Download and run it once, then come back here.
                     </p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-                      {companionDl.supported ? (
-                        <a
-                          href={companionDl.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn primary"
-                          style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
-                        >
-                          {companionDl.label}
-                        </a>
-                      ) : (
-                        <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                          NEXIS Local Companion currently supports Windows and Linux/WSL2.
-                        </p>
-                      )}
+                      <button
+                        className="btn primary"
+                        style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                        onClick={() => { setModalOpen(false); setCompanionOverlayOpen(true); }}
+                      >
+                        Open Companion Setup
+                      </button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
                         onClick={() => runDetection(localEndpoint, selectedModel)}>
                         Recheck
@@ -627,29 +884,21 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* ── State: CHECK_FAILED_TEMP ── */}
                 {uiState === "CHECK_FAILED_TEMP" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "#f59e0b", margin: "0 0 8px" }}>
                       Models could not be checked right now.
                     </p>
-                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>{statusMsg}</p>
                     <div className="row" style={{ gap: 8 }}>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={handleRestartOllama}>
-                        Restart Ollama
-                      </button>
+                        onClick={handleRestartOllama}>Restart Ollama</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: OLLAMA_NOT_INSTALLED ── */}
                 {uiState === "OLLAMA_NOT_INSTALLED" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -660,80 +909,56 @@ export default function ModelConfig({ config, onConfigChange }) {
                       Install it, then come back here.
                     </p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-                      <a
-                        href="https://ollama.com/download"
-                        target="_blank"
-                        rel="noreferrer"
+                      <a href="https://ollama.com/download" target="_blank" rel="noreferrer"
                         className="btn primary"
-                        style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
-                      >
+                        style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}>
                         Install Ollama
                       </a>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: OLLAMA_NOT_RUNNING ── */}
                 {uiState === "OLLAMA_NOT_RUNNING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
                       Ollama is installed but not open.
                     </p>
-                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>{statusMsg}</p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
                       <button className="btn primary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={handleStartOllama}>
-                        Start Ollama
-                      </button>
+                        onClick={handleStartOllama}>Start Ollama</button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: OLLAMA_STARTING ── */}
                 {uiState === "OLLAMA_STARTING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", margin: "0 0 6px" }}>
-                      Ollama is starting…
+                      Ollama is starting&hellip;
                     </p>
-                    <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>{statusMsg}</p>
                   </div>
                 )}
 
-                {/* ── State: OLLAMA_HUNG ── */}
                 {uiState === "OLLAMA_HUNG" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "#f59e0b", margin: "0 0 8px", fontWeight: 500 }}>
                       Ollama appears to be stuck.
                     </p>
-                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>{statusMsg}</p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
                       <button className="btn primary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={handleRestartOllama}>
-                        Restart Ollama
-                      </button>
+                        onClick={handleRestartOllama}>Restart Ollama</button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: NO_MODELS ── */}
                 {uiState === "NO_MODELS" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -743,66 +968,46 @@ export default function ModelConfig({ config, onConfigChange }) {
                       NEXIS will download the recommended model ({pullModel_}) automatically.
                     </p>
                     {statusMsg && (
-                      <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: "0 0 12px" }}>
-                        {statusMsg}
-                      </p>
+                      <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: "0 0 12px" }}>{statusMsg}</p>
                     )}
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
                       <button className="btn primary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={handleDownloadModel}>
-                        Download Recommended Model
-                      </button>
+                        onClick={handleDownloadModel}>Download Recommended Model</button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: PULLING_MODEL ── */}
                 {uiState === "PULLING_MODEL" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 4px", fontWeight: 500 }}>
-                      Downloading AI model…
+                      Downloading AI model&hellip;
                     </p>
                     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", margin: "0 0 8px" }}>
-                      {pullModel_} — this may take several minutes depending on your internet speed.
+                      {pullModel_} &mdash; this may take several minutes depending on your internet speed.
                     </p>
                     <PullProgressBar percent={pullPercent} status={pullStatus} />
-                    <button
-                      className="btn"
-                      style={{ marginTop: 14, padding: "5px 12px", fontSize: "0.82rem" }}
-                      onClick={handleCancelPull}
-                    >
-                      Cancel
-                    </button>
+                    <button className="btn" style={{ marginTop: 14, padding: "5px 12px", fontSize: "0.82rem" }}
+                      onClick={handleCancelPull}>Cancel</button>
                   </div>
                 )}
 
-                {/* ── State: PULL_FAILED ── */}
                 {uiState === "PULL_FAILED" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(239,68,68,0.9)", margin: "0 0 8px", fontWeight: 500 }}>
                       Download failed.
                     </p>
-                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>
-                      {statusMsg}
-                    </p>
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>{statusMsg}</p>
                     <div className="row" style={{ gap: 8 }}>
                       <button className="btn primary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={handleDownloadModel}>
-                        Try Again
-                      </button>
+                        onClick={handleDownloadModel}>Try Again</button>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}>
-                        Recheck
-                      </button>
+                        onClick={() => runDetection(localEndpoint, selectedModel)}>Recheck</button>
                     </div>
                   </div>
                 )}
 
-                {/* ── State: MODEL_READY ── */}
                 {uiState === "MODEL_READY" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "var(--arc-accent)", margin: "0 0 4px", fontWeight: 500 }}>
@@ -811,8 +1016,6 @@ export default function ModelConfig({ config, onConfigChange }) {
                     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "0 0 14px" }}>
                       {availableModels.length} model{availableModels.length !== 1 ? "s" : ""} available.
                     </p>
-
-                    {/* Model selection list */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
                       {availableModels.map((m) => (
                         <button
@@ -825,29 +1028,21 @@ export default function ModelConfig({ config, onConfigChange }) {
                         </button>
                       ))}
                     </div>
-
-                    {/* System info */}
                     <SystemBadge diag={diagInfo} />
-
-                    {/* Recheck / reconnect */}
-                    <button
-                      className="btn"
-                      style={{ marginTop: 14, padding: "5px 12px", fontSize: "0.82rem" }}
-                      onClick={() => runDetection(localEndpoint, selectedModel)}
-                      disabled={isBusy}
-                    >
+                    <button className="btn" style={{ marginTop: 14, padding: "5px 12px", fontSize: "0.82rem" }}
+                      onClick={() => runDetection(localEndpoint, selectedModel)} disabled={isBusy}>
                       Recheck
                     </button>
                   </div>
                 )}
 
-                {/* ── Advanced section ── */}
+                {/* Ã¢â€â‚¬Ã¢â€â‚¬ Advanced Ã¢â€â‚¬Ã¢â€â‚¬ */}
                 <div style={{ marginTop: 22, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 14 }}>
                   <button
                     style={{ all: "unset", cursor: "pointer", fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", textDecoration: "underline", textUnderlineOffset: 3 }}
                     onClick={() => setShowAdvanced((v) => !v)}
                   >
-                    {showAdvanced ? "▾ Hide Advanced" : "▸ Advanced"}
+                    {showAdvanced ? "\u25be Hide Advanced" : "\u25b8 Advanced"}
                   </button>
 
                   {showAdvanced && (
@@ -870,18 +1065,16 @@ export default function ModelConfig({ config, onConfigChange }) {
                         Default: {BRIDGE_DEFAULT_URL}. Change only if you run the companion on a custom port.
                       </p>
                       <button className="btn" style={{ padding: "4px 12px", fontSize: "0.8rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)}
-                        disabled={isBusy}>
+                        onClick={() => runDetection(localEndpoint, selectedModel)} disabled={isBusy}>
                         Recheck with this URL
                       </button>
 
-                      {/* Troubleshooting — deeper last-resort section */}
                       <div style={{ marginTop: 14 }}>
                         <button
                           style={{ all: "unset", cursor: "pointer", fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", textDecoration: "underline", textUnderlineOffset: 3 }}
                           onClick={() => setShowTroubleshooting((v) => !v)}
                         >
-                          {showTroubleshooting ? "▾ Hide Troubleshooting" : "▸ Troubleshooting"}
+                          {showTroubleshooting ? "\u25be Hide Troubleshooting" : "\u25b8 Troubleshooting"}
                         </button>
 
                         {showTroubleshooting && (
@@ -889,26 +1082,23 @@ export default function ModelConfig({ config, onConfigChange }) {
                             {diagInfo && (
                               <div style={{ marginBottom: 10 }}>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: "0 0 3px" }}>
-                                  Companion v{diagInfo.bridge_version || "—"} · {diagInfo.platform || "—"} · {diagInfo.cpu_count || 0} CPUs
+                                  Companion v{diagInfo.bridge_version || "\u2014"} &middot; {diagInfo.platform || "\u2014"} &middot; {diagInfo.cpu_count || 0} CPUs
                                 </p>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: "0 0 3px" }}>
                                   Ollama path: {diagInfo.ollama_path || "not found"}
                                 </p>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: 0 }}>
-                                  Model storage: {diagInfo.model_storage || "—"}
+                                  Model storage: {diagInfo.model_storage || "\u2014"}
                                 </p>
                               </div>
                             )}
                             <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.25)", margin: "0 0 8px" }}>
                               Open a terminal only if NEXIS support has asked you to.
                             </p>
-                            <button
-                              className="btn"
+                            <button className="btn"
                               style={{ padding: "4px 12px", fontSize: "0.78rem", color: "rgba(255,255,255,0.4)" }}
-                              onClick={handleOpenTerminal}
-                              disabled={terminalOpening}
-                            >
-                              {terminalOpening ? "Opening…" : "Open Command Prompt"}
+                              onClick={handleOpenTerminal} disabled={terminalOpening}>
+                              {terminalOpening ? "Opening\u2026" : "Open Command Prompt"}
                             </button>
                           </div>
                         )}
@@ -917,30 +1107,24 @@ export default function ModelConfig({ config, onConfigChange }) {
                   )}
                 </div>
 
-                {/* ── Save / Clear buttons ── */}
+                {/* Ã¢â€â‚¬Ã¢â€â‚¬ Save / Clear Ã¢â€â‚¬Ã¢â€â‚¬ */}
                 <div className="row" style={{ marginTop: 20, justifyContent: "flex-end" }}>
                   {config && (
-                    <button
-                      className="btn"
+                    <button className="btn"
                       style={{ color: "rgba(239,68,68,0.7)", borderColor: "rgba(239,68,68,0.4)" }}
-                      onClick={handleClear}
-                    >
+                      onClick={handleClear}>
                       Clear
                     </button>
                   )}
-                  <button
-                    className="btn primary"
-                    onClick={handleSaveLocal}
-                    disabled={!selectedModel || uiState !== "MODEL_READY"}
-                  >
+                  <button className="btn primary" onClick={handleSaveLocal}
+                    disabled={!selectedModel || uiState !== "MODEL_READY"}>
                     Save
                   </button>
                 </div>
-
               </div>
             )}
 
-            {/* ══ PROVIDER KEY TAB ══ */}
+            {/* Ã¢â€¢ÂÃ¢â€¢Â PROVIDER KEY TAB Ã¢â€¢ÂÃ¢â€¢Â */}
             {tab === "provider" && (
               <div>
                 <p className="subtle" style={{ fontSize: "0.82rem", marginBottom: 14 }}>
@@ -969,9 +1153,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   {config && (
                     <button className="btn"
                       style={{ color: "rgba(239,68,68,0.7)", borderColor: "rgba(239,68,68,0.4)" }}
-                      onClick={handleClear}>
-                      Clear
-                    </button>
+                      onClick={handleClear}>Clear</button>
                   )}
                   <button className="btn primary" onClick={handleSaveProvider}
                     disabled={!providerName.trim() || !providerKey.trim()}>
@@ -983,11 +1165,6 @@ export default function ModelConfig({ config, onConfigChange }) {
 
           </div>
         </div>
-      )}
-
-      {/* ── Tested Models overlay ── */}
-      {testedModelsOpen && (
-        <TestedModelsOverlay onClose={() => setTestedModelsOpen(false)} />
       )}
     </>
   );
