@@ -16,6 +16,7 @@ import TopBar from "./TopBar";
 
 import NexusDashboard from "../pages/NexusDashboard";
 import HelpOverlay from "../components/HelpOverlay";
+import DiagnosticsOverlay from "../components/DiagnosticsOverlay";
 import SignedOutScreen from "../components/SignedOutScreen";
 import PasswordRecoveryOverlay from "../components/PasswordRecoveryOverlay";
 import AccountOverlay from "../components/AccountOverlay";
@@ -207,6 +208,9 @@ export default function AppLayout() {
       {/* Overlays — rendered on top of everything */}
       {overlay === "help" && (
         <HelpOverlay onClose={() => setOverlay(null)} />
+      )}
+      {overlay === "diagnostics" && (
+        <DiagnosticsOverlay onClose={() => setOverlay(null)} />
       )}
       {showAccount && (
         <AccountOverlay

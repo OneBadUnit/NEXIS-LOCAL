@@ -17,13 +17,19 @@ export default function TopBar({ onHome, openOverlay, user, onOpenAccount, onSig
           right  — Auth buttons
       */}
       <div className="topbar-inner">
-        {/* LEFT — Help */}
+        {/* LEFT — Help + Diagnostics */}
         <div className="topbar-left">
           <button
             className="nav-item topnav-help"
             onClick={() => openOverlay("help")}
           >
             Help
+          </button>
+          <button
+            className="nav-item topnav-help"
+            onClick={() => openOverlay("diagnostics")}
+          >
+            Diagnostics
           </button>
         </div>
 

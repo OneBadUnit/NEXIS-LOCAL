@@ -1,6 +1,7 @@
 @echo off
 echo Building NEXIS Local Companion for Windows...
-go build -ldflags="-s -w" -o nexis-bridge.exe nexis_bridge.go
+if not exist go.mod go mod init nexis-bridge
+go build -ldflags="-s -w" -o nexis-bridge.exe .
 if %ERRORLEVEL% == 0 (
     echo.
     echo Build successful: nexis-bridge.exe

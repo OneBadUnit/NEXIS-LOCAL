@@ -10,7 +10,7 @@
 
 import React from "react";
 
-export default function PageOverlay({ title, onClose, children }) {
+export default function PageOverlay({ title, onClose, children, maxWidth = 760 }) {
   return (
     <div
       style={{
@@ -82,7 +82,7 @@ export default function PageOverlay({ title, onClose, children }) {
           padding: "36px 32px 64px",
         }}
       >
-        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+        <div style={{ maxWidth, margin: "0 auto" }}>
           {children}
         </div>
       </div>
