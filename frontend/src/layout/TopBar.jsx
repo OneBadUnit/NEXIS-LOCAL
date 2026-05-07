@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - TOP BAR
 // File: src/layout/TopBar.jsx
-// Version: 007 (Setup left, Help right, overlays)
+// Version: 008 (Help only — Setup merged into Help)
 // ============================================================
 
 import React, { useState } from "react";
@@ -28,20 +28,13 @@ export default function TopBar({ onHome, openOverlay, user, onOpenSignUp, onOpen
     <header className="topnav">
       {/*
         Three-zone layout:
-          left   — Setup button
+          left   — Help button
           center — Logo (flex-centered)
-          right  — Auth + Help button
+          right  — Auth buttons
       */}
       <div className="topbar-inner">
-        {/* LEFT — Setup */}
+        {/* LEFT — Help */}
         <div className="topbar-left">
-          <button
-            className="nav-item topnav-help"
-            onClick={() => openOverlay("setup")}
-          >
-            Setup
-          </button>
-
           <button
             className="nav-item topnav-help"
             onClick={() => openOverlay("help")}

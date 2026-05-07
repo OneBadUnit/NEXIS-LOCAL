@@ -10,7 +10,6 @@ import TopBar from "./TopBar";
 
 import NexusDashboard from "../pages/NexusDashboard";
 import HelpOverlay from "../components/HelpOverlay";
-import SetupOverlay from "../components/SetupOverlay";
 import SignUpOverlay from "../components/SignUpOverlay";
 import SignedOutScreen from "../components/SignedOutScreen";
 import PasswordRecoveryOverlay from "../components/PasswordRecoveryOverlay";
@@ -21,7 +20,7 @@ import { supabase } from "../lib/supabase";
 import "./layout.css";
 
 export default function AppLayout() {
-  // null | "help" | "setup"
+  // null | "help"
   const [overlay, setOverlay] = useState(null);
   const [showSignUp, setShowSignUp] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
@@ -211,9 +210,6 @@ export default function AppLayout() {
       {/* Overlays — rendered on top of everything */}
       {overlay === "help" && (
         <HelpOverlay onClose={() => setOverlay(null)} />
-      )}
-      {overlay === "setup" && (
-        <SetupOverlay onClose={() => setOverlay(null)} />
       )}
       {showSignUp && (
         <SignUpOverlay
