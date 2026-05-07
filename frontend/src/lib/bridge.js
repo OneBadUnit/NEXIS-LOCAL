@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // NEXIS - LOCAL COMPANION CLIENT
 // File: src/lib/bridge.js
 // Version: 002 (user-first: start/restart Ollama, pull models)

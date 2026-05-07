@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ARC-NEXUS - MODEL CONFIG
 // File: src/components/ModelConfig/ModelConfig.jsx
 // Version: 003 (user-first state machine â€” NEXIS Local Companion)
@@ -33,11 +33,9 @@ import {
   getDiagnostics,
   startOllama,
   restartOllama,
-  fetchBridgeModels,
   pullModel,
   subscribePullProgress,
   openTerminal,
-  getBridgeSystem,
   BRIDGE_DEFAULT_URL,
   RECOMMENDED_MODEL,
   isLegacyOllamaEndpoint,
@@ -144,7 +142,6 @@ export default function ModelConfig({ config, onConfigChange }) {
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel]     = useState("");
   const [diagInfo, setDiagInfo]               = useState(null); // full /diagnostics snapshot
-  const [ollamaInstalled, setOllamaInstalled] = useState(false);
 
   // Pull state
   const [pullPercent, setPullPercent]   = useState(null);
@@ -212,7 +209,6 @@ export default function ModelConfig({ config, onConfigChange }) {
     }
 
     setDiagInfo(diag);
-    setOllamaInstalled(!!diag.ollama_installed);
 
     // Ollama not installed
     if (!diag.ollama_installed) {
