@@ -19,7 +19,7 @@
 
 const _isLocalDev =
   window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
+  window.location.hostname === "https://nexis-l8oc.onrender.com";
 
 // Local dev fallback — only applies when running on localhost.
 // In production (Vercel) REACT_APP_API_BASE_URL must be set explicitly.
