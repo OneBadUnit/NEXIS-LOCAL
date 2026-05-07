@@ -113,7 +113,157 @@ export default function HelpOverlay({ onClose }) {
         </Step>
       </div>
 
-      
+      {/* LOCAL MODEL SETUP */}
+      <div className="panel">
+        <SectionTitle>Local Model Setup</SectionTitle>
+        <p style={{ marginTop: 0 }}>
+          Use a model running on your own computer. Local AI processing happens entirely on your own machine.
+        </p>
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "0 0 28px" }}>
+          NEXIS can connect to your local Ollama from the hosted site. Your browser communicates
+          with Ollama directly — no data leaves your computer.
+        </p>
+
+        {/* Windows */}
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            Windows
+          </p>
+
+          <Step number="1" title="Install Ollama">
+            <p style={{ marginTop: 0 }}>
+              Download and install Ollama from{" "}
+              <a href="https://ollama.com/download" target="_blank" rel="noreferrer" style={{ color: "var(--arc-accent)" }}>
+                ollama.com/download
+              </a>
+              . Once installed, Ollama runs in the background automatically.
+            </p>
+          </Step>
+
+          <Step number="2" title="Open Command Prompt">
+            <p style={{ marginTop: 0 }}>
+              Press <strong>Win + R</strong>, type <code>cmd</code>, and press Enter.
+            </p>
+          </Step>
+
+          <Step number="3" title="Download and Run a Model">
+            <p style={{ marginTop: 0 }}>Run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
+          </Step>
+
+          <Step number="4" title="Confirm Installed Models">
+            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
+          </Step>
+
+          <Step number="5" title="Return to NEXIS and Detect Models">
+            <p style={{ marginTop: 0 }}>
+              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
+              NEXIS will find models running on your computer.
+            </p>
+          </Step>
+
+          <Step number="6" title="Select Your Model">
+            <p style={{ marginTop: 0, marginBottom: 0 }}>
+              Once models are detected, select the one you want to use from the dropdown.
+              NEXIS will use that model for all package creation and refine operations.
+            </p>
+          </Step>
+        </div>
+
+        {/* Mac */}
+        <div style={{ marginBottom: 32 }}>
+          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            Mac
+          </p>
+
+          <Step number="1" title="Download and Install Ollama">
+            <p style={{ marginTop: 0 }}>
+              Visit{" "}
+              <a href="https://ollama.com" target="_blank" rel="noreferrer" style={{ color: "var(--arc-accent)" }}>
+                ollama.com
+              </a>
+              {" "}and download the Mac installer. Open the downloaded file and follow the installation steps.
+            </p>
+          </Step>
+
+          <Step number="2" title="Open Terminal">
+            <p style={{ marginTop: 0 }}>
+              Open <strong>Terminal</strong> from Applications &#8594; Utilities, or press <strong>Cmd + Space</strong> and search for Terminal.
+            </p>
+          </Step>
+
+          <Step number="3" title="Download and Run a Model">
+            <p style={{ marginTop: 0 }}>Run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
+          </Step>
+
+          <Step number="4" title="Confirm Installed Models">
+            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
+          </Step>
+
+          <Step number="5" title="Return to NEXIS and Detect Models">
+            <p style={{ marginTop: 0 }}>
+              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
+              NEXIS will find models running on your computer.
+            </p>
+          </Step>
+
+          <Step number="6" title="Select Your Model">
+            <p style={{ marginTop: 0, marginBottom: 0 }}>
+              Once models are detected, select the one you want to use from the dropdown.
+              NEXIS will use that model for all package creation and refine operations.
+            </p>
+          </Step>
+        </div>
+
+        {/* Linux */}
+        <div>
+          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            Linux
+          </p>
+
+          <Step number="1" title="Open Terminal">
+            <p style={{ marginTop: 0 }}>
+              Open a terminal using your desktop environment or press <strong>Ctrl + Alt + T</strong>.
+            </p>
+          </Step>
+
+          <Step number="2" title="Install Ollama">
+            <p style={{ marginTop: 0 }}>Run the official install command:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>curl -fsSL https://ollama.com/install.sh | sh</pre>
+          </Step>
+
+          <Step number="3" title="Download and Run a Model">
+            <p style={{ marginTop: 0 }}>Run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
+          </Step>
+
+          <Step number="4" title="Confirm Installed Models">
+            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
+          </Step>
+
+          <Step number="5" title="Return to NEXIS and Detect Models">
+            <p style={{ marginTop: 0 }}>
+              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
+              NEXIS will find models running on your computer.
+            </p>
+          </Step>
+
+          <Step number="6" title="Select Your Model">
+            <p style={{ marginTop: 0, marginBottom: 0 }}>
+              Once models are detected, select the one you want to use from the dropdown.
+              NEXIS will use that model for all package creation and refine operations.
+            </p>
+          </Step>
+        </div>
+      </div>
+
       {/* IF DETECT MODELS FAILS */}
       <div className="panel">
         <SectionTitle>If Detect Models Fails</SectionTitle>
