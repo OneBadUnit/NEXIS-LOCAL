@@ -14,25 +14,38 @@ export default function OnboardingOverlay() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    console.log("[LandingInfo] check — key present:", !!localStorage.getItem(STORAGE_KEY));
-    if (localStorage.getItem(STORAGE_KEY)) {
-      console.log("[LandingInfo] already seen, skipping.");
-      return;
+    try {
+      const seen = localStorage.getItem(STORAGE_KEY);
+      console.log("[LandingInfo] check — key present:", !!seen);
+      if (seen) {
+        console.log("[LandingInfo] already seen, skipping.");
+        return;
+      }
+      console.log("[LandingInfo] should show");
+      setVisible(true);
+    } catch (e) {
+      console.warn("[LandingInfo] localStorage unavailable, showing onboarding anyway");
+      setVisible(true);
     }
-    console.log("[LandingInfo] should show");
-    setVisible(true);
   }, []);
 
   if (!visible) return null;
 
   const handleStart = () => {
     console.log("[LandingInfo] dismissed");
-    localStorage.setItem(STORAGE_KEY, "true");
+    try {
+      localStorage.setItem(STORAGE_KEY, "true");
+    } catch (e) {
+      console.warn("[LandingInfo] failed to persist onboarding completion");
+    }
     setVisible(false);
   };
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-title"
       style={{
         position: "fixed",
         inset: 0,
@@ -47,7 +60,7 @@ export default function OnboardingOverlay() {
         className="panel"
         style={{ width: 340, margin: 0, textAlign: "center" }}
       >
-        <h2 style={{ marginTop: 0, marginBottom: 24 }}>Welcome to NEXIS</h2>
+        <h2 id="onboarding-title" style={{ marginTop: 0, marginBottom: 24 }}>Welcome to NEXIS</h2>
 
         <ol
           style={{
