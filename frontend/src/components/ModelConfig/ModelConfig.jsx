@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - MODEL CONFIG
 // File: src/components/ModelConfig/ModelConfig.jsx
-// Version: 003 (user-first state machine â€” NEXIS Local Companion)
+// Version: 003 (user-first state machine — NEXIS Local Companion)
 //
 // Design principles:
 //   - Normal users never see "localhost", "port", or terminal commands
@@ -11,21 +11,21 @@
 //   - The companion handles Ollama start, restart, and model downloads
 //
 // UI states (uiState):
-//   COMPANION_NOT_RUNNING â€” companion exe not found at bridge URL
-//   CHECKING              â€” currently running detection
-//   OLLAMA_NOT_INSTALLED  â€” companion found but Ollama not on machine
-//   OLLAMA_NOT_RUNNING    â€” Ollama installed but not started
-//   OLLAMA_STARTING       â€” companion is starting Ollama (polling)
-//   OLLAMA_HUNG           â€” start was attempted, timed out
-//   NO_MODELS             â€” Ollama confirmed running, models list empty
-//   PULLING_MODEL         â€” async model download in progress
-//   PULL_FAILED           â€” model download failed
-//   MODEL_READY           â€” connected, model selected, ready to save
-//   CHECK_FAILED_TEMP     â€” had a saved config but temporary check failed
+//   COMPANION_NOT_RUNNING — companion exe not found at bridge URL
+//   CHECKING              — currently running detection
+//   OLLAMA_NOT_INSTALLED  — companion found but Ollama not on machine
+//   OLLAMA_NOT_RUNNING    — Ollama installed but not started
+//   OLLAMA_STARTING       — companion is starting Ollama (polling)
+//   OLLAMA_HUNG           — start was attempted, timed out
+//   NO_MODELS             — Ollama confirmed running, models list empty
+//   PULLING_MODEL         — async model download in progress
+//   PULL_FAILED           — model download failed
+//   MODEL_READY           — connected, model selected, ready to save
+//   CHECK_FAILED_TEMP     — had a saved config but temporary check failed
 //
 // Props:
-//   config         â€” saved model config object or null
-//   onConfigChange â€” called with new config or null on save/clear
+//   config         — saved model config object or null
+//   onConfigChange — called with new config or null on save/clear
 // ============================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -41,7 +41,7 @@ import {
   isLegacyOllamaEndpoint,
 } from "../../lib/bridge.js";
 
-// â”€â”€ Workspace status row (outside modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Workspace status row (outside modal) ──────────────────────────────────
 
 function workspaceLabel(config, liveState) {
   if (!config) return "No model configured";
@@ -50,12 +50,12 @@ function workspaceLabel(config, liveState) {
   }
   if (!config.model) return "No model selected";
   switch (liveState) {
-    case "MODEL_READY": return `Local AI is ready â€” ${config.model}`;
-    case "CHECKING":    return "Checking your local AIâ€¦";
+    case "MODEL_READY": return `Local AI is ready — ${config.model}`;
+    case "CHECKING":    return "Checking your local AI…";
     case "COMPANION_NOT_RUNNING": return "NEXIS Companion is not running";
     case "OLLAMA_NOT_RUNNING":    return "Ollama is installed but not open";
     case "OLLAMA_NOT_INSTALLED":  return "Ollama is not installed";
-    default:            return "Saved â€” not checked";
+    default:            return "Saved — not checked";
   }
 }
 
@@ -76,7 +76,7 @@ function workspaceDot(config, liveState) {
   }
 }
 
-// â”€â”€ Pull progress bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Pull progress bar ─────────────────────────────────────────────────────
 
 function PullProgressBar({ percent, status }) {
   const pct = percent != null ? percent : null;
@@ -98,13 +98,13 @@ function PullProgressBar({ percent, status }) {
         }} />
       </div>
       <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", margin: "5px 0 0" }}>
-        {pct != null ? `${pct}% â€” ${status || "downloadingâ€¦"}` : (status || "Preparing downloadâ€¦")}
+        {pct != null ? `${pct}% — ${status || "downloading…"}` : (status || "Preparing download…")}
       </p>
     </div>
   );
 }
 
-// â”€â”€ System badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── System badge ──────────────────────────────────────────────────────────
 
 function SystemBadge({ diag }) {
   if (!diag) return null;
@@ -112,23 +112,23 @@ function SystemBadge({ diag }) {
     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
       {diag.has_nvidia_gpu ? (
         <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: 0 }}>
-          NVIDIA GPU detected â€” AI will run fast.
+          NVIDIA GPU detected — AI will run fast.
         </p>
       ) : (
         <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: 0 }}>
-          No NVIDIA GPU â€” AI will run on CPU (slower but supported).
+          No NVIDIA GPU — AI will run on CPU (slower but supported).
         </p>
       )}
       {diag.cpu_count > 0 && (
         <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.35)", margin: 0 }}>
-          {diag.cpu_count} CPU threads Â· {diag.platform}
+          {diag.cpu_count} CPU threads · {diag.platform}
         </p>
       )}
     </div>
   );
 }
 
-// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main component ────────────────────────────────────────────────────────
 
 export default function ModelConfig({ config, onConfigChange }) {
   const [modalOpen, setModalOpen]   = useState(false);
@@ -159,7 +159,7 @@ export default function ModelConfig({ config, onConfigChange }) {
   const [providerName, setProviderName] = useState("");
   const [providerKey, setProviderKey]   = useState("");
 
-  // â”€â”€ Open modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Open modal ────────────────────────────────────────────────────────────
 
   const handleOpen = async () => {
     if (config?.type === "provider") {
@@ -183,13 +183,13 @@ export default function ModelConfig({ config, onConfigChange }) {
     await runDetection(ep, config?.model || "");
   };
 
-  // â”€â”€ Full detection flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Calls /diagnostics â†’ derives uiState â†’ sets available models.
+  // ── Full detection flow ───────────────────────────────────────────────────
+  // Calls /diagnostics → derives uiState → sets available models.
 
   const runDetection = async (endpoint = localEndpoint, currentModel = selectedModel) => {
     const base = endpoint.replace(/\/$/, "");
     setUiState("CHECKING");
-    setStatusMsg("Checking your local AIâ€¦");
+    setStatusMsg("Checking your local AI…");
     setAvailableModels([]);
     setDiagInfo(null);
 
@@ -224,7 +224,7 @@ export default function ModelConfig({ config, onConfigChange }) {
       return;
     }
 
-    // Ollama running â€” check models
+    // Ollama running — check models
     const models = Array.isArray(diag.models) ? diag.models : [];
     if (models.length === 0) {
       setUiState("NO_MODELS");
@@ -246,11 +246,11 @@ export default function ModelConfig({ config, onConfigChange }) {
     setStatusMsg("");
   };
 
-  // â”€â”€ Action: Start Ollama â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Action: Start Ollama ──────────────────────────────────────────────────
 
   const handleStartOllama = async () => {
     setUiState("OLLAMA_STARTING");
-    setStatusMsg("Opening Ollamaâ€¦ this may take up to 20 seconds.");
+    setStatusMsg("Opening Ollama… this may take up to 20 seconds.");
 
     const result = await startOllama(localEndpoint);
 
@@ -264,11 +264,11 @@ export default function ModelConfig({ config, onConfigChange }) {
     await runDetection(localEndpoint, selectedModel);
   };
 
-  // â”€â”€ Action: Restart Ollama â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Action: Restart Ollama ────────────────────────────────────────────────
 
   const handleRestartOllama = async () => {
     setUiState("OLLAMA_STARTING");
-    setStatusMsg("Restarting Ollamaâ€¦");
+    setStatusMsg("Restarting Ollama…");
 
     const result = await restartOllama(localEndpoint);
 
@@ -281,12 +281,12 @@ export default function ModelConfig({ config, onConfigChange }) {
     await runDetection(localEndpoint, selectedModel);
   };
 
-  // â”€â”€ Action: Download recommended model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Action: Download recommended model ───────────────────────────────────
 
   const handleDownloadModel = async () => {
     setUiState("PULLING_MODEL");
     setPullPercent(null);
-    setPullStatus("Starting downloadâ€¦");
+    setPullStatus("Starting download…");
 
     const model = pullModel_ || RECOMMENDED_MODEL;
     const result = await pullModel(model, localEndpoint);
@@ -302,7 +302,7 @@ export default function ModelConfig({ config, onConfigChange }) {
       localEndpoint,
       ({ status, percent }) => {
         setPullPercent(percent);
-        setPullStatus(status || "Downloadingâ€¦");
+        setPullStatus(status || "Downloading…");
       },
       async ({ success, error }) => {
         cancelPullRef.current = null;
@@ -322,7 +322,7 @@ export default function ModelConfig({ config, onConfigChange }) {
       cancelPullRef.current();
       cancelPullRef.current = null;
     }
-    // Return to NO_MODELS â€” don't re-detect so we don't re-show "no models"
+    // Return to NO_MODELS — don't re-detect so we don't re-show "no models"
     // if pull was partially complete. Let user recheck manually.
     setUiState("NO_MODELS");
     setStatusMsg("Download cancelled.");
@@ -333,7 +333,7 @@ export default function ModelConfig({ config, onConfigChange }) {
     if (cancelPullRef.current) cancelPullRef.current();
   }, []);
 
-  // â”€â”€ Action: Open terminal (last resort) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Action: Open terminal (last resort) ───────────────────────────────────
 
   const handleOpenTerminal = async () => {
     if (!window.confirm(
@@ -346,7 +346,7 @@ export default function ModelConfig({ config, onConfigChange }) {
     setTerminalOpening(false);
   };
 
-  // â”€â”€ Save / Clear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Save / Clear ──────────────────────────────────────────────────────────
 
   const handleSaveLocal = () => {
     const newConfig = {
@@ -377,17 +377,17 @@ export default function ModelConfig({ config, onConfigChange }) {
     setModalOpen(false);
   };
 
-  // â”€â”€ Derived helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Derived helpers ───────────────────────────────────────────────────────
 
   const isBusy = uiState === "CHECKING" || uiState === "OLLAMA_STARTING" || uiState === "PULLING_MODEL";
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* â”€â”€ Workspace status row â”€â”€ */}
+      {/* ── Workspace status row ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>â¬¤</span>
+        <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>⬤</span>
         <span style={{ fontSize: "0.82rem", color: workspaceDot(config, uiState) }}>
           {workspaceLabel(config, uiState)}
         </span>
@@ -400,7 +400,7 @@ export default function ModelConfig({ config, onConfigChange }) {
         </button>
       </div>
 
-      {/* â”€â”€ Config modal â”€â”€ */}
+      {/* ── Config modal ── */}
       {modalOpen && (
         <div style={{
           position: "fixed", inset: 0,
@@ -432,15 +432,15 @@ export default function ModelConfig({ config, onConfigChange }) {
               </button>
             </div>
 
-            {/* â•â• LOCAL AI TAB â•â• */}
+            {/* ══ LOCAL AI TAB ══ */}
             {tab === "local" && (
               <div>
 
-                {/* â”€â”€ State: CHECKING â”€â”€ */}
+                {/* ── State: CHECKING ── */}
                 {uiState === "CHECKING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", margin: "0 0 6px" }}>
-                      Checking your local AIâ€¦
+                      Checking your local AI…
                     </p>
                     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>
                       {statusMsg}
@@ -448,7 +448,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: COMPANION_NOT_RUNNING â”€â”€ */}
+                {/* ── State: COMPANION_NOT_RUNNING ── */}
                 {uiState === "COMPANION_NOT_RUNNING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -476,7 +476,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: CHECK_FAILED_TEMP â”€â”€ */}
+                {/* ── State: CHECK_FAILED_TEMP ── */}
                 {uiState === "CHECK_FAILED_TEMP" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "#f59e0b", margin: "0 0 8px" }}>
@@ -498,7 +498,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: OLLAMA_NOT_INSTALLED â”€â”€ */}
+                {/* ── State: OLLAMA_NOT_INSTALLED ── */}
                 {uiState === "OLLAMA_NOT_INSTALLED" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -526,7 +526,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: OLLAMA_NOT_RUNNING â”€â”€ */}
+                {/* ── State: OLLAMA_NOT_RUNNING ── */}
                 {uiState === "OLLAMA_NOT_RUNNING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -548,11 +548,11 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: OLLAMA_STARTING â”€â”€ */}
+                {/* ── State: OLLAMA_STARTING ── */}
                 {uiState === "OLLAMA_STARTING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", margin: "0 0 6px" }}>
-                      Ollama is startingâ€¦
+                      Ollama is starting…
                     </p>
                     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>
                       {statusMsg}
@@ -560,7 +560,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: OLLAMA_HUNG â”€â”€ */}
+                {/* ── State: OLLAMA_HUNG ── */}
                 {uiState === "OLLAMA_HUNG" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "#f59e0b", margin: "0 0 8px", fontWeight: 500 }}>
@@ -582,7 +582,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: NO_MODELS â”€â”€ */}
+                {/* ── State: NO_MODELS ── */}
                 {uiState === "NO_MODELS" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -609,14 +609,14 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: PULLING_MODEL â”€â”€ */}
+                {/* ── State: PULLING_MODEL ── */}
                 {uiState === "PULLING_MODEL" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 4px", fontWeight: 500 }}>
-                      Downloading AI modelâ€¦
+                      Downloading AI model…
                     </p>
                     <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", margin: "0 0 8px" }}>
-                      {pullModel_} â€” this may take several minutes depending on your internet speed.
+                      {pullModel_} — this may take several minutes depending on your internet speed.
                     </p>
                     <PullProgressBar percent={pullPercent} status={pullStatus} />
                     <button
@@ -629,7 +629,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: PULL_FAILED â”€â”€ */}
+                {/* ── State: PULL_FAILED ── */}
                 {uiState === "PULL_FAILED" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(239,68,68,0.9)", margin: "0 0 8px", fontWeight: 500 }}>
@@ -651,7 +651,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ State: MODEL_READY â”€â”€ */}
+                {/* ── State: MODEL_READY ── */}
                 {uiState === "MODEL_READY" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "var(--arc-accent)", margin: "0 0 4px", fontWeight: 500 }}>
@@ -690,13 +690,13 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* â”€â”€ Advanced section â”€â”€ */}
+                {/* ── Advanced section ── */}
                 <div style={{ marginTop: 22, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 14 }}>
                   <button
                     style={{ all: "unset", cursor: "pointer", fontSize: "0.78rem", color: "rgba(255,255,255,0.3)", textDecoration: "underline", textUnderlineOffset: 3 }}
                     onClick={() => setShowAdvanced((v) => !v)}
                   >
-                    {showAdvanced ? "â–¾ Hide Advanced" : "â–¸ Advanced"}
+                    {showAdvanced ? "▾ Hide Advanced" : "▸ Advanced"}
                   </button>
 
                   {showAdvanced && (
@@ -724,13 +724,13 @@ export default function ModelConfig({ config, onConfigChange }) {
                         Recheck with this URL
                       </button>
 
-                      {/* Troubleshooting â€” deeper last-resort section */}
+                      {/* Troubleshooting — deeper last-resort section */}
                       <div style={{ marginTop: 14 }}>
                         <button
                           style={{ all: "unset", cursor: "pointer", fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", textDecoration: "underline", textUnderlineOffset: 3 }}
                           onClick={() => setShowTroubleshooting((v) => !v)}
                         >
-                          {showTroubleshooting ? "â–¾ Hide Troubleshooting" : "â–¸ Troubleshooting"}
+                          {showTroubleshooting ? "▾ Hide Troubleshooting" : "▸ Troubleshooting"}
                         </button>
 
                         {showTroubleshooting && (
@@ -738,13 +738,13 @@ export default function ModelConfig({ config, onConfigChange }) {
                             {diagInfo && (
                               <div style={{ marginBottom: 10 }}>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: "0 0 3px" }}>
-                                  Companion v{diagInfo.bridge_version || "â€”"} Â· {diagInfo.platform || "â€”"} Â· {diagInfo.cpu_count || 0} CPUs
+                                  Companion v{diagInfo.bridge_version || "—"} · {diagInfo.platform || "—"} · {diagInfo.cpu_count || 0} CPUs
                                 </p>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: "0 0 3px" }}>
                                   Ollama path: {diagInfo.ollama_path || "not found"}
                                 </p>
                                 <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.35)", margin: 0 }}>
-                                  Model storage: {diagInfo.model_storage || "â€”"}
+                                  Model storage: {diagInfo.model_storage || "—"}
                                 </p>
                               </div>
                             )}
@@ -757,7 +757,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                               onClick={handleOpenTerminal}
                               disabled={terminalOpening}
                             >
-                              {terminalOpening ? "Openingâ€¦" : "Open Command Prompt"}
+                              {terminalOpening ? "Opening…" : "Open Command Prompt"}
                             </button>
                           </div>
                         )}
@@ -766,7 +766,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   )}
                 </div>
 
-                {/* â”€â”€ Save / Clear buttons â”€â”€ */}
+                {/* ── Save / Clear buttons ── */}
                 <div className="row" style={{ marginTop: 20, justifyContent: "flex-end" }}>
                   {config && (
                     <button
@@ -789,7 +789,7 @@ export default function ModelConfig({ config, onConfigChange }) {
               </div>
             )}
 
-            {/* â•â• PROVIDER KEY TAB â•â• */}
+            {/* ══ PROVIDER KEY TAB ══ */}
             {tab === "provider" && (
               <div>
                 <p className="subtle" style={{ fontSize: "0.82rem", marginBottom: 14 }}>

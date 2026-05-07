@@ -168,10 +168,9 @@ async function buildReport(advanced) {
     }
     if (advanced.envDetails) {
       // Sanitized browser environment — no cookies, no storage dump.
+      // Browser user-agent and screen resolution omitted (not needed for troubleshooting).
       lines.push(
-        `  ${pad("Browser")} ${navigator.userAgent}`,
-        `  ${pad("Language")} ${navigator.language}`,
-        `  ${pad("Screen Resolution")} ${window.screen.width}×${window.screen.height}`
+        `  ${pad("Language")} ${navigator.language}`
       );
     }
     if (advanced.debugLogs) {
