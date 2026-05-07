@@ -10,7 +10,7 @@
 // Vite-style import.meta.env is NOT available here.
 //
 // Required env var:
-//   REACT_APP_API_BASE_URL=https://your-backend.onrender.com
+//   REACT_APP_API_BASE_URL=https://nexis-l8oc.onrender.com
 //
 // Set this in:
 //   - Vercel project settings → Environment Variables (production)
@@ -23,7 +23,7 @@ const _isLocalDev =
 
 // Local dev fallback — only applies when running on localhost.
 // In production (Vercel) REACT_APP_API_BASE_URL must be set explicitly.
-const _localDevFallback = _isLocalDev ? "http://127.0.0.1:8000" : null;
+const _localDevFallback = _isLocalDev ? "https://nexis-l8oc.onrender.com" : null;
 
 export const API_BASE = process.env.REACT_APP_API_BASE_URL || _localDevFallback;
 
