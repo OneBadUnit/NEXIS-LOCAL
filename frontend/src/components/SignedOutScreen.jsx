@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // ARC-NEXUS - SIGNED OUT SCREEN
 // File: src/components/SignedOutScreen.jsx
 // Version: 002 (magic-link / email-only auth)

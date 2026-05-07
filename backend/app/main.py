@@ -4,6 +4,8 @@
 # Version: 005 (CORS before routers + preflight debug middleware)
 # ============================================================
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -41,6 +43,12 @@ ALLOWED_ORIGINS = [
     "https://nexis-td1ezngfa-onebadunits-projects.vercel.app",
     "https://nexis-psi.vercel.app",
 ]
+
+# Allow an additional origin via env var (e.g. a new Vercel preview URL).
+# Set FRONTEND_URL on Render if the production domain ever changes.
+_extra_origin = os.getenv("FRONTEND_URL", "").strip()
+if _extra_origin and _extra_origin not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append(_extra_origin)
 
 print("[CORS] Allowed origins:", ALLOWED_ORIGINS)
 

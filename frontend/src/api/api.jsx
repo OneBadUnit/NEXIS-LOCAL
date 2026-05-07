@@ -1,35 +1,44 @@
 // ============================================================
 // ARC-NEXUS - API CLIENT
-// File: src/api/api.js
-// Version: 002 (Centralized + Expandable)
+// File: src/api/api.jsx
+// Version: 003 (env-var only base URL — no hardcoded hosts)
 // ============================================================
-
-
+//
+// NOTE: This is a Create React App (CRA) project.
+// Environment variables must be prefixed REACT_APP_ and are
+// accessed via process.env.REACT_APP_* at build time.
+// Vite-style import.meta.env is NOT available here.
+//
+// Required env var:
+//   REACT_APP_API_BASE_URL=https://your-backend.onrender.com
+//
+// Set this in:
+//   - Vercel project settings → Environment Variables (production)
+//   - .env.local for local development (git-ignored)
 // ------------------------------------------------------------
-// Base URL
-// Resolution order:
-//   1. REACT_APP_API_BASE_URL env var (explicit override)
-//   2. localhost fallback when running on localhost/127.0.0.1
-//   3. Hosted Render backend for all other origins (Vercel etc.)
-// ------------------------------------------------------------
-const LOCAL_API_BASE = "http://127.0.0.1:8000";
-const HOSTED_API_BASE = "https://nexis-l8oc.onrender.com";
 
-const isLocalHost =
+const _isLocalDev =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1";
 
-export const API_BASE =
-  process.env.REACT_APP_API_BASE_URL ||
-  (isLocalHost ? LOCAL_API_BASE : HOSTED_API_BASE);
+// Local dev fallback — only applies when running on localhost.
+// In production (Vercel) REACT_APP_API_BASE_URL must be set explicitly.
+const _localDevFallback = _isLocalDev ? "http://127.0.0.1:8000" : null;
+
+export const API_BASE = process.env.REACT_APP_API_BASE_URL || _localDevFallback;
+
+if (!API_BASE) {
+  console.error(
+    "[NEXIS API] REACT_APP_API_BASE_URL is not set and this is not a local dev " +
+    "environment. API calls will fail. " +
+    "Set REACT_APP_API_BASE_URL in your Vercel environment variables."
+  );
+}
+
+console.log("[NEXIS API] API_BASE =", API_BASE);
 
 // Keep BASE_URL as an internal alias so existing call sites don't change.
 const BASE_URL = API_BASE;
-
-// TEMPORARY DEBUG — remove after confirming hosted env var
-console.log("[NEXIS API] hostname =", window.location.hostname);
-console.log("[NEXIS API] process.env.REACT_APP_API_BASE_URL =", process.env.REACT_APP_API_BASE_URL);
-console.log("[NEXIS API] API_BASE =", API_BASE);
 
 // ------------------------------------------------------------
 // Helper
