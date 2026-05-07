@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // ARC-NEXUS - HELP OVERLAY
 // File: src/components/HelpOverlay.jsx
 // Version: 002 (navigation outline + Local AI Setup section)
@@ -13,7 +13,7 @@
 import React, { useState, useEffect } from "react";
 import PageOverlay from "./PageOverlay";
 
-// ── Navigation items ────────────────────────────────────────
+// â”€â”€ Navigation items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const NAV = [
   { id: "help-overview",        label: "Overview" },
@@ -29,7 +29,7 @@ const NAV = [
   { id: "help-about",           label: "About" },
 ];
 
-// ── Primitive components ────────────────────────────────────
+// â”€â”€ Primitive components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SectionAnchor({ id }) {
   return <div id={id} style={{ scrollMarginTop: 24 }} />;
@@ -95,7 +95,7 @@ function Collapsible({ label, children }) {
           boxSizing: "border-box",
         }}
       >
-        <span style={{ fontSize: "0.7rem" }}>{open ? "▾" : "▸"}</span>
+        <span style={{ fontSize: "0.7rem" }}>{open ? "â–¾" : "â–¸"}</span>
         {label}
       </button>
       {open && (
@@ -147,12 +147,12 @@ function TroubleBlock({ title, children }) {
   );
 }
 
-// ── Main component ──────────────────────────────────────────
+// â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function HelpOverlay({ onClose }) {
   const [activeSection, setActiveSection] = useState("help-overview");
 
-  // IntersectionObserver — highlight whichever section is topmost in viewport
+  // IntersectionObserver â€” highlight whichever section is topmost in viewport
   useEffect(() => {
     const visible = new Set();
 
@@ -188,10 +188,10 @@ export default function HelpOverlay({ onClose }) {
   return (
     <PageOverlay title="Help &amp; Documentation" onClose={onClose} maxWidth={1040}>
 
-      {/* ── Two-column layout ── */}
+      {/* â”€â”€ Two-column layout â”€â”€ */}
       <div style={{ display: "flex", gap: 0, alignItems: "flex-start" }}>
 
-        {/* ── Left nav ── */}
+        {/* â”€â”€ Left nav â”€â”€ */}
         <nav style={{
           width: 168,
           flexShrink: 0,
@@ -236,10 +236,10 @@ export default function HelpOverlay({ onClose }) {
           })}
         </nav>
 
-        {/* ── Right content ── */}
+        {/* â”€â”€ Right content â”€â”€ */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
-          {/* ════ OVERVIEW ════ */}
+          {/* â•â•â•â• OVERVIEW â•â•â•â• */}
           <SectionAnchor id="help-overview" />
           <div className="panel">
             <SectionTitle>What NEXIS Does</SectionTitle>
@@ -248,11 +248,11 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0 }}>
               A project holds your collected sources, package outputs, and refined versions.
-              The workflow: collect sources → review → create a package → refine if needed.
+              The workflow: collect sources â†’ review â†’ create a package â†’ refine if needed.
             </p>
           </div>
 
-          {/* ════ COLLECT ════ */}
+          {/* â•â•â•â• COLLECT â•â•â•â• */}
           <SectionAnchor id="help-collect" />
           <div className="panel">
             <SectionTitle>Collect</SectionTitle>
@@ -263,7 +263,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
           </div>
 
-          {/* ════ REVIEW & SELECT ════ */}
+          {/* â•â•â•â• REVIEW & SELECT â•â•â•â• */}
           <SectionAnchor id="help-review" />
           <div className="panel">
             <SectionTitle>Review &amp; Select</SectionTitle>
@@ -274,7 +274,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
           </div>
 
-          {/* ════ CREATE PACKAGE ════ */}
+          {/* â•â•â•â• CREATE PACKAGE â•â•â•â• */}
           <SectionAnchor id="help-create" />
           <div className="panel">
             <SectionTitle>Create Package</SectionTitle>
@@ -301,17 +301,17 @@ export default function HelpOverlay({ onClose }) {
             </div>
           </div>
 
-          {/* ════ REFINE ════ */}
+          {/* â•â•â•â• REFINE â•â•â•â• */}
           <SectionAnchor id="help-refine" />
           <div className="panel">
             <SectionTitle>Refine</SectionTitle>
             <p style={{ marginTop: 0 }}>
               After creating a package, you can refine any output by providing an instruction.
-              The refined version is saved as a new output — the original is not replaced.
+              The refined version is saved as a new output â€” the original is not replaced.
             </p>
           </div>
 
-          {/* ════ LOCAL AI SETUP ════ */}
+          {/* â•â•â•â• LOCAL AI SETUP â•â•â•â• */}
           <SectionAnchor id="help-local-ai" />
           <div className="panel">
             <SectionTitle>Local AI Setup</SectionTitle>
@@ -338,23 +338,23 @@ export default function HelpOverlay({ onClose }) {
                   <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem", color: "var(--arc-accent)" }}>NEXIS Local Companion</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                     A small program you download once. It runs quietly in the background and lets NEXIS
-                    communicate with your local AI. You only need to start it — NEXIS handles the rest.
+                    communicate with your local AI. You only need to start it â€” NEXIS handles the rest.
                   </p>
                 </div>
                 <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Ollama</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                     A free, open-source program that runs AI models on your computer. NEXIS can open
-                    Ollama and download models for you automatically — no terminal needed.
+                    Ollama and download models for you automatically â€” no terminal needed.
                   </p>
                 </div>
               </div>
 
               {/* Flow diagram */}
               <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {["NEXIS (browser)", "→", "NEXIS Companion", "→", "Ollama", "→", "AI Model"].map((item, i) => (
-                  item === "→" ? (
-                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>→</span>
+                {["NEXIS (browser)", "â†’", "NEXIS Companion", "â†’", "Ollama", "â†’", "AI Model"].map((item, i) => (
+                  item === "â†’" ? (
+                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>â†’</span>
                   ) : (
                     <span key={i} style={{
                       padding: "4px 12px",
@@ -371,7 +371,7 @@ export default function HelpOverlay({ onClose }) {
                 ))}
               </div>
               <p style={{ textAlign: "center", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", margin: "8px 0 0" }}>
-                You never need to understand the details — NEXIS manages this flow for you.
+                You never need to understand the details â€” NEXIS manages this flow for you.
               </p>
             </div>
 
@@ -381,7 +381,7 @@ export default function HelpOverlay({ onClose }) {
               <Step number="1" title="Download and run the NEXIS Local Companion">
                 <p style={{ marginTop: 0, marginBottom: 6 }}>
                   Download <strong>nexis-bridge.exe</strong> (Windows) or <strong>nexis-bridge</strong> (Mac/Linux)
-                  and double-click it. A small window will appear — keep it open while using NEXIS.
+                  and double-click it. A small window will appear â€” keep it open while using NEXIS.
                 </p>
                 <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                   You only need to do this once. After that, start it whenever you want to use local AI.
@@ -392,7 +392,7 @@ export default function HelpOverlay({ onClose }) {
                   Go to <strong>AI Model Settings</strong> in NEXIS. If Ollama is not installed,
                   NEXIS will show an "Install Ollama" button. If it is installed but not open,
                   NEXIS will offer to start it. If no model is downloaded, NEXIS will offer to
-                  download one. Follow the buttons — no terminal needed.
+                  download one. Follow the buttons â€” no terminal needed.
                 </p>
               </Step>
             </div>
@@ -412,9 +412,9 @@ export default function HelpOverlay({ onClose }) {
               </div>
 
               <StateRow
-                state="Checking your local AI…"
+                state="Checking your local AIâ€¦"
                 meaning="NEXIS is detecting the Companion, Ollama, and available models."
-                action="Wait — this takes a few seconds."
+                action="Wait â€” this takes a few seconds."
               />
               <StateRow
                 state="NEXIS Companion is not running."
@@ -424,30 +424,30 @@ export default function HelpOverlay({ onClose }) {
               <StateRow
                 state="Ollama is not installed."
                 meaning="The Ollama program needs to be downloaded and installed."
-                action='Click "Install Ollama" — NEXIS will open the download page.'
+                action='Click "Install Ollama" â€” NEXIS will open the download page.'
               />
               <StateRow
                 state="Ollama is installed but not open."
                 meaning="Ollama is on your computer but not currently running."
-                action='Click "Start Ollama" — NEXIS will open it for you automatically.'
+                action='Click "Start Ollama" â€” NEXIS will open it for you automatically.'
               />
               <StateRow
-                state="Ollama is starting…"
+                state="Ollama is startingâ€¦"
                 meaning="NEXIS opened Ollama and is waiting for it to be ready."
-                action="Wait — usually takes 5–20 seconds."
+                action="Wait â€” usually takes 5â€“20 seconds."
               />
               <StateRow
                 state="Ollama appears to be stuck."
                 meaning="Ollama was started but did not become ready in time."
-                action='Click "Restart Ollama" — NEXIS will close and reopen it.'
+                action='Click "Restart Ollama" â€” NEXIS will close and reopen it.'
               />
               <StateRow
                 state="No AI model found."
                 meaning="Ollama is running but no AI model has been downloaded yet."
-                action='Click "Download Recommended Model" — NEXIS handles the download.'
+                action='Click "Download Recommended Model" â€” NEXIS handles the download.'
               />
               <StateRow
-                state="Downloading AI model… X%"
+                state="Downloading AI modelâ€¦ X%"
                 meaning="A model is being downloaded. This may take several minutes."
                 action="Wait for the download to finish. You can cancel if needed."
               />
@@ -489,14 +489,14 @@ export default function HelpOverlay({ onClose }) {
             {/* Collapsible: what cannot be automated */}
             <Collapsible label="Things NEXIS cannot do for you (one-time only)">
               <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "1.9", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)" }}>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> — requires an installer that needs system permission. NEXIS provides the download link.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> — you must run it once per session. After the first time, it is quick.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> — if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> â€” requires an installer that needs system permission. NEXIS provides the download link.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> â€” you must run it once per session. After the first time, it is quick.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> â€” if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
               </ul>
             </Collapsible>
           </div>
 
-          {/* ════ PROVIDER MODE ════ */}
+          {/* â•â•â•â• PROVIDER MODE â•â•â•â• */}
           <SectionAnchor id="help-provider" />
           <div className="panel">
             <SectionTitle>Provider Mode</SectionTitle>
@@ -506,12 +506,12 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0, fontSize: "0.88rem", color: "rgba(255,255,255,0.55)" }}>
               Provider mode sends your text to the provider's cloud servers. The provider's
-              usage costs apply — NEXIS does not cover them. Local AI mode is recommended
+              usage costs apply â€” NEXIS does not cover them. Local AI mode is recommended
               for privacy and offline use.
             </p>
           </div>
 
-          {/* ════ PROJECTS & LIMITS ════ */}
+          {/* â•â•â•â• PROJECTS & LIMITS â•â•â•â• */}
           <SectionAnchor id="help-limits" />
           <div className="panel">
             <SectionTitle>Projects &amp; Limits</SectionTitle>
@@ -525,7 +525,7 @@ export default function HelpOverlay({ onClose }) {
             <p style={{ marginBottom: 0 }}>Your account level may limit the number of active projects available.</p>
           </div>
 
-          {/* ════ TROUBLESHOOTING ════ */}
+          {/* â•â•â•â• TROUBLESHOOTING â•â•â•â• */}
           <SectionAnchor id="help-troubleshooting" />
           <div className="panel">
             <SectionTitle>Troubleshooting</SectionTitle>
@@ -552,7 +552,7 @@ export default function HelpOverlay({ onClose }) {
 
             <TroubleBlock title='3. "Ollama is installed but not open."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                Click <strong>Start Ollama</strong> — NEXIS will open it automatically.
+                Click <strong>Start Ollama</strong> â€” NEXIS will open it automatically.
                 If it does not respond within 20 seconds, click <strong>Restart Ollama</strong>.
               </p>
             </TroubleBlock>
@@ -570,7 +570,7 @@ export default function HelpOverlay({ onClose }) {
             <TroubleBlock title='5. Download was interrupted or failed.'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 Click <strong>Try Again</strong>. Ollama resumes interrupted downloads where
-                they left off — it does not restart from zero.
+                they left off â€” it does not restart from zero.
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                 If it keeps failing, make sure Ollama is still open and your internet is connected.
@@ -594,9 +594,9 @@ export default function HelpOverlay({ onClose }) {
                 <li>If Ollama shows as stuck, click <strong>Restart Ollama</strong>.</li>
                 <li>If the problem persists, restart your computer and try again.</li>
               </ol>
-              <Collapsible label="Advanced — manual commands (only if asked by support)">
+              <Collapsible label="Advanced â€” manual commands (only if asked by support)">
                 <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)" }}>
-                  Open a terminal from AI Model Settings → Advanced → Troubleshooting, or
+                  Open a terminal from AI Model Settings â†’ Advanced â†’ Troubleshooting, or
                   open Command Prompt manually.
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
@@ -625,7 +625,7 @@ export default function HelpOverlay({ onClose }) {
             </div>
           </div>
 
-          {/* ════ FAQ ════ */}
+          {/* â•â•â•â• FAQ â•â•â•â• */}
           <SectionAnchor id="help-faq" />
           <div className="panel">
             <SectionTitle>Frequently Asked Questions</SectionTitle>
@@ -668,7 +668,7 @@ export default function HelpOverlay({ onClose }) {
             />
           </div>
 
-          {/* ════ ABOUT ════ */}
+          {/* â•â•â•â• ABOUT â•â•â•â• */}
           <SectionAnchor id="help-about" />
           <div className="panel">
             <SectionTitle>About NEXIS</SectionTitle>
@@ -683,409 +683,6 @@ export default function HelpOverlay({ onClose }) {
 
         </div>{/* end right content */}
       </div>{/* end two-column layout */}
-    </PageOverlay>
-  );
-}
-
-
-// ── Shared primitives ───────────────────────────────────────
-
-const SectionTitle = ({ children }) => (
-  <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginTop: 0, marginBottom: 10 }}>
-    {children}
-  </h2>
-);
-
-const SubTitle = ({ children }) => (
-  <h3 style={{ fontSize: "0.95rem", fontWeight: 600, marginTop: 0, marginBottom: 8 }}>
-    {children}
-  </h3>
-);
-
-const Step = ({ number, title, children }) => (
-  <div style={{ marginBottom: 24 }}>
-    <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-      <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--arc-accent)" }}>
-        {number}.
-      </span>
-      <SubTitle>{title}</SubTitle>
-    </div>
-    {children}
-  </div>
-);
-
-const FAQ = ({ q, a }) => (
-  <div style={{ marginBottom: 20 }}>
-    <p style={{ fontWeight: 600, marginBottom: 4 }}>{q}</p>
-    <p style={{ color: "rgba(255,255,255,0.6)", marginTop: 0 }}>{a}</p>
-  </div>
-);
-
-// ── Component ───────────────────────────────────────────────
-
-export default function HelpOverlay({ onClose }) {
-  return (
-    <PageOverlay title="Help &amp; Documentation" onClose={onClose}>
-
-      {/* WHAT NEXIS DOES */}
-      <div className="panel">
-        <SectionTitle>What NEXIS Does</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          NEXIS helps you turn source material into structured, usable output.
-        </p>
-        <p>
-          A project holds your collected source text, package outputs, and refined versions.
-          NEXIS is designed around a simple workflow: collect sources, review what was captured,
-          select what to include, create a package, then refine the result if needed.
-        </p>
-      </div>
-
-      {/* HOW IT WORKS */}
-      <div className="panel">
-        <SectionTitle>How It Works</SectionTitle>
-
-        <Step number="1" title="Collect Sources">
-          <p style={{ marginTop: 0 }}>Add URLs, files, or pictures to a project.</p>
-          <p>
-            NEXIS extracts usable text from each source and saves it under Raw Files.
-            Raw text can be viewed, copied, renamed, selected, or deleted.
-          </p>
-        </Step>
-
-        <Step number="2" title="Review &amp; Select Raw">
-          <p style={{ marginTop: 0 }}>Review the saved raw text before creating a package.</p>
-          <p>
-            Use the checkbox beside each raw item to choose whether it should be included.
-            Only selected raw items are used when creating a package.
-          </p>
-        </Step>
-
-        <Step number="3" title="Create Package">
-          <p style={{ marginTop: 0 }}>Choose one package to create from the selected raw items.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 12 }}>
-            <div>
-              <p style={{ fontWeight: 600, marginTop: 0, marginBottom: 6 }}>Summary Package includes:</p>
-              <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "2" }}>
-                <li>Outline</li>
-                <li>Timeline</li>
-                <li>Key Points</li>
-                <li>Summary</li>
-              </ul>
-            </div>
-            <div>
-              <p style={{ fontWeight: 600, marginTop: 0, marginBottom: 6 }}>Creator Package includes:</p>
-              <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "2" }}>
-                <li>Make Engaging</li>
-                <li>Hook Script</li>
-                <li>Dialogue Script</li>
-                <li>Titles &amp; Keywords</li>
-              </ul>
-            </div>
-          </div>
-        </Step>
-
-        <Step number="4" title="Refine Output">
-          <p style={{ marginTop: 0 }}>
-            After creating a package, you can refine any output by providing an instruction.
-            The refined version is saved as a new output.
-          </p>
-        </Step>
-      </div>
-
-      {/* LOCAL MODEL SETUP */}
-      <div className="panel">
-        <SectionTitle>Local Model Setup</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          Use a model running on your own computer. Local AI processing happens entirely on your own machine.
-        </p>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "0 0 28px" }}>
-          NEXIS can connect to your local Ollama from the hosted site. Your browser communicates
-          with Ollama directly — no data leaves your computer.
-        </p>
-
-        {/* Windows */}
-        <div style={{ marginBottom: 32 }}>
-          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            Windows
-          </p>
-
-          <Step number="1" title="Install Ollama">
-            <p style={{ marginTop: 0 }}>
-              Download and install Ollama from{" "}
-              <a href="https://ollama.com/download" target="_blank" rel="noreferrer" style={{ color: "var(--arc-accent)" }}>
-                ollama.com/download
-              </a>
-              . Once installed, Ollama runs in the background automatically.
-            </p>
-          </Step>
-
-          <Step number="2" title="Open Command Prompt">
-            <p style={{ marginTop: 0 }}>
-              Press <strong>Win + R</strong>, type <code>cmd</code>, and press Enter.
-            </p>
-          </Step>
-
-          <Step number="3" title="Download and Run a Model">
-            <p style={{ marginTop: 0 }}>Run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
-            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
-          </Step>
-
-          <Step number="4" title="Confirm Installed Models">
-            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
-          </Step>
-
-          <Step number="5" title="Return to NEXIS and Detect Models">
-            <p style={{ marginTop: 0 }}>
-              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
-              NEXIS will find models running on your computer.
-            </p>
-          </Step>
-
-          <Step number="6" title="Select Your Model">
-            <p style={{ marginTop: 0, marginBottom: 0 }}>
-              Once models are detected, select the one you want to use from the dropdown.
-              NEXIS will use that model for all package creation and refine operations.
-            </p>
-          </Step>
-        </div>
-
-        {/* Mac */}
-        <div style={{ marginBottom: 32 }}>
-          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            Mac
-          </p>
-
-          <Step number="1" title="Download and Install Ollama">
-            <p style={{ marginTop: 0 }}>
-              Visit{" "}
-              <a href="https://ollama.com" target="_blank" rel="noreferrer" style={{ color: "var(--arc-accent)" }}>
-                ollama.com
-              </a>
-              {" "}and download the Mac installer. Open the downloaded file and follow the installation steps.
-            </p>
-          </Step>
-
-          <Step number="2" title="Open Terminal">
-            <p style={{ marginTop: 0 }}>
-              Open <strong>Terminal</strong> from Applications &#8594; Utilities, or press <strong>Cmd + Space</strong> and search for Terminal.
-            </p>
-          </Step>
-
-          <Step number="3" title="Download and Run a Model">
-            <p style={{ marginTop: 0 }}>Run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
-            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
-          </Step>
-
-          <Step number="4" title="Confirm Installed Models">
-            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
-          </Step>
-
-          <Step number="5" title="Return to NEXIS and Detect Models">
-            <p style={{ marginTop: 0 }}>
-              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
-              NEXIS will find models running on your computer.
-            </p>
-          </Step>
-
-          <Step number="6" title="Select Your Model">
-            <p style={{ marginTop: 0, marginBottom: 0 }}>
-              Once models are detected, select the one you want to use from the dropdown.
-              NEXIS will use that model for all package creation and refine operations.
-            </p>
-          </Step>
-        </div>
-
-        {/* Linux */}
-        <div>
-          <p style={{ fontWeight: 700, fontSize: "0.95rem", margin: "0 0 16px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            Linux
-          </p>
-
-          <Step number="1" title="Open Terminal">
-            <p style={{ marginTop: 0 }}>
-              Open a terminal using your desktop environment or press <strong>Ctrl + Alt + T</strong>.
-            </p>
-          </Step>
-
-          <Step number="2" title="Install Ollama">
-            <p style={{ marginTop: 0 }}>Run the official install command:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>curl -fsSL https://ollama.com/install.sh | sh</pre>
-          </Step>
-
-          <Step number="3" title="Download and Run a Model">
-            <p style={{ marginTop: 0 }}>Run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
-            <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
-          </Step>
-
-          <Step number="4" title="Confirm Installed Models">
-            <p style={{ marginTop: 0 }}>To see all downloaded models, run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama list</pre>
-          </Step>
-
-          <Step number="5" title="Return to NEXIS and Detect Models">
-            <p style={{ marginTop: 0 }}>
-              Go to <strong>Settings &#8594; Model</strong> in NEXIS and click <strong>Detect Models</strong>.
-              NEXIS will find models running on your computer.
-            </p>
-          </Step>
-
-          <Step number="6" title="Select Your Model">
-            <p style={{ marginTop: 0, marginBottom: 0 }}>
-              Once models are detected, select the one you want to use from the dropdown.
-              NEXIS will use that model for all package creation and refine operations.
-            </p>
-          </Step>
-        </div>
-      </div>
-
-      {/* IF DETECT MODELS FAILS */}
-      <div className="panel">
-        <SectionTitle>If Detect Models Fails</SectionTitle>
-        <p style={{ marginTop: 0 }}>Try these steps in order:</p>
-
-        <Step number="1" title="Restart Ollama">
-          <p style={{ marginTop: 0 }}>
-            Fully close Ollama — on Windows, right-click the Ollama icon in the system tray and choose Quit.
-            Then reopen Ollama.
-          </p>
-        </Step>
-
-        <Step number="2" title="Restart Your Browser">
-          <p style={{ marginTop: 0 }}>
-            Close all browser windows completely, then reopen NEXIS and try Detect Models again.
-          </p>
-        </Step>
-
-        <Step number="3" title="Verify Ollama Is Running">
-          <p style={{ marginTop: 0 }}>Open a new browser tab and visit:</p>
-          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>http://localhost:11434/api/tags</pre>
-          <p style={{ margin: 0 }}>
-            If you see a list of models, Ollama is running. If you see an error, Ollama is not
-            running — start it and try again.
-          </p>
-        </Step>
-
-        <Step number="4" title="Allow NEXIS in Ollama Origins (Hosted Site)">
-          <p style={{ marginTop: 0 }}>
-            If you are using NEXIS from the hosted site and Ollama is still not responding,
-            your browser is blocking the connection. Ollama only accepts requests from specific
-            origins by default.
-          </p>
-          <p>Run this command in Command Prompt:</p>
-          <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{`setx OLLAMA_ORIGINS "https://nexis-psi.vercel.app,http://localhost:3000,http://127.0.0.1:3000"`}</pre>
-          <p>Then:</p>
-          <ol style={{ margin: 0, paddingLeft: 20, lineHeight: "2" }}>
-            <li>Fully close Ollama (system tray &#8594; Quit)</li>
-            <li>Restart Ollama</li>
-            <li>Return to NEXIS and click Detect Models</li>
-          </ol>
-        </Step>
-      </div>
-
-      {/* WINDOWS FIX SCRIPT */}
-      <div className="panel">
-        <SectionTitle>Windows Quick Fix Script</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          Copy the script below into a file named <code>fix-ollama.bat</code> and run it as Administrator.
-          It configures Ollama for NEXIS and stops any running Ollama processes so you can restart cleanly.
-        </p>
-        <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px", whiteSpace: "pre" }}>{`@echo off
-echo Configuring Ollama for NEXIS...
-
-setx OLLAMA_ORIGINS "https://nexis-psi.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
-
-echo.
-echo Stopping Ollama...
-taskkill /F /IM "ollama app.exe" 2>nul
-taskkill /F /IM ollama.exe 2>nul
-taskkill /F /IM ollama_llama_server.exe 2>nul
-
-echo.
-echo Done.
-echo Restart Ollama, then return to NEXIS and click Detect Models.
-pause`}</pre>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: "12px 0 0" }}>
-          After running the script, restart Ollama manually, then click Detect Models in NEXIS.
-        </p>
-      </div>
-
-      {/* PROVIDER / API KEYS */}
-      <div className="panel">
-        <SectionTitle>Provider API Keys</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          You can also use your own provider account (such as OpenAI or Anthropic) instead of a local model.
-          Enter your API key in <strong>Settings &#8594; Model</strong>.
-        </p>
-        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.88rem", margin: 0 }}>
-          NEXIS does not automatically call a hosted model unless you configure one.
-          Whoever owns the provider account is responsible for any usage costs.
-        </p>
-      </div>
-
-      {/* PROJECTS AND LIMITS */}
-      <div className="panel">
-        <SectionTitle>Projects and Limits</SectionTitle>
-        <p style={{ marginTop: 0 }}>Projects organize your work.</p>
-        <p style={{ marginBottom: 8 }}>Each project contains:</p>
-        <ul style={{ margin: "0 0 12px", paddingLeft: 20, lineHeight: "2" }}>
-          <li>Raw Files</li>
-          <li>Package Outputs</li>
-          <li>Refined Outputs</li>
-        </ul>
-        <p>Your account level may limit the number of active projects available.</p>
-      </div>
-
-      {/* IMPORTANT NOTE */}
-      <div
-        className="panel"
-        style={{ borderColor: "rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.05)" }}
-      >
-        <SectionTitle>Important Note</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          NEXIS is driven by your input. NEXIS can make mistakes. Check important work.
-        </p>
-      </div>
-
-      {/* FAQ */}
-      <div className="panel">
-        <SectionTitle>Frequently Asked Questions</SectionTitle>
-
-        <FAQ
-          q="Does NEXIS save my work?"
-          a="Yes. Projects, raw text, outputs, and refined outputs are saved so you can return to them later."
-        />
-        <FAQ
-          q="Can I delete raw files or outputs?"
-          a="Yes. Raw files and outputs can be deleted with confirmation."
-        />
-        <FAQ
-          q="Can I choose what gets included in a package?"
-          a="Yes. Only checked raw items are included."
-        />
-        <FAQ
-          q="Does NEXIS replace the original output when refining?"
-          a="No. Refined work is saved as a new output."
-        />
-        <FAQ
-          q="Does NEXIS provide the AI model?"
-          a="NEXIS can connect to a configured model. This may be a local model or your own provider account."
-        />
-      </div>
-
-      {/* ABOUT */}
-      <div className="panel">
-        <SectionTitle>About NEXIS</SectionTitle>
-        <p style={{ marginTop: 0 }}>
-          NEXIS is a project-based system for collecting source material, converting it into
-          structured outputs, and refining those outputs into usable work.
-        </p>
-      </div>
-
     </PageOverlay>
   );
 }
