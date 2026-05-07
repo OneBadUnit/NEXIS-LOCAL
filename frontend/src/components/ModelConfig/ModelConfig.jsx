@@ -33,7 +33,6 @@ import {
   checkBridge,
   fetchBridgeModels,
   getBridgeSystem,
-  classifyBridgeError,
   BRIDGE_DEFAULT_URL,
   isLegacyOllamaEndpoint,
 } from "../../lib/bridge.js";

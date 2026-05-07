@@ -26,7 +26,6 @@ import {
   getModelConfigWithMigration,
   generateViaBridge,
   BRIDGE_DEFAULT_URL,
-  classifyBridgeError,
 } from "../lib/bridge.js";
 
 // Local dev detection — compares hostname only (not full URL).
