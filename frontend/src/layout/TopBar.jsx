@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - TOP BAR
 // File: src/layout/TopBar.jsx
-// Version: 009 (magic-link auth — password/sign-up removed)
+// Version: 010 (email/password auth — no provider/social buttons)
 // ============================================================
 
 import React from "react";

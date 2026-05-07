@@ -1,13 +1,17 @@
 # ============================================================
 # ARC-NEXUS - SYSTEM CHECK API
 # File: app/api/routes/system.py
-# Version: 002 (Model Alignment + Safer Diagnostics)
+# Version: 003 (local-AI-first — no subprocess Ollama calls)
+#
+# Ollama runs on the USER's machine, not on this Render server.
+# Subprocess calls to `ollama` were removed because they always
+# fail silently on Render (ollama is not installed there).
+# Ollama status is reported by the NEXIS Local Companion bridge
+# (localhost:8765 on the user's machine), not from this API.
 # ============================================================
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 import os
-import subprocess
-import shutil
 import json
 
 
@@ -22,60 +26,6 @@ router = APIRouter(tags=["system"])
 # ------------------------------------------------------------
 CONFIG_PATH = os.path.expanduser("~/.arc_nexus/config.json")
 
-# Must match the models currently used by services:
-# - app/services/llm_service.py
-# - app/services/vision_service.py
-REQUIRED_MODELS = [
-    "llama3.1:8b",
-    "llava:34b",
-]
-
-
-# ------------------------------------------------------------
-# Safe Command Helper
-# ------------------------------------------------------------
-def run_command(command: list[str]) -> str:
-    try:
-        return subprocess.check_output(
-            command,
-            stderr=subprocess.STDOUT,
-            timeout=20,
-        ).decode(errors="ignore")
-    except Exception:
-        return ""
-
-
-# ------------------------------------------------------------
-# Check Functions
-# ------------------------------------------------------------
-def check_ollama_installed() -> bool:
-    return shutil.which("ollama") is not None
-
-
-def check_ollama_running() -> bool:
-    if not check_ollama_installed():
-        return False
-
-    output = run_command(["ollama", "ps"])
-    return bool(output)
-
-
-def get_available_models() -> list[str]:
-    if not check_ollama_installed():
-        return []
-
-    output = run_command(["ollama", "list"])
-
-    if not output:
-        return []
-
-    return output.split()
-
-
-def check_models_available() -> bool:
-    available_text = " ".join(get_available_models())
-    return all(model in available_text for model in REQUIRED_MODELS)
-
 
 def check_config_ready() -> bool:
     return os.path.exists(CONFIG_PATH)
@@ -83,20 +33,17 @@ def check_config_ready() -> bool:
 
 # ------------------------------------------------------------
 # GET /api/system/check
+# Ollama status is NOT reported here — it runs on the user's
+# machine, not this server. Check via NEXIS Local Companion.
 # ------------------------------------------------------------
 @router.get("/check")
 def system_check():
-    available_models = get_available_models()
-
     return {
         "ollama": {
-            "installed": check_ollama_installed(),
-            "running": check_ollama_running(),
-        },
-        "models": {
-            "required": REQUIRED_MODELS,
-            "available": available_models,
-            "ready": check_models_available(),
+            "note": (
+                "Ollama runs on the user's machine, not this server. "
+                "Check Ollama status via the NEXIS Local Companion (localhost:8765)."
+            ),
         },
         "config": {
             "path": CONFIG_PATH,
@@ -130,32 +77,20 @@ def fix_config():
 
 # ------------------------------------------------------------
 # POST /api/system/fix/models
+# Ollama model management is done on the user's machine.
+# This endpoint cannot install or pull Ollama models from
+# the Render server — Ollama is not installed here.
 # ------------------------------------------------------------
 @router.post("/fix/models")
 def fix_models():
-    pulled = []
-    failed = []
-
-    if not check_ollama_installed():
-        return {
-            "success": False,
-            "error": "Ollama is not installed or not on PATH.",
-            "modelsPulled": pulled,
-            "modelsFailed": REQUIRED_MODELS,
-        }
-
-    for model in REQUIRED_MODELS:
-        try:
-            subprocess.check_call(["ollama", "pull", model])
-            pulled.append(model)
-        except Exception:
-            failed.append(model)
-
-    return {
-        "success": len(failed) == 0,
-        "modelsPulled": pulled,
-        "modelsFailed": failed,
-    }
+    raise HTTPException(
+        status_code=503,
+        detail=(
+            "Ollama runs on your machine, not this server. "
+            "Open the Ollama app and download models from there, "
+            "or use the NEXIS Local Companion to manage local models."
+        ),
+    )
 
 
 # ------------------------------------------------------------

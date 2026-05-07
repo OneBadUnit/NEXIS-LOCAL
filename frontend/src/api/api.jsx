@@ -1,8 +1,13 @@
 // ============================================================
 // ARC-NEXUS - API CLIENT
 // File: src/api/api.jsx
-// Version: 003 (env-var only base URL — no hardcoded hosts)
+// Version: 004 (local-first via NEXIS Local Companion bridge)
 // ============================================================
+//
+// LOCAL MODE: generation goes browser → nexis-bridge (port 8765)
+//             → Ollama (port 11434). The browser NEVER calls
+//             localhost:11434 directly — CORS blocks it.
+// PROVIDER/HOSTED MODE: uses the Render backend (API_BASE).
 //
 // NOTE: This is a Create React App (CRA) project.
 // Environment variables must be prefixed REACT_APP_ and are
@@ -17,9 +22,20 @@
 //   - .env.local for local development (git-ignored)
 // ------------------------------------------------------------
 
+import {
+  getModelConfigWithMigration,
+  generateViaBridge,
+  BRIDGE_DEFAULT_URL,
+  classifyBridgeError,
+} from "../lib/bridge.js";
+
+// Local dev detection — compares hostname only (not full URL).
+// "https://nexis-l8oc.onrender.com" is a full URL string, not a hostname,
+// so it was previously always false and never matched in a browser.
+// Fixed: compare against the bare hostname "nexis-l8oc.onrender.com".
 const _isLocalDev =
   window.location.hostname === "localhost" ||
-  window.location.hostname === "https://nexis-l8oc.onrender.com";
+  window.location.hostname === "nexis-l8oc.onrender.com";
 
 // Local dev fallback — only applies when running on localhost.
 // In production (Vercel) REACT_APP_API_BASE_URL must be set explicitly.
@@ -80,50 +96,53 @@ export async function systemCheck() {
 
 // ------------------------------------------------------------
 // LOCAL MODEL HELPERS
-// Read saved model config from localStorage.
-// When type === "local", generation goes directly to the
-// user's Ollama instance in the browser — never to Render.
+// Read saved model config from localStorage, migrating any
+// legacy localhost:11434 endpoints to the bridge URL.
+// When type === "local", generation goes:
+//   browser → NEXIS Local Companion (port 8765) → Ollama
+// The browser NEVER calls localhost:11434 directly.
 // ------------------------------------------------------------
+
+// Re-export so ModelConfig can import from one place if needed.
+export { BRIDGE_DEFAULT_URL };
+
+// Internal alias used by nexisConvert / nexisCreate.
 function getModelConfig() {
-  try {
-    const raw = localStorage.getItem("nexis_model_config");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return getModelConfigWithMigration();
 }
 
-async function runLocalOllama(prompt, modelConfig) {
-  const base = (modelConfig.endpoint || "http://localhost:11434").replace(/\/$/, "");
+// runViaBridge — replaces the old runLocalOllama direct-Ollama call.
+// Sends a prompt through the local companion bridge to Ollama.
+// Throws a user-facing Error on any failure.
+async function runViaBridge(prompt, modelConfig) {
+  const bridgeUrl = (modelConfig.endpoint || BRIDGE_DEFAULT_URL).replace(/\/$/, "");
   const model = modelConfig.model;
-  console.log("[LOCAL MODE] using browser Ollama endpoint:", base, "| model:", model);
+  console.log("[LOCAL MODE] → NEXIS Local Companion:", bridgeUrl, "| model:", model);
 
-  const res = await fetch(`${base}/api/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt, stream: false }),
-  });
+  const result = await generateViaBridge(prompt, model, bridgeUrl);
 
-  if (!res.ok) {
-    const msg = await res.text().catch(() => res.status);
-    throw new Error(`Ollama request failed (${res.status}): ${msg}`);
+  if (result.error) {
+    // result.code is a structured bridge error code
+    console.error("[LOCAL MODE] bridge error:", result.code, result.error);
+    throw new Error(result.error);
   }
 
-  const data = await res.json();
-  return (data.response || "").trim();
+  return result.output;
 }
 
 
 // ------------------------------------------------------------
 // NEXIS - CONVERT
-// Routes to local Ollama when a local model is configured,
-// otherwise calls the hosted backend.
+// LOCAL:  browser → NEXIS Local Companion (bridge) → Ollama
+// HOSTED: browser → Render backend (provider/API-key mode)
 // ------------------------------------------------------------
 export async function nexisConvert(payload) {
   const modelConfig = getModelConfig();
 
-  if (modelConfig?.type === "local" && modelConfig?.model && modelConfig?.endpoint) {
-    console.log("[LOCAL MODE] using browser Ollama endpoint");
+  // Local path: requires bridge + Ollama on user's machine.
+  // endpoint defaults to bridge URL if not set.
+  if (modelConfig?.type === "local" && modelConfig?.model) {
+    console.log("[LOCAL MODE] routing through NEXIS Local Companion");
     const { buildReconstructionPrompt } = await import("../lib/prompts.js");
     const prompt = buildReconstructionPrompt(
       payload.text,
@@ -131,10 +150,11 @@ export async function nexisConvert(payload) {
       payload.action,
       payload.option
     );
-    const output = await runLocalOllama(prompt, modelConfig);
+    const output = await runViaBridge(prompt, modelConfig);
     return { output };
   }
 
+  // Hosted/provider path: goes through Render backend.
   console.log("[HOSTED MODE] using backend inference endpoint");
   return request("/nexis/convert", {
     method: "POST",
@@ -153,17 +173,17 @@ export async function nexisUnderstand(payload) {
 
 // ------------------------------------------------------------
 // NEXIS - CREATE
-// Routes to local Ollama for "refine" when a local model is
-// configured, otherwise calls the hosted backend.
+// LOCAL:  browser → NEXIS Local Companion (bridge) → Ollama
+// HOSTED: browser → Render backend (provider/API-key mode)
 // ------------------------------------------------------------
 export async function nexisCreate(payload) {
   const modelConfig = getModelConfig();
 
-  if (modelConfig?.type === "local" && modelConfig?.model && modelConfig?.endpoint) {
-    console.log("[LOCAL MODE] using browser Ollama endpoint");
+  if (modelConfig?.type === "local" && modelConfig?.model) {
+    console.log("[LOCAL MODE] routing through NEXIS Local Companion");
     const { buildCreationPrompt } = await import("../lib/prompts.js");
     const prompt = buildCreationPrompt(payload.text, payload.mode, payload.option);
-    const output = await runLocalOllama(prompt, modelConfig);
+    const output = await runViaBridge(prompt, modelConfig);
     return { output };
   }
 

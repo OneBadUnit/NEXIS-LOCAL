@@ -1,7 +1,13 @@
 // ============================================================
 // ARC-NEXUS - APP LAYOUT
 // File: src/layout/AppLayout.jsx
-// Version: 007 (password recovery + account overlay)
+// Version: 008 (email/password auth — no magic-link, no providers)
+// ============================================================
+//
+// AUTH CHANGE: All magic-link / OTP code removed.
+// Auth gate relies exclusively on the Supabase session returned by
+// getSession() / onAuthStateChange(). No localStorage flags, URL params,
+// demo booleans, or hardcoded bypasses are used anywhere in this file.
 // ============================================================
 
 import React, { useState, useEffect } from "react";
@@ -13,7 +19,8 @@ import HelpOverlay from "../components/HelpOverlay";
 import SignedOutScreen from "../components/SignedOutScreen";
 import PasswordRecoveryOverlay from "../components/PasswordRecoveryOverlay";
 import AccountOverlay from "../components/AccountOverlay";
-import { sendMagicLink, signOut, ensureProfile } from "../lib/auth";
+// AUTH CHANGE: sendMagicLink removed. signIn / signUp use password-based Supabase auth.
+import { signIn, signUp, signOut, ensureProfile } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 
 import "./layout.css";
@@ -25,7 +32,8 @@ export default function AppLayout() {
   const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Raw signUp — authLoading stays true until the initial session check resolves
+  // authLoading stays true until the initial Supabase session check resolves.
+  // The app NEVER renders until this completes — no bypass possible.
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -92,10 +100,21 @@ export default function AppLayout() {
     };
   }, []);
 
-  // Send a magic-link email. Returns { error } from Supabase.
-  const handleSendMagicLink = async (email) => {
-    const { error } = await sendMagicLink(email);
-    if (error) console.error("[Auth] sendMagicLink error:", error.message);
+  // AUTH CHANGE: Replaced sendMagicLink with password-based handlers.
+
+  // Sign in with email + password. Returns { error } from Supabase.
+  // On success, onAuthStateChange fires and sets user → app renders.
+  const handleSignIn = async (email, password) => {
+    const { error } = await signIn(email, password);
+    if (error) console.error("[Auth] signIn error:", error.message);
+    return { error };
+  };
+
+  // Sign up with email + password. Supabase sends a confirmation email.
+  // The user must confirm before signInWithPassword will succeed.
+  const handleSignUp = async (email, password) => {
+    const { error } = await signUp(email, password);
+    if (error) console.error("[Auth] signUp error:", error.message);
     return { error };
   };
 
@@ -146,11 +165,15 @@ export default function AppLayout() {
     );
   }
 
-  // ── Signed-out gate ────────────────────────────────────────
+  // ── Signed-out gate ──────────────────────────────────────────────────────
+  // AUTH CHANGE: The only accepted source of truth is the Supabase `user`
+  // object populated by getSession() / onAuthStateChange() above.
+  // No localStorage flag, URL param, or demo/mock value can bypass this check.
   if (!user) {
     return (
       <SignedOutScreen
-        onSendMagicLink={handleSendMagicLink}
+        onSignIn={handleSignIn}
+        onSignUp={handleSignUp}
       />
     );
   }

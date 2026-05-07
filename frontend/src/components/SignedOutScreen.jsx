@@ -1,11 +1,25 @@
 // ============================================================
 // ARC-NEXUS - SIGNED OUT SCREEN
 // File: src/components/SignedOutScreen.jsx
-// Version: 002 (magic-link / email-only auth)
+// Version: 003 (email/password auth — no magic-link, no providers)
+// ============================================================
+//
+// AUTH CHANGE: Replaced magic-link / OTP with email+password auth.
+// - Sign-in  → supabase.auth.signInWithPassword()  (via onSignIn prop)
+// - Sign-up  → supabase.auth.signUp()              (via onSignUp prop)
+// - No social/provider login buttons are present.
+// - No magic-link / OTP buttons are present.
+// - The component never touches localStorage or URL params for auth state.
+//
+// Props:
+//   onSignIn(email, password) → Promise<{ error }>
+//   onSignUp(email, password) → Promise<{ error }>
 // ============================================================
 
 import React, { useState } from "react";
 import logo from "../nexis2.png";
+
+// ── Styles ────────────────────────────────────────────────────────────────
 
 const inputStyle = {
   background: "rgba(255,255,255,0.05)",
@@ -43,86 +57,175 @@ const wrapStyle = {
   padding: 24,
 };
 
-export default function SignedOutScreen({ onSendMagicLink }) {
-  const [email, setEmail]   = useState("");
-  const [status, setStatus] = useState("idle"); // "idle" | "sent"
-  const [errMsg, setErrMsg] = useState("");
+const primaryBtnStyle = (loading) => ({
+  all: "unset",
+  cursor: loading ? "default" : "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "10px 0",
+  borderRadius: 8,
+  background: "rgba(56,189,248,0.18)",
+  border: "1px solid rgba(56,189,248,0.45)",
+  color: "#7dd3fc",
+  fontSize: "0.9rem",
+  fontWeight: 600,
+  opacity: loading ? 0.6 : 1,
+  transition: "opacity 0.15s",
+  boxSizing: "border-box",
+  width: "100%",
+});
+
+// ── Error message mapping ─────────────────────────────────────────────────
+// Maps Supabase error codes/messages to user-friendly strings.
+
+function mapAuthError(error) {
+  if (!error) return null;
+  const msg = (error.message || "").toLowerCase();
+  const code = (error.code || "").toLowerCase();
+
+  // Unconfirmed email — user signed up but hasn't clicked the confirmation link
+  if (
+    code === "email_not_confirmed" ||
+    msg.includes("email not confirmed") ||
+    msg.includes("not confirmed")
+  ) {
+    return "Please confirm your email before signing in.";
+  }
+
+  // Supabase rate-limit on auth emails (signup confirmation re-sends, etc.)
+  if (
+    msg.includes("email rate limit") ||
+    msg.includes("rate limit") ||
+    msg.includes("too many requests") ||
+    error.status === 429
+  ) {
+    return "Too many email attempts. Please wait before trying again.";
+  }
+
+  // Wrong credentials
+  if (
+    msg.includes("invalid login credentials") ||
+    msg.includes("invalid email or password") ||
+    msg.includes("user not found")
+  ) {
+    return "Incorrect email or password.";
+  }
+
+  // Fallback — surface Supabase message directly
+  return error.message || "Something went wrong. Please try again.";
+}
+
+// ── Component ─────────────────────────────────────────────────────────────
+
+export default function SignedOutScreen({ onSignIn, onSignUp }) {
+  // AUTH CHANGE: Two distinct modes replace the single magic-link flow.
+  const [mode, setMode]       = useState("signin"); // "signin" | "signup"
+  const [email, setEmail]     = useState("");
+  const [password, setPassword] = useState("");
+  const [errMsg, setErrMsg]   = useState("");
+  const [infoMsg, setInfoMsg] = useState(""); // non-error feedback (signup success)
   const [loading, setLoading] = useState(false);
 
-  const handleSend = async () => {
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setErrMsg("Enter your email address.");
+  const resetFields = () => {
+    setEmail("");
+    setPassword("");
+    setErrMsg("");
+    setInfoMsg("");
+  };
+
+  const switchMode = (next) => {
+    setMode(next);
+    resetFields();
+  };
+
+  // ── Sign-in handler ──────────────────────────────────────────────────────
+  // Uses signInWithPassword only — no OTP, no magic-link.
+  const handleSignIn = async () => {
+    const trimmedEmail    = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setErrMsg("Enter your email and password.");
       return;
     }
+
     setErrMsg("");
+    setInfoMsg("");
     setLoading(true);
-    const { error } = await onSendMagicLink(trimmed);
+
+    const { error } = await onSignIn(trimmedEmail, trimmedPassword);
+
     setLoading(false);
+
     if (error) {
-      setErrMsg(error.message || "Something went wrong. Try again.");
+      setErrMsg(mapAuthError(error));
+    }
+    // On success, AppLayout's onAuthStateChange fires and sets user → component unmounts.
+  };
+
+  // ── Sign-up handler ──────────────────────────────────────────────────────
+  // Uses signUp (email+password). Supabase sends a confirmation email;
+  // the user must confirm before they can sign in.
+  const handleSignUp = async () => {
+    const trimmedEmail    = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setErrMsg("Enter your email and password.");
+      return;
+    }
+    if (trimmedPassword.length < 8) {
+      setErrMsg("Password must be at least 8 characters.");
+      return;
+    }
+
+    setErrMsg("");
+    setInfoMsg("");
+    setLoading(true);
+
+    const { error } = await onSignUp(trimmedEmail, trimmedPassword);
+
+    setLoading(false);
+
+    if (error) {
+      setErrMsg(mapAuthError(error));
     } else {
-      setStatus("sent");
+      // AUTH CHANGE: Signup does NOT sign the user in immediately.
+      // They must confirm their email first.
+      setInfoMsg("Check your email to confirm your account.");
+      setPassword("");
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSend();
+    if (e.key === "Enter") {
+      mode === "signin" ? handleSignIn() : handleSignUp();
+    }
   };
 
-  // -- Sent confirmation
-  if (status === "sent") {
-    return (
-      <div style={wrapStyle}>
-        <img src={logo} alt="NEXIS" style={{ height: 200, width: "auto", marginBottom: 8 }} />
-        <div style={cardStyle}>
-          <h2 style={{ margin: "0 0 4px", fontSize: "1.05rem", fontWeight: 700, color: "var(--arc-text)" }}>
-            Check your email
-          </h2>
-          <p style={{ margin: 0, color: "rgba(255,255,255,0.55)", fontSize: "0.88rem" }}>
-            We sent a login link to:
-          </p>
-          <p style={{ margin: 0, fontWeight: 600, color: "#7dd3fc", wordBreak: "break-all", fontSize: "0.92rem" }}>
-            {email}
-          </p>
-          <p style={{ margin: 0, color: "rgba(255,255,255,0.45)", fontSize: "0.85rem" }}>
-            Click the link in the email to sign in. The link expires after a few minutes.
-          </p>
-          <button
-            onClick={() => { setStatus("idle"); setEmail(""); setErrMsg(""); }}
-            style={{
-              all: "unset",
-              cursor: "pointer",
-              fontSize: "0.82rem",
-              color: "rgba(255,255,255,0.4)",
-              textDecoration: "underline",
-              textUnderlineOffset: 3,
-              marginTop: 4,
-            }}
-          >
-            Use a different email
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ── Render ───────────────────────────────────────────────────────────────
 
-  // -- Sign-in form
+  const isSignIn = mode === "signin";
+
   return (
     <div style={wrapStyle}>
-      <img src={logo} alt="NEXIS" style={{ height: 200, width: "auto", marginBottom: 8 }} />
+      <img
+        src={logo}
+        alt="NEXIS"
+        style={{ height: 200, width: "auto", marginBottom: 8 }}
+      />
       <p style={{ margin: "0 0 32px", color: "rgba(255,255,255,0.45)", fontSize: "0.88rem", textAlign: "center" }}>
         Use your account to save projects, inputs, and outputs.
       </p>
 
       <div style={cardStyle}>
+        {/* ── Title ── */}
         <h2 style={{ margin: "0 0 2px", fontSize: "1.05rem", fontWeight: 700, color: "var(--arc-text)" }}>
-          Sign in to NEXIS
+          {isSignIn ? "Sign in to NEXIS" : "Create an account"}
         </h2>
-        <p style={{ margin: "0 0 4px", color: "rgba(255,255,255,0.4)", fontSize: "0.82rem" }}>
-          We will send a login link to your email. New accounts are created automatically.
-        </p>
 
+        {/* ── Email field ── */}
         <input
           type="email"
           placeholder="you@example.com"
@@ -133,34 +236,57 @@ export default function SignedOutScreen({ onSendMagicLink }) {
           style={inputStyle}
         />
 
+        {/* ── Password field ── */}
+        <input
+          type="password"
+          placeholder={isSignIn ? "Password" : "Password (min 8 characters)"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={handleKeyDown}
+          style={inputStyle}
+        />
+
+        {/* ── Error message ── */}
         {errMsg && (
-          <p style={{ margin: 0, fontSize: "0.82rem", color: "#f87171" }}>{errMsg}</p>
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "#f87171" }}>
+            {errMsg}
+          </p>
         )}
 
+        {/* ── Info / success message (e.g. "check your email") ── */}
+        {infoMsg && (
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "#86efac" }}>
+            {infoMsg}
+          </p>
+        )}
+
+        {/* ── Primary action button ── */}
         <button
-          onClick={handleSend}
+          onClick={isSignIn ? handleSignIn : handleSignUp}
           disabled={loading}
-          style={{
-            all: "unset",
-            cursor: loading ? "default" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "10px 0",
-            borderRadius: 8,
-            background: "rgba(56,189,248,0.18)",
-            border: "1px solid rgba(56,189,248,0.45)",
-            color: "#7dd3fc",
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            opacity: loading ? 0.6 : 1,
-            transition: "opacity 0.15s",
-            boxSizing: "border-box",
-            width: "100%",
-          }}
+          style={primaryBtnStyle(loading)}
         >
-          {loading ? "Sending..." : "Send Login Link"}
+          {loading
+            ? (isSignIn ? "Signing in…" : "Creating account…")
+            : (isSignIn ? "Sign In" : "Create Account")}
         </button>
+
+        {/* ── Mode toggle ── */}
+        <p style={{ margin: "4px 0 0", textAlign: "center", fontSize: "0.82rem", color: "rgba(255,255,255,0.38)" }}>
+          {isSignIn ? "No account yet?" : "Already have an account?"}{" "}
+          <button
+            onClick={() => switchMode(isSignIn ? "signup" : "signin")}
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              color: "#7dd3fc",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            {isSignIn ? "Create one" : "Sign in"}
+          </button>
+        </p>
       </div>
     </div>
   );

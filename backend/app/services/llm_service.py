@@ -1,19 +1,28 @@
 # ============================================================
 # ARC-NEXUS - LLM SERVICE
 # File: app/services/llm_service.py
-# Version: 003 (Ollama Non-Streaming + Prompt Fidelity)
+# Version: 004 (env-var URL — no hardcoded Ollama host)
+#
+# NEXIS is local-AI-first. Ollama runs on the USER's machine,
+# not on this Render server. LLM_URL must be explicitly set
+# via the OLLAMA_URL environment variable. If it is not set,
+# all run_llm() calls raise HTTP 503 so the caller knows to
+# route through the NEXIS Local Companion instead.
 # ============================================================
 
 import asyncio
+import os
 from functools import partial
 
 import requests
+from fastapi import HTTPException
 
 
 # ------------------------------------------------------------
 # Ollama Configuration
+# LLM_URL is read from env. Empty string means "not configured".
 # ------------------------------------------------------------
-LLM_URL = "http://localhost:11434/api/generate"
+LLM_URL = os.environ.get("OLLAMA_URL", "")
 DEFAULT_MODEL = "llama3.1:8b"
 
 
@@ -21,6 +30,18 @@ DEFAULT_MODEL = "llama3.1:8b"
 # Sync Ollama Request
 # ------------------------------------------------------------
 def _run_llm_sync(prompt: str, model: str = DEFAULT_MODEL) -> str:
+    # Guard: no Ollama backend configured on this server.
+    # Ollama runs on the user's machine — local generation goes
+    # through the NEXIS Local Companion, not this endpoint.
+    if not LLM_URL:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "No LLM backend configured on this server. "
+                "Configure a local model using the NEXIS Local Companion."
+            ),
+        )
+
     payload = {
         "model": model,
         "prompt": prompt,

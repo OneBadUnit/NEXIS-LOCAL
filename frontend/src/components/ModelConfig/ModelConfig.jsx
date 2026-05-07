@@ -1,331 +1,239 @@
 // ============================================================
 // ARC-NEXUS - MODEL CONFIG
 // File: src/components/ModelConfig/ModelConfig.jsx
+// Version: 002 (local-first via NEXIS Local Companion bridge)
 //
-// Manages local model or provider key configuration.
-// Stores config in localStorage under "nexis_model_config".
+// Local mode is the PRIMARY/DEFAULT path.
+// Provider key mode is secondary.
 //
-// Detect Model flow (local):
-//   1. Connect to /api/tags  — confirms Ollama is running, fetches model list
-//   2. Send tiny prompt      — loads the selected model so /api/ps reflects it
-//   3. Read /api/ps          — determines processor (GPU / CPU / mixed)
+// Detection flow:
+//   1. Modal opens → auto-run bridge detection immediately
+//   2. checkBridge() → confirms bridge + Ollama reachable
+//   3. fetchBridgeModels() → populates model list
+//   4. "Reconnect" button re-runs detection manually
+//
+// Status shown in workspace row:
+//   - No config        → "No model configured"          (red dot)
+//   - Saved, unchecked → "Saved — not checked"          (amber dot)
+//   - Bridge error     → specific error message          (red dot)
+//   - Connected        → "Local model ready — {model}"  (green dot)
+//   - Provider         → "Provider configured"           (green dot)
+//
+// localStorage migration:
+//   Old configs pointing at localhost:11434 or 127.0.0.1:11434
+//   are automatically migrated to the bridge URL on read.
 //
 // Props:
-//   config         — current model config object or null (from parent state)
+//   config         — current model config object or null
 //   onConfigChange — called with new config object or null on save/clear
 // ============================================================
 
 import React, { useState } from "react";
-import { API_BASE } from "../../api/api.jsx";
+import {
+  checkBridge,
+  fetchBridgeModels,
+  getBridgeSystem,
+  classifyBridgeError,
+  BRIDGE_DEFAULT_URL,
+  isLegacyOllamaEndpoint,
+} from "../../lib/bridge.js";
 
-// ----------------------------------------------------------
-// Fetch available model names from /api/tags
-// Returns string[] of model names, or [] on error
-// ----------------------------------------------------------
-async function fetchLocalModels(endpoint) {
-  const base = endpoint.replace(/\/$/, "");
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(`${base}/api/tags`, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (Array.isArray(data.models) ? data.models : []).map(
-      (m) => m.name || m.model || String(m)
-    );
-  } catch {
-    return [];
+// ── Status label / dot helpers ────────────────────────────────────────────
+
+// "live" detection state separate from saved config:
+// null = not yet checked, "checking", "ok", "error"
+function workspaceStatusLabel(config, liveStatus) {
+  if (!config) return "No model configured";
+
+  if (config.type === "provider") {
+    return `Provider configured (${config.providerName || "unknown"})`;
+  }
+
+  // Local type
+  if (!config.model) return "No model selected";
+
+  switch (liveStatus) {
+    case "ok":
+      return `Local model ready — ${config.model}`;
+    case "error":
+      return "Local Companion — connection error";
+    case "checking":
+      return "Checking local model…";
+    default:
+      // null = saved but not yet verified this session
+      return `Saved — not checked`;
   }
 }
 
-// ----------------------------------------------------------
-// Send a minimal prompt to ensure the model is loaded
-// so that /api/ps reflects its processor assignment
-// ----------------------------------------------------------
-async function warmModel(endpoint, model) {
-  const base = endpoint.replace(/\/$/, "");
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
-    await fetch(`${base}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model, prompt: "OK", stream: false }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-  } catch {
-    // warm failure is non-fatal — we still check /api/ps
+function workspaceDotColor(config, liveStatus) {
+  if (!config) return "rgba(239,68,68,0.7)";
+  if (config.type === "provider") return "var(--arc-accent)";
+  switch (liveStatus) {
+    case "ok":      return "var(--arc-accent)";
+    case "error":   return "rgba(239,68,68,0.7)";
+    case "checking": return "#f59e0b";
+    default:        return "#f59e0b"; // amber = saved but unchecked
   }
 }
 
-// ----------------------------------------------------------
-// Processor detection via Ollama /api/ps
-// Matches the specific selected model by name.
-// Ollama reports processor via size_vram vs size:
-//   size_vram === size  → fully on GPU
-//   size_vram === 0     → fully on CPU
-//   0 < size_vram < size → split (mixed)
-// Returns: { status: "gpu"|"cpu"|"mixed"|"unknown", label: string }
-// ----------------------------------------------------------
-async function detectProcessorStatus(endpoint, modelName) {
-  const base = endpoint.replace(/\/$/, "");
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`${base}/api/ps`, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return { status: "unknown", label: "Processor not confirmed" };
+// ── Processor badge shown after detection ─────────────────────────────────
 
-    const data = await res.json();
-    const models = Array.isArray(data.models) ? data.models : [];
+function ProcessorBadge({ system }) {
+  if (!system) return null;
+  const { has_nvidia_gpu, cpu_count, platform } = system;
 
-    if (models.length === 0) {
-      return { status: "unknown", label: "Processor not confirmed" };
-    }
-
-    // Find the entry for the selected model; fall back to first entry
-    let entry = models[0];
-    if (modelName) {
-      const target = modelName.toLowerCase();
-      const match = models.find((m) => {
-        const name = (m.name || m.model || "").toLowerCase();
-        return name === target || name.startsWith(target.split(":")[0]);
-      });
-      if (match) entry = match;
-    }
-
-    // Ollama uses size_vram vs size to indicate GPU usage
-    const size = entry.size ?? 0;
-    const sizeVram = entry.size_vram ?? 0;
-
-    if (size > 0 && sizeVram >= size) {
-      return { status: "gpu", label: "GPU" };
-    }
-    if (sizeVram === 0) {
-      return { status: "cpu", label: "CPU" };
-    }
-    if (sizeVram > 0 && sizeVram < size) {
-      return { status: "mixed", label: "CPU/GPU mixed" };
-    }
-    return { status: "unknown", label: "Processor not confirmed" };
-  } catch (err) {
-    return { status: "unknown", label: `Processor not confirmed` };
-  }
-}
-
-// ----------------------------------------------------------
-// Processor warning shown after detection
-// ----------------------------------------------------------
-function ProcessorWarning({ result }) {
-  const status = result?.status ?? "unknown";
-  const backend = result?.backendInfo?.acceleration_backend;
-  const gpuName = result?.backendInfo?.gpu_name;
-
-  if (status === "gpu") {
-    return (
-      <div style={{ margin: "8px 0 0" }}>
-        <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: 0 }}>
-          GPU acceleration detected.
-        </p>
-        {gpuName && (
-          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
-            GPU: {gpuName}
-          </p>
-        )}
-        {backend && (
-          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
-            Acceleration backend: {backend}
-          </p>
-        )}
-        {!backend && (
-          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: "3px 0 0" }}>
-            Acceleration backend: Unknown GPU
-          </p>
-        )}
-      </div>
-    );
-  }
-  if (status === "cpu") {
-    return (
-      <div style={{ margin: "8px 0 0" }}>
-        <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: 0 }}>
-          Running on CPU.
-        </p>
-        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "3px 0 0" }}>
-          CPU mode: supported, may be slower
-        </p>
-      </div>
-    );
-  }
-  if (status === "mixed") {
-    return (
-      <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: "8px 0 0" }}>
-        This model is split between CPU and GPU. Performance may vary.
-      </p>
-    );
-  }
-  // unknown or null
   return (
-    <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "8px 0 0" }}>
-      Acceleration unknown — local model use may still work.
-    </p>
+    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+      {has_nvidia_gpu ? (
+        <p style={{ fontSize: "0.78rem", color: "var(--arc-accent)", margin: 0 }}>
+          NVIDIA GPU detected.
+        </p>
+      ) : (
+        <p style={{ fontSize: "0.78rem", color: "#f59e0b", margin: 0 }}>
+          No NVIDIA GPU detected — model will run on CPU.
+        </p>
+      )}
+      {cpu_count > 0 && (
+        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: 0 }}>
+          {cpu_count} CPU threads · {platform}
+        </p>
+      )}
+    </div>
   );
 }
 
-// ----------------------------------------------------------
-// Persistent status label shown in the workspace panel
-// ----------------------------------------------------------
-function statusLabel(config) {
-  if (!config) return "No model configured";
-  if (config.type === "local") {
-    if (!config.model) return "Local model detected — no model selected";
-    const proc = config.processorLabel ? ` — ${config.processorLabel}` : "";
-    return `Local model detected — ${config.model}${proc}`;
-  }
-  if (config.type === "provider") {
-    return `Provider model configured (${config.providerName || "unknown"})`;
-  }
-  return "No model configured";
-}
+// ── Main component ────────────────────────────────────────────────────────
 
-function statusDotColor(config) {
-  if (!config) return "rgba(239,68,68,0.7)";
-  if (config.type === "local" && !config.model) return "#f59e0b";
-  return "var(--arc-accent)";
-}
-
-// ----------------------------------------------------------
-// Main component
-// ----------------------------------------------------------
 export default function ModelConfig({ config, onConfigChange }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [tab, setTab] = useState("local");
 
-  // Local model state
-  const [localEndpoint, setLocalEndpoint] = useState("http://localhost:11434");
-  const [detectStatus, setDetectStatus] = useState(null); // null | "detecting" | "ok" | "fail"
-  const [detectDetail, setDetectDetail] = useState("");
-  const [processorResult, setProcessorResult] = useState(null);
-  const [testStatus, setTestStatus] = useState(null); // null | "testing" | "done"
+  // Live detection state (this session only — never read from localStorage)
+  // null = not checked, "checking", "ok", "error"
+  const [liveStatus, setLiveStatus] = useState(null);
+  const [liveErrorMsg, setLiveErrorMsg] = useState("");
+
+  // Local model UI state
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
+  const [systemInfo, setSystemInfo] = useState(null);
+
+  // Advanced endpoint (hidden by default)
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [localEndpoint, setLocalEndpoint] = useState(BRIDGE_DEFAULT_URL);
 
   // Provider state
   const [providerName, setProviderName] = useState("");
   const [providerKey, setProviderKey] = useState("");
 
-  // ---- Open modal, pre-populate from saved config ----
+  // ── Open modal ───────────────────────────────────────────────────────────
   const handleOpen = async () => {
+    // Pre-populate from saved config
     if (config?.type === "local") {
       setTab("local");
-      const ep = config.endpoint || "http://localhost:11434";
-      setLocalEndpoint(ep);
+      // Migrate legacy direct-Ollama endpoint to bridge URL
+      const savedEndpoint = isLegacyOllamaEndpoint(config.endpoint)
+        ? BRIDGE_DEFAULT_URL
+        : (config.endpoint || BRIDGE_DEFAULT_URL);
+      setLocalEndpoint(savedEndpoint);
       setSelectedModel(config.model || "");
-      setDetectStatus(null);
-      setDetectDetail("");
-      setProcessorResult(
-        config.processorStatus
-          ? { status: config.processorStatus, label: config.processorLabel || "" }
-          : null
-      );
-      setTestStatus(config.processorStatus ? "done" : null);
-      setAvailableModels([]);
-      setModalOpen(true);
-      // Silently pre-load model list so current selection is visible immediately
-      const models = await fetchLocalModels(ep);
-      if (models.length > 0) {
-        setAvailableModels(models);
-        setDetectStatus("ok");
-        setDetectDetail("Models loaded.");
-      }
+      setShowAdvanced(false);
     } else if (config?.type === "provider") {
       setTab("provider");
       setProviderName(config.providerName || "");
       setProviderKey(config.providerKey || "");
-      setModalOpen(true);
     } else {
+      // No saved config — default to local tab
       setTab("local");
-      setLocalEndpoint("http://localhost:11434");
+      setLocalEndpoint(BRIDGE_DEFAULT_URL);
       setSelectedModel("");
-      setDetectStatus(null);
-      setDetectDetail("");
-      setProcessorResult(null);
-      setTestStatus(null);
-      setAvailableModels([]);
-      setModalOpen(true);
+      setShowAdvanced(false);
+    }
+
+    // Reset live state for this session
+    setLiveStatus(null);
+    setLiveErrorMsg("");
+    setAvailableModels([]);
+    setSystemInfo(null);
+
+    setModalOpen(true);
+
+    // Auto-run detection immediately on open (local tab)
+    if (!config || config?.type === "local") {
+      const ep = isLegacyOllamaEndpoint(config?.endpoint)
+        ? BRIDGE_DEFAULT_URL
+        : (config?.endpoint || BRIDGE_DEFAULT_URL);
+      await runDetection(ep, config?.model || "");
     }
   };
 
-  // ---- Detect Models: connect + fetch model list only ----
-  const handleDetect = async () => {
-    setDetectStatus("detecting");
-    setDetectDetail("Connecting...");
-    setProcessorResult(null);
-    setTestStatus(null);
+  // ── Core detection logic ─────────────────────────────────────────────────
+  // Called on modal open and on "Reconnect" click.
+  const runDetection = async (endpoint = localEndpoint, currentModel = selectedModel) => {
+    const base = endpoint.replace(/\/$/, "");
+    setLiveStatus("checking");
+    setLiveErrorMsg("");
     setAvailableModels([]);
+    setSystemInfo(null);
 
-    const models = await fetchLocalModels(localEndpoint);
-    if (models.length === 0) {
-      setDetectStatus("fail");
-      setDetectDetail("Could not connect or no models found.");
+    // Step 1: Check bridge is reachable
+    const health = await checkBridge(base);
+    if (!health.reachable) {
+      setLiveStatus("error");
+      setLiveErrorMsg(
+        "The NEXIS Local Companion is not running. Start nexis-bridge.exe, then click Reconnect."
+      );
       return;
     }
 
+    // Step 2: Fetch model list
+    const modelsResult = await fetchBridgeModels(base);
+    if (modelsResult.error) {
+      setLiveStatus("error");
+      setLiveErrorMsg(modelsResult.error);
+      return;
+    }
+
+    const models = modelsResult.models;
     setAvailableModels(models);
-    setDetectStatus("ok");
-    setDetectDetail("Models found. Select a model, then test CPU/GPU.");
 
-    // Keep previous selection if still valid, else pick first
-    const current =
-      selectedModel && models.includes(selectedModel) ? selectedModel : models[0];
-    setSelectedModel(current);
+    // Step 3: Restore or pick model selection
+    let chosenModel = currentModel;
+    if (chosenModel && !models.includes(chosenModel)) {
+      // Saved model was removed from Ollama
+      chosenModel = models[0] || "";
+    }
+    if (!chosenModel && models.length > 0) {
+      chosenModel = models[0];
+    }
+    setSelectedModel(chosenModel);
+
+    // Step 4: Fetch system info (best-effort, non-blocking)
+    getBridgeSystem(base).then((sys) => {
+      if (sys) setSystemInfo(sys);
+    });
+
+    setLiveStatus("ok");
   };
 
-  // ---- Test CPU/GPU: warm selected model, then read /api/ps + system GPU ----
-  const handleTestProcessor = async () => {
-    if (!selectedModel) return;
-    setTestStatus("testing");
-    setProcessorResult(null);
-
-    await warmModel(localEndpoint, selectedModel);
-    const proc = await detectProcessorStatus(localEndpoint, selectedModel);
-
-    // Enrich with vendor/backend info from the system GPU endpoint
-    let backendInfo = null;
-    try {
-      const gpuRes = await fetch(`${API_BASE}/api/system/gpu`);
-      if (gpuRes.ok) {
-        const gpuData = await gpuRes.json();
-        backendInfo = gpuData.detail || null;
-      }
-    } catch (_) {}
-
-    setProcessorResult({ ...proc, backendInfo });
-    setTestStatus("done");
+  // ── Reconnect button (manual re-detect) ──────────────────────────────────
+  const handleReconnect = async () => {
+    await runDetection(localEndpoint, selectedModel);
   };
 
-  // ---- Save local config ----
+  // ── Save local config ─────────────────────────────────────────────────────
   const handleSaveLocal = () => {
-    const backendStr = processorResult?.backendInfo?.acceleration_backend;
-    const procLabel =
-      processorResult?.status === "gpu" && backendStr
-        ? `GPU — ${backendStr}`
-        : processorResult?.label || null;
     const newConfig = {
       type: "local",
       endpoint: localEndpoint,
       model: selectedModel,
-      processorStatus: processorResult?.status || null,
-      processorLabel: procLabel,
     };
     localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
     setModalOpen(false);
   };
 
-  // ---- Save provider config ----
+  // ── Save provider config ──────────────────────────────────────────────────
   const handleSaveProvider = () => {
     if (!providerName.trim() || !providerKey.trim()) return;
     const newConfig = {
@@ -338,22 +246,24 @@ export default function ModelConfig({ config, onConfigChange }) {
     setModalOpen(false);
   };
 
-  // ---- Clear config ----
+  // ── Clear config ──────────────────────────────────────────────────────────
   const handleClear = () => {
     localStorage.removeItem("nexis_model_config");
     onConfigChange(null);
     setModalOpen(false);
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <>
-      {/* ---- Persistent status row ---- */}
+      {/* ── Persistent status row in workspace ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: "0.82rem", color: statusDotColor(config) }}>
+        <span style={{ fontSize: "0.82rem", color: workspaceDotColor(config, liveStatus) }}>
           ⬤
         </span>
-        <span style={{ fontSize: "0.82rem", color: statusDotColor(config) }}>
-          {statusLabel(config)}
+        <span style={{ fontSize: "0.82rem", color: workspaceDotColor(config, liveStatus) }}>
+          {workspaceStatusLabel(config, liveStatus)}
         </span>
         <button
           className="btn"
@@ -364,7 +274,7 @@ export default function ModelConfig({ config, onConfigChange }) {
         </button>
       </div>
 
-      {/* ---- Config modal ---- */}
+      {/* ── Config modal ── */}
       {modalOpen && (
         <div
           style={{
@@ -379,94 +289,75 @@ export default function ModelConfig({ config, onConfigChange }) {
         >
           <div
             className="panel"
-            style={{ width: 420, margin: 0, maxHeight: "90vh", overflowY: "auto" }}
+            style={{ width: 440, margin: 0, maxHeight: "90vh", overflowY: "auto" }}
           >
             {/* Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Configure Model</h3>
-              <button
-                className="btn"
-                style={{ padding: "3px 10px" }}
-                onClick={() => setModalOpen(false)}
-              >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ margin: 0 }}>Model Settings</h3>
+              <button className="btn" style={{ padding: "3px 10px" }} onClick={() => setModalOpen(false)}>
                 &times;
               </button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs — Local is first and default */}
             <div className="row" style={{ marginBottom: 20 }}>
               <button
                 className={`btn${tab === "local" ? " active" : ""}`}
                 onClick={() => setTab("local")}
               >
-                Local Model
+                Local AI
               </button>
               <button
                 className={`btn${tab === "provider" ? " active" : ""}`}
                 onClick={() => setTab("provider")}
+                style={{ opacity: 0.7 }}
               >
                 Provider Key
               </button>
             </div>
 
-            {/* ---- LOCAL MODEL ---- */}
+            {/* ── LOCAL AI TAB ── */}
             {tab === "local" && (
               <div>
-                <label style={{ fontSize: "0.82rem", display: "block", marginBottom: 6 }}>
-                  Local Endpoint
-                </label>
-                <input
-                  value={localEndpoint}
-                  onChange={(e) => {
-                    setLocalEndpoint(e.target.value);
-                    setDetectStatus(null);
-                    setAvailableModels([]);
-                    setSelectedModel("");
-                    setProcessorResult(null);
-                  }}
-                  placeholder="http://localhost:11434"
-                  style={{ marginBottom: 10 }}
-                />
+                {/* Detection status area */}
+                <div style={{ marginBottom: 14 }}>
+                  {liveStatus === "checking" && (
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: 0 }}>
+                      Connecting to NEXIS Local Companion…
+                    </p>
+                  )}
+                  {liveStatus === "error" && (
+                    <p style={{ fontSize: "0.82rem", color: "var(--arc-error, #f87171)", margin: 0 }}>
+                      {liveErrorMsg}
+                    </p>
+                  )}
+                  {liveStatus === "ok" && availableModels.length > 0 && (
+                    <p style={{ fontSize: "0.82rem", color: "var(--arc-accent)", margin: 0 }}>
+                      Connected — {availableModels.length} model{availableModels.length !== 1 ? "s" : ""} available.
+                    </p>
+                  )}
+                  {liveStatus === null && (
+                    <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.38)", margin: 0 }}>
+                      Checking…
+                    </p>
+                  )}
+                </div>
 
-                {/* Detect Models button */}
+                {/* Reconnect button */}
                 <button
                   className="btn"
                   style={{ padding: "5px 14px", fontSize: "0.85rem", marginBottom: 14 }}
-                  onClick={handleDetect}
-                  disabled={detectStatus === "detecting"}
+                  onClick={handleReconnect}
+                  disabled={liveStatus === "checking"}
                 >
-                  {detectStatus === "detecting" ? "Detecting..." : "Detect Models"}
+                  {liveStatus === "checking" ? "Connecting…" : "Reconnect"}
                 </button>
 
-                {/* Detection status feedback */}
-                {detectStatus === "detecting" && (
-                  <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", margin: "0 0 8px" }}>
-                    {detectDetail}
-                  </p>
-                )}
-                {detectStatus === "fail" && (
-                  <p style={{ fontSize: "0.8rem", color: "var(--arc-error)", margin: "0 0 8px" }}>
-                    {detectDetail}
-                  </p>
-                )}
-                {detectStatus === "ok" && (
-                  <p style={{ fontSize: "0.8rem", color: "var(--arc-accent)", margin: "0 0 8px" }}>
-                    {detectDetail}
-                  </p>
-                )}
-
-                {/* Model list */}
-                {availableModels.length > 0 && (
-                  <div style={{ marginTop: 16 }}>
+                {/* Model list — shown once detection succeeds */}
+                {liveStatus === "ok" && availableModels.length > 0 && (
+                  <div style={{ marginTop: 4, marginBottom: 16 }}>
                     <div className="subtle" style={{ fontSize: "0.78rem", marginBottom: 8 }}>
-                      Detected Models
+                      Available Models
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {availableModels.map((m) => (
@@ -479,11 +370,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                             fontSize: "0.85rem",
                             justifyContent: "flex-start",
                           }}
-                          onClick={() => {
-                            setSelectedModel(m);
-                            setProcessorResult(null);
-                            setTestStatus(null);
-                          }}
+                          onClick={() => setSelectedModel(m)}
                         >
                           {m}
                         </button>
@@ -492,31 +379,49 @@ export default function ModelConfig({ config, onConfigChange }) {
                   </div>
                 )}
 
-                {/* Test CPU/GPU button — shown once a model is selected */}
-                {selectedModel && (
-                  <div style={{ marginTop: 16 }}>
-                    <button
-                      className="btn"
-                      style={{ padding: "5px 14px", fontSize: "0.85rem" }}
-                      onClick={handleTestProcessor}
-                      disabled={testStatus === "testing"}
-                    >
-                      {testStatus === "testing" ? "Testing processor…" : "Test CPU/GPU"}
-                    </button>
-
-                    {/* Show result after test completes */}
-                    {testStatus === "done" && (
-                      <ProcessorWarning result={processorResult} />
-                    )}
-
-                    {/* Prompt to test before any test has run */}
-                    {!testStatus && (
-                      <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.35)", margin: "8px 0 0" }}>
-                        Processor not confirmed — click to check.
-                      </p>
-                    )}
-                  </div>
+                {/* System info badge */}
+                {liveStatus === "ok" && systemInfo && (
+                  <ProcessorBadge system={systemInfo} />
                 )}
+
+                {/* Advanced — endpoint field hidden by default */}
+                <div style={{ marginTop: 18 }}>
+                  <button
+                    style={{
+                      all: "unset",
+                      cursor: "pointer",
+                      fontSize: "0.78rem",
+                      color: "rgba(255,255,255,0.35)",
+                      textDecoration: "underline",
+                      textUnderlineOffset: 3,
+                    }}
+                    onClick={() => setShowAdvanced((v) => !v)}
+                  >
+                    {showAdvanced ? "▾ Hide Advanced" : "▸ Advanced"}
+                  </button>
+
+                  {showAdvanced && (
+                    <div style={{ marginTop: 10 }}>
+                      <label style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", display: "block", marginBottom: 5 }}>
+                        Local Companion URL
+                      </label>
+                      <input
+                        value={localEndpoint}
+                        onChange={(e) => {
+                          setLocalEndpoint(e.target.value);
+                          setLiveStatus(null);
+                          setAvailableModels([]);
+                          setSelectedModel("");
+                        }}
+                        placeholder={BRIDGE_DEFAULT_URL}
+                        style={{ marginBottom: 6, fontSize: "0.82rem" }}
+                      />
+                      <p className="subtle" style={{ fontSize: "0.75rem", margin: 0 }}>
+                        Default: {BRIDGE_DEFAULT_URL}. Change only if you run the companion on a custom port.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 <div className="row" style={{ marginTop: 20, justifyContent: "flex-end" }}>
                   {config && (
@@ -531,7 +436,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   <button
                     className="btn primary"
                     onClick={handleSaveLocal}
-                    disabled={!selectedModel}
+                    disabled={!selectedModel || liveStatus !== "ok"}
                   >
                     Save
                   </button>
@@ -539,9 +444,14 @@ export default function ModelConfig({ config, onConfigChange }) {
               </div>
             )}
 
-            {/* ---- PROVIDER KEY ---- */}
+            {/* ── PROVIDER KEY TAB ── */}
             {tab === "provider" && (
               <div>
+                <p className="subtle" style={{ fontSize: "0.82rem", marginBottom: 14 }}>
+                  Use a provider API key (e.g. OpenAI, Anthropic) via the hosted backend.
+                  Local AI mode is recommended for privacy and offline use.
+                </p>
+
                 <label style={{ fontSize: "0.82rem", display: "block", marginBottom: 6 }}>
                   Provider Name
                 </label>
@@ -564,7 +474,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                 />
 
                 <p className="subtle" style={{ fontSize: "0.78rem", marginBottom: 16 }}>
-                  Key is stored in localStorage. Do not use on shared devices.
+                  Key is stored locally. Do not use on shared devices.
                 </p>
 
                 <div className="row" style={{ justifyContent: "flex-end" }}>

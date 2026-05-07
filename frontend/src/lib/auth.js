@@ -1,18 +1,29 @@
 import { supabase } from './supabase'
 
-// Send a magic-link (OTP) email. The user clicks the link to sign in.
-// Works for both new and existing accounts — no separate sign-up needed.
-export async function sendMagicLink(email) {
-  return await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin },
-  })
+// ── AUTH CHANGE: Removed magic-link / OTP entirely.
+// Only email+password flows are supported.
+// sendMagicLink / signInWithOtp are intentionally absent.
+
+// ── Email/password sign-up ─────────────────────────────────────────────────
+// Creates a new Supabase account. Supabase sends a confirmation email;
+// the user must click it before they can sign in with signInWithPassword.
+export async function signUp(email, password) {
+  return await supabase.auth.signUp({ email, password })
 }
 
+// ── Email/password sign-in ─────────────────────────────────────────────────
+// Signs in an existing, confirmed account using a password only.
+// Never sends an OTP or magic-link. Returns { data, error }.
+export async function signIn(email, password) {
+  return await supabase.auth.signInWithPassword({ email, password })
+}
+
+// ── Sign-out ───────────────────────────────────────────────────────────────
 export async function signOut() {
   return await supabase.auth.signOut()
 }
 
+// ── Session / user helpers ─────────────────────────────────────────────────
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser()
   return data?.user || null
@@ -23,6 +34,7 @@ export async function getSession() {
   return data?.session || null
 }
 
+// ── Password reset ─────────────────────────────────────────────────────────
 export async function resetPasswordForEmail(email) {
   return await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin,
