@@ -1,11 +1,12 @@
 import { supabase } from './supabase'
 
-export async function signUp(email, password) {
-  return await supabase.auth.signUp({ email, password })
-}
-
-export async function signIn(email, password) {
-  return await supabase.auth.signInWithPassword({ email, password })
+// Send a magic-link (OTP) email. The user clicks the link to sign in.
+// Works for both new and existing accounts — no separate sign-up needed.
+export async function sendMagicLink(email) {
+  return await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  })
 }
 
 export async function signOut() {

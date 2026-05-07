@@ -10,11 +10,10 @@ import TopBar from "./TopBar";
 
 import NexusDashboard from "../pages/NexusDashboard";
 import HelpOverlay from "../components/HelpOverlay";
-import SignUpOverlay from "../components/SignUpOverlay";
 import SignedOutScreen from "../components/SignedOutScreen";
 import PasswordRecoveryOverlay from "../components/PasswordRecoveryOverlay";
 import AccountOverlay from "../components/AccountOverlay";
-import { signUp, signIn, signOut, ensureProfile } from "../lib/auth";
+import { sendMagicLink, signOut, ensureProfile } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 
 import "./layout.css";
@@ -22,12 +21,11 @@ import "./layout.css";
 export default function AppLayout() {
   // null | "help"
   const [overlay, setOverlay] = useState(null);
-  const [showSignUp, setShowSignUp] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Auth — authLoading stays true until the initial session check resolves
+  // Raw signUp — authLoading stays true until the initial session check resolves
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -94,32 +92,11 @@ export default function AppLayout() {
     };
   }, []);
 
-  // Raw signUp — overlay handles its own result display; also updates user if session active.
-  // profileInfo is collected in step 2 of the signup overlay and stored in the profiles table.
-  const handleSignUp = async (email, password, profileInfo = {}) => {
-    const result = await signUp(email, password);
-    const newUser = result?.data?.user;
-    if (newUser) {
-      // Seed the profile immediately (works even if email confirmation is pending —
-      // the user row exists in auth.users, so the profiles insert will succeed).
-      ensureProfile(newUser, profileInfo)
-        .then((p) => { if (p) setProfile(p); })
-        .catch((e) => console.error("[Profile] post-signUp profile error:", e));
-    }
-    // onAuthStateChange will handle setUser once a session is established
-    return result;
-  };
-
-  // Returns the error (or null) so the caller can display it
-  const handleSignIn = async (email, password) => {
-    const { data, error } = await signIn(email, password);
-    if (error) {
-      console.error("[Auth] signIn error:", error.message);
-      return error;
-    }
-    console.log("[Auth] signIn user:", data.user, "session:", data.session);
-    // onAuthStateChange will update user state
-    return null;
+  // Send a magic-link email. Returns { error } from Supabase.
+  const handleSendMagicLink = async (email) => {
+    const { error } = await sendMagicLink(email);
+    if (error) console.error("[Auth] sendMagicLink error:", error.message);
+    return { error };
   };
 
   const handleSignOut = async () => {
@@ -173,8 +150,7 @@ export default function AppLayout() {
   if (!user) {
     return (
       <SignedOutScreen
-        onSignIn={handleSignIn}
-        onSignUpSuccess={handleSignUp}
+        onSendMagicLink={handleSendMagicLink}
       />
     );
   }
@@ -186,9 +162,7 @@ export default function AppLayout() {
         onHome={() => setOverlay(null)}
         openOverlay={(name) => setOverlay(name)}
         user={user}
-        onOpenSignUp={() => setShowSignUp(true)}
         onOpenAccount={() => setShowAccount(true)}
-        onSignIn={handleSignIn}
         onSignOut={handleSignOut}
       />
 
@@ -210,13 +184,6 @@ export default function AppLayout() {
       {/* Overlays — rendered on top of everything */}
       {overlay === "help" && (
         <HelpOverlay onClose={() => setOverlay(null)} />
-      )}
-      {showSignUp && (
-        <SignUpOverlay
-          onClose={() => setShowSignUp(false)}
-          onSignUpSuccess={handleSignUp}
-          onGoToSignIn={() => setShowSignUp(false)}
-        />
       )}
       {showAccount && (
         <AccountOverlay
