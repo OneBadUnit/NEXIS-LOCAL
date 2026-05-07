@@ -24,6 +24,11 @@ Tesseract-OCR/
 # --- FFMPEG BINARIES ---
 bin/
 
+# --- BRIDGE BUILD OUTPUTS ---
+bridge/dist/
+*.exe
+bridge/*.exe
+
 # --- TEMP FILES ---
 *.log
 *.tmp
