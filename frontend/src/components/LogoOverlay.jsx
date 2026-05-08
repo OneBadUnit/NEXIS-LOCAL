@@ -4,30 +4,25 @@
 // Version: FINAL (correct path)
 // ============================================================
 
-import React, { useEffect, useState } from "react";
-import logo from "../logo.png"; // ✅ correct path for your setup
+import React, { useEffect } from 'react';
+import OnboardingOverlay from './OnboardingOverlay';
 
 const LogoOverlay = ({ onComplete }) => {
-  const [visible, setVisible] = useState(true);
-
   useEffect(() => {
     const timer = setTimeout(() => {
-      setVisible(false);
-      if (onComplete) onComplete();
-    }, 2600);
+      if (onComplete) {
+        onComplete();
+      }
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
 
-  if (!visible) return null;
-
   return (
     <div className="logo-overlay">
-      <img
-        src={logo}
-        alt="ArcNexus"
-        className="logo-overlay-img"
-      />
+      <div className="logo-spinner" />
+      <p>Loading ArcNexus…</p>
+      <OnboardingOverlay onComplete={onComplete} />
     </div>
   );
 };

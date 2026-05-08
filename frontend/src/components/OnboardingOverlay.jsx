@@ -6,89 +6,56 @@
 // Dismissed via "Start" button. State stored in localStorage.
 // ============================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import LogoOverlay from './LogoOverlay';
 
-const STORAGE_KEY = "nexis_onboarding_seen";
-
-export default function OnboardingOverlay() {
-  const [visible, setVisible] = useState(false);
+const OnboardingOverlay = ({ onComplete }) => {
+  const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
+    let isOnboardingSkipped = false;
     try {
-      const seen = localStorage.getItem(STORAGE_KEY);
-      console.log("[LandingInfo] check — key present:", !!seen);
-      if (seen) {
-        console.log("[LandingInfo] already seen, skipping.");
-        return;
+      isOnboardingSkipped = localStorage.getItem('nexusOnboardingSkipped') === 'true';
+    } catch {
+      // Ignore localStorage access errors (e.g., privacy mode, sandboxed iframe)
+    }
+
+    if (isOnboardingSkipped) {
+      setIsSkipped(true);
+      if (onComplete) {
+        onComplete();
       }
-      console.log("[LandingInfo] should show");
-      setVisible(true);
-    } catch (e) {
-      console.warn("[LandingInfo] localStorage unavailable, showing onboarding anyway");
-      setVisible(true);
     }
-  }, []);
+  }, [onComplete]);
 
-  if (!visible) return null;
-
-  const handleStart = () => {
-    console.log("[LandingInfo] dismissed");
+  const skipOnboarding = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch (e) {
-      console.warn("[LandingInfo] failed to persist onboarding completion");
+      localStorage.setItem('nexusOnboardingSkipped', 'true');
+    } catch {
+      // Ignore localStorage setItem errors
     }
-    setVisible(false);
+    setIsSkipped(true);
+    if (onComplete) {
+      onComplete();
+    }
   };
+
+  if (isSkipped) {
+    return null;
+  }
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="onboarding-title"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.82)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9000,
-      }}
+      className="onboarding-overlay"
     >
-      <div
-        className="panel"
-        style={{ width: 340, margin: 0, textAlign: "center" }}
-      >
-        <h2 id="onboarding-title" style={{ marginTop: 0, marginBottom: 24 }}>Welcome to NEXIS</h2>
-
-        <ol
-          style={{
-            textAlign: "left",
-            paddingLeft: 22,
-            margin: "0 0 24px",
-            lineHeight: "2.2",
-            fontSize: "0.95rem",
-          }}
-        >
-          <li>Collect sources</li>
-          <li>Select what matters</li>
-          <li>Create structured output</li>
-          <li>Refine and reuse</li>
-        </ol>
-
-        <p className="subtle" style={{ fontSize: "0.82rem", margin: "0 0 24px" }}>
-          Processing requires a configured model.
-        </p>
-
-        <button
-          className="btn primary"
-          onClick={handleStart}
-          style={{ width: "100%" }}
-        >
-          Start
-        </button>
-      </div>
+      <h2 id="onboarding-title">Welcome to ArcNexus</h2>
+      <p>Follow the steps to get started.</p>
+      <button onClick={skipOnboarding}>Skip</button>
     </div>
   );
-}
+};
+
+export default OnboardingOverlay;

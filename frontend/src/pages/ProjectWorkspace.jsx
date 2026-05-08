@@ -11,6 +11,8 @@ import {
   saveRawItemsForProject,
   loadOutputs,
   saveOutputsForProject,
+  countAllRawItems,
+  countAllOutputs,
 } from "../utils/projectStorage";
 import ModelConfig from "../components/ModelConfig/ModelConfig";
 
@@ -420,7 +422,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   // and on every count change (prevents exceeding limits).
   // ----------------------------------------------------------
   useEffect(() => {
-    syncUsage({ raw_inputs: rawItems.length, outputs: outputs.length })
+    syncUsage({ raw_inputs: countAllRawItems(), outputs: countAllOutputs() })
       .then((data) => setUsage(data))
       .catch(() => {});
   }, [rawItems.length, outputs.length]); // eslint-disable-line react-hooks/exhaustive-deps
