@@ -7,7 +7,6 @@
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
-import LogoOverlay from './LogoOverlay';
 
 const OnboardingOverlay = ({ onComplete }) => {
   const [isSkipped, setIsSkipped] = useState(false);
