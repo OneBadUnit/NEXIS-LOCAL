@@ -4,7 +4,7 @@ D:.
 |   .gitignore
 |   ARC.docx
 |   ARC_CONTEXT.md
-|   NEXIS_TREE.txt
+|   NEXIS_TREE.md
 |   README.md
 |   
 +---assets
@@ -162,8 +162,15 @@ D:.
 |               
 +---config
 +---docs
-|       LOCAL_COMPANION_QA.md
-|       
+|   |   LOCAL_COMPANION_QA.md
+|   |   
+|   \---ai
+|           AI_BEHAVIOR_EXAMPLES.md
+|           AI_RULES.md
+|           AI_SESSION_NOTES.md
+|           KNOWN_ISSUES.md
+|           NEXIS_CONTENT.md
+|           
 +---frontend
 |   |   .env
 |   |   .env.example
