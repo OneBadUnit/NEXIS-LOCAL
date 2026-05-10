@@ -191,6 +191,36 @@ available to Ollama.</p>
 
 <p class=MsoNormal>&nbsp;</p>
 
+
+<hr>
+<p class=MsoNormal><b><span style='font-size:18.0pt;line-height:115%'>Linux & WSL2 Users: Important Notes & Troubleshooting</span></b></p>
+
+<p class=MsoNormal><b>General:</b><br>
+If you’re using <b>WSL2 or Linux</b>: ensure localhost services (e.g., Ollama) are reachable from the WSL2 VM — try <code>curl http://127.0.0.1:11434</code> or <code>curl http://host.docker.internal:11434</code>. Avoid storing project files under <code>/mnt/c</code>; use the WSL2 home directory instead.
+</p>
+
+<p class=MsoNormal><b>Ollama-specific:</b><br>
+On WSL2, Ollama must bind to <code>0.0.0.0</code> (not localhost) on the Windows host, and WSL2 must be able to reach the host IP. You may need to add <code>host.docker.internal</code> to <code>/etc/hosts</code> or configure <code>OLLAMA_HOST=0.0.0.0:11434</code> in Windows.
+</p>
+
+<p class=MsoNormal><b>Shell/venv:</b><br>
+Use <code>./venv/bin/activate</code> (not Windows-style paths) in WSL2/Linux. If python isn’t found, run <code>sudo apt install python3 python3-pip</code>.
+</p>
+
+<p class=MsoNormal><b>Performance:</b><br>
+For best performance, store project files in WSL2’s <code>/home/username/...</code> — not <code>/mnt/c/...</code>. NTFS-backed WSL2 filesystems are significantly slower for npm, Git, and file-watching operations.
+</p>
+
+<p class=MsoNormal><b>Node:</b><br>
+On Ubuntu/Debian WSL2, ensure <code>nodejs-legacy</code> is installed to provide the <code>node</code> symlink, or use <code>nvm</code>.
+</p>
+
+<p class=MsoNormal><b>CUDA:</b><br>
+CUDA in WSL2 requires the Windows NVIDIA driver (version ≥465.12) and WSL2 GPU driver. Run <code>nvidia-smi</code> in WSL2 to verify. If missing, inference may fall back to CPU.
+</p>
+
+<p class=MsoNormal>If NEXIS can’t reach your local AI backend (Ollama), run <code>npx @nexis/cli-diagnostic --check localhost</code> to verify reachability and path issues.</p>
+
 </div>
 
 </body>
