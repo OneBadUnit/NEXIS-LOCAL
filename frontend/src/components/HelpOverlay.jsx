@@ -26,6 +26,7 @@ const NAV = [
   { id: "help-provider",        label: "Provider Mode" },
   { id: "help-limits",          label: "Projects & Limits" },
   { id: "help-troubleshooting", label: "Troubleshooting" },
+  { id: "help-wsl2",           label: "Linux / WSL2" },
   { id: "help-faq",             label: "FAQ" },
   { id: "help-about",           label: "About" },
 ];
@@ -656,6 +657,79 @@ export default function HelpOverlay({ onClose }) {
                 <li>Check the provider's status page for outages.</li>
               </ol>
             </div>
+          </div>
+
+          {/* ???? LINUX / WSL2 ???? */}
+          <SectionAnchor id="help-wsl2" />
+          <div className="panel">
+            <SectionTitle>Linux / WSL2 Troubleshooting</SectionTitle>
+            <p style={{ marginTop: 0, marginBottom: 16, fontSize: "0.88rem", color: "rgba(255,255,255,0.55)" }}>
+              Running NEXIS on Linux or WSL2? The notes below cover the most common setup and connectivity issues.
+            </p>
+
+            <TroubleBlock title="General — localhost reachability">
+              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
+                Ensure localhost services (e.g., Ollama) are reachable from the WSL2 VM. Test with:
+              </p>
+              <pre style={codeStyle}>{`curl http://127.0.0.1:11434
+curl http://host.docker.internal:11434`}</pre>
+              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                Avoid storing project files under <code style={{ fontFamily: "monospace" }}>/mnt/c</code>; use the WSL2 home directory instead.
+              </p>
+            </TroubleBlock>
+
+            <TroubleBlock title="Ollama — binding and host reachability">
+              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
+                On WSL2, Ollama must bind to <code style={{ fontFamily: "monospace" }}>0.0.0.0</code> (not localhost) on the Windows host, and WSL2 must be able to reach the host IP.
+                You may need to add <code style={{ fontFamily: "monospace" }}>host.docker.internal</code> to <code style={{ fontFamily: "monospace" }}>/etc/hosts</code>, or set the following in Windows:
+              </p>
+              <pre style={codeStyle}>OLLAMA_HOST=0.0.0.0:11434</pre>
+            </TroubleBlock>
+
+            <TroubleBlock title="Shell / Python venv">
+              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
+                Use <code style={{ fontFamily: "monospace" }}>./venv/bin/activate</code> (not Windows-style paths) in WSL2/Linux.
+                If <code style={{ fontFamily: "monospace" }}>python</code> is not found, install it:
+              </p>
+              <pre style={codeStyle}>sudo apt install python3 python3-pip</pre>
+            </TroubleBlock>
+
+            <TroubleBlock title="Performance — file system location">
+              <p style={{ margin: 0, fontSize: "0.85rem" }}>
+                For best performance, store project files in WSL2's native filesystem:
+              </p>
+              <pre style={codeStyle}>/home/username/...   ✓  (fast)
+/mnt/c/...          ✗  (slow)</pre>
+              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                NTFS-backed WSL2 filesystems are significantly slower for npm, Git, and file-watching operations.
+              </p>
+            </TroubleBlock>
+
+            <TroubleBlock title="Node — missing symlink">
+              <p style={{ margin: 0, fontSize: "0.85rem" }}>
+                On Ubuntu/Debian WSL2, ensure <code style={{ fontFamily: "monospace" }}>nodejs-legacy</code> is installed to provide the{" "}
+                <code style={{ fontFamily: "monospace" }}>node</code> symlink, or use{" "}
+                <code style={{ fontFamily: "monospace" }}>nvm</code>.
+              </p>
+            </TroubleBlock>
+
+            <TroubleBlock title="CUDA — GPU inference in WSL2">
+              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
+                CUDA in WSL2 requires the Windows NVIDIA driver (version ≥ 465.12) and the WSL2 GPU driver.
+                Verify inside WSL2:
+              </p>
+              <pre style={codeStyle}>nvidia-smi</pre>
+              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                If the command fails or the driver is missing, inference will fall back to CPU.
+              </p>
+            </TroubleBlock>
+
+            <TroubleBlock title="NEXIS can't reach local Ollama backend">
+              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
+                If NEXIS can't reach your local AI backend, run the following to verify reachability and path issues:
+              </p>
+              <pre style={codeStyle}>npx @nexis/cli-diagnostic --check localhost</pre>
+            </TroubleBlock>
           </div>
 
           {/* ???? FAQ ???? */}
