@@ -97,7 +97,7 @@ function Collapsible({ label, children }) {
           boxSizing: "border-box",
         }}
       >
-        <span style={{ fontSize: "0.7rem" }}>{open ? "?" : "?"}</span>
+        <span style={{ fontSize: "0.7rem" }}>{open ? "v" : ">"}</span>
         {label}
       </button>
       {open && (
@@ -250,7 +250,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0 }}>
               A project holds your collected sources, package outputs, and refined versions.
-              The workflow: collect sources ? review ? create a package ? refine if needed.
+              The workflow: collect sources &gt; review &gt; create a package &gt; refine if needed.
             </p>
           </div>
 
@@ -347,16 +347,16 @@ export default function HelpOverlay({ onClose }) {
                   <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Ollama</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
                     A free, open-source program that runs AI models on your computer. NEXIS can open
-                    Ollama and download models for you automatically ? no terminal needed.
+                    Ollama and download models for you automatically - no terminal needed.
                   </p>
                 </div>
               </div>
 
               {/* Flow diagram */}
               <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {["NEXIS (browser)", "?", "NEXIS Companion", "?", "Ollama", "?", "AI Model"].map((item, i) => (
-                  item === "?" ? (
-                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>?</span>
+                {["NEXIS (browser)", ">", "NEXIS Companion", ">", "Ollama", ">", "AI Model"].map((item, i) => (
+                  item === ">" ? (
+                    <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>&#8250;</span>
                   ) : (
                     <span key={i} style={{
                       padding: "4px 12px",
@@ -373,7 +373,7 @@ export default function HelpOverlay({ onClose }) {
                 ))}
               </div>
               <p style={{ textAlign: "center", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", margin: "8px 0 0" }}>
-                You never need to understand the details ? NEXIS manages this flow for you.
+                You never need to understand the details - NEXIS manages this flow for you.
               </p>
             </div>
 
@@ -426,7 +426,7 @@ export default function HelpOverlay({ onClose }) {
                   Go to <strong>AI Model Settings</strong> in NEXIS. If Ollama is not installed,
                   NEXIS will show an "Install Ollama" button. If it is installed but not open,
                   NEXIS will offer to start it. If no model is downloaded, NEXIS will offer to
-                  download one. Follow the buttons ? no terminal needed.
+                  download one. Follow the buttons - no terminal needed.
                 </p>
               </Step>
             </div>
@@ -446,9 +446,9 @@ export default function HelpOverlay({ onClose }) {
               </div>
 
               <StateRow
-                state="Checking your local AI?"
+                state="Checking your local AI..."
                 meaning="NEXIS is detecting the Companion, Ollama, and available models."
-                action="Wait ? this takes a few seconds."
+                action="Wait - this takes a few seconds."
               />
               <StateRow
                 state="NEXIS Companion is not running."
@@ -458,30 +458,30 @@ export default function HelpOverlay({ onClose }) {
               <StateRow
                 state="Ollama is not installed."
                 meaning="The Ollama program needs to be downloaded and installed."
-                action='Click "Install Ollama" ? NEXIS will open the download page.'
+                action='Click "Install Ollama" - NEXIS will open the download page.'
               />
               <StateRow
                 state="Ollama is installed but not open."
                 meaning="Ollama is on your computer but not currently running."
-                action='Click "Start Ollama" ? NEXIS will open it for you automatically.'
+                action='Click "Start Ollama" - NEXIS will open it for you automatically.'
               />
               <StateRow
-                state="Ollama is starting?"
+                state="Ollama is starting..."
                 meaning="NEXIS opened Ollama and is waiting for it to be ready."
-                action="Wait ? usually takes 5?20 seconds."
+                action="Wait - usually takes 5-20 seconds."
               />
               <StateRow
                 state="Ollama appears to be stuck."
                 meaning="Ollama was started but did not become ready in time."
-                action='Click "Restart Ollama" ? NEXIS will close and reopen it.'
+                action='Click "Restart Ollama" - NEXIS will close and reopen it.'
               />
               <StateRow
                 state="No AI model found."
                 meaning="Ollama is running but no AI model has been downloaded yet."
-                action='Click "Download Recommended Model" ? NEXIS handles the download.'
+                action='Click "Download Recommended Model" - NEXIS handles the download.'
               />
               <StateRow
-                state="Downloading AI model? X%"
+                state="Downloading AI model... X%"
                 meaning="A model is being downloaded. This may take several minutes."
                 action="Wait for the download to finish. You can cancel if needed."
               />
@@ -523,9 +523,9 @@ export default function HelpOverlay({ onClose }) {
             {/* Collapsible: what cannot be automated */}
             <Collapsible label="Things NEXIS cannot do for you (one-time only)">
               <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "1.9", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)" }}>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> ? requires an installer that needs system permission. NEXIS provides the download link.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> ? you must run it once per session. After the first time, it is quick.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> ? if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> - requires an installer that needs system permission. NEXIS provides the download link.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> - you must run it once per session. After the first time, it is quick.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> - if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
               </ul>
             </Collapsible>
           </div>
@@ -667,7 +667,7 @@ export default function HelpOverlay({ onClose }) {
               Running NEXIS on Linux or WSL2? The notes below cover the most common setup and connectivity issues.
             </p>
 
-            <TroubleBlock title="General — localhost reachability">
+            <TroubleBlock title="General - localhost reachability">
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 Ensure localhost services (e.g., Ollama) are reachable from the WSL2 VM. Test with:
               </p>
@@ -678,7 +678,7 @@ curl http://host.docker.internal:11434`}</pre>
               </p>
             </TroubleBlock>
 
-            <TroubleBlock title="Ollama — binding and host reachability">
+            <TroubleBlock title="Ollama - binding and host reachability">
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 On WSL2, Ollama must bind to <code style={{ fontFamily: "monospace" }}>0.0.0.0</code> (not localhost) on the Windows host, and WSL2 must be able to reach the host IP.
                 You may need to add <code style={{ fontFamily: "monospace" }}>host.docker.internal</code> to <code style={{ fontFamily: "monospace" }}>/etc/hosts</code>, or set the following in Windows:
@@ -694,18 +694,18 @@ curl http://host.docker.internal:11434`}</pre>
               <pre style={codeStyle}>sudo apt install python3 python3-pip</pre>
             </TroubleBlock>
 
-            <TroubleBlock title="Performance — file system location">
+            <TroubleBlock title="Performance - file system location">
               <p style={{ margin: 0, fontSize: "0.85rem" }}>
                 For best performance, store project files in WSL2's native filesystem:
               </p>
-              <pre style={codeStyle}>/home/username/...   ✓  (fast)
-/mnt/c/...          ✗  (slow)</pre>
+              <pre style={codeStyle}>{`/home/username/...   [fast]
+/mnt/c/...           [slow]`}</pre>
               <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                 NTFS-backed WSL2 filesystems are significantly slower for npm, Git, and file-watching operations.
               </p>
             </TroubleBlock>
 
-            <TroubleBlock title="Node — missing symlink">
+            <TroubleBlock title="Node - missing symlink">
               <p style={{ margin: 0, fontSize: "0.85rem" }}>
                 On Ubuntu/Debian WSL2, ensure <code style={{ fontFamily: "monospace" }}>nodejs-legacy</code> is installed to provide the{" "}
                 <code style={{ fontFamily: "monospace" }}>node</code> symlink, or use{" "}
@@ -713,9 +713,9 @@ curl http://host.docker.internal:11434`}</pre>
               </p>
             </TroubleBlock>
 
-            <TroubleBlock title="CUDA — GPU inference in WSL2">
+            <TroubleBlock title="CUDA - GPU inference in WSL2">
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                CUDA in WSL2 requires the Windows NVIDIA driver (version ≥ 465.12) and the WSL2 GPU driver.
+                CUDA in WSL2 requires the Windows NVIDIA driver (version &gt;= 465.12) and the WSL2 GPU driver.
                 Verify inside WSL2:
               </p>
               <pre style={codeStyle}>nvidia-smi</pre>
