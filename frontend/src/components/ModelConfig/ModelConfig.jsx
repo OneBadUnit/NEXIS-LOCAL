@@ -296,7 +296,7 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
 
         {/* Download */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 8px" }}>Step 1 ?? Download</p>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 8px" }}>Step 1 - Download</p>
           {companionDl.supported ? (
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <a
@@ -321,7 +321,7 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
 
         {/* Set location */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 2 ?? Save the location</p>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 2 - Save the location</p>
           <p style={{ margin: "0 0 10px", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
             After downloading, copy the full file path and paste it below. NEXIS uses this
             to remind you where to find the companion when you need to start it.
@@ -363,12 +363,12 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
           )}
         </div>
 
-        {/* Step 3 ?? Start */}
+        {/* Step 3 - Start */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 3 ?? Start the Companion</p>
+          <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 4px" }}>Step 3 - Start the Companion</p>
           <p style={{ margin: "0 0 10px", fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
             Navigate to the saved location and double-click the file to start it. A small window
-            will open ?? keep it open while using NEXIS. You can minimise it.
+            will open - keep it open while using NEXIS. You can minimise it.
           </p>
           {savedPath && (
             <div style={{
@@ -383,7 +383,7 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
           )}
           <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
             <button className="btn" style={{ padding: "6px 14px", fontSize: "0.82rem" }} onClick={onRecheck}>
-              After starting ?? click Recheck
+              After starting - click Recheck
             </button>
           </div>
           <p style={{ margin: "6px 0 0", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", lineHeight: 1.5 }}>
