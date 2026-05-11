@@ -9,6 +9,8 @@ const KEYS = {
   PROJECTS: "arcn_projects",
   RAW_ITEMS: "arcn_raw_items",
   OUTPUTS: "arcn_outputs",
+  // Model config is user-scoped: provider API keys must not persist between accounts.
+  MODEL_CONFIG: "nexis_model_config",
 };
 
 // ------------------------------------------------------------
@@ -123,6 +125,11 @@ export function clearAllProjectStorage() {
   try { localStorage.removeItem(KEYS.PROJECTS); } catch {}
   try { localStorage.removeItem(KEYS.RAW_ITEMS); } catch {}
   try { localStorage.removeItem(KEYS.OUTPUTS); } catch {}
+  // Clear model config so a provider API key from one account cannot be
+  // read or auto-filled by the next user on the same browser.
+  // nexis_companion_path is intentionally preserved — it is device-scoped
+  // (path to a local executable), not a credential.
+  try { localStorage.removeItem(KEYS.MODEL_CONFIG); } catch {}
 }
 
 // ------------------------------------------------------------
