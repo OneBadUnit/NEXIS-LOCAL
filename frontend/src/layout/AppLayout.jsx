@@ -23,6 +23,7 @@ import AccountOverlay from "../components/AccountOverlay";
 // AUTH CHANGE: sendMagicLink removed. signIn / signUp use password-based Supabase auth.
 import { signIn, signUp, signOut, ensureProfile } from "../lib/auth";
 import { supabase } from "../lib/supabase";
+import { clearAllProjectStorage } from "../utils/projectStorage";
 
 import "./layout.css";
 
@@ -77,6 +78,10 @@ export default function AppLayout() {
       } else {
         setAuthLoading(false);
       }
+    }).catch(() => {
+      // SDK-level failure (corrupted storage, network error before JS loads, etc.)
+      // Always unblock the UI so the user can reach the sign-in screen.
+      setAuthLoading(false);
     });
 
     // Reactive auth state listener
@@ -120,8 +125,11 @@ export default function AppLayout() {
   };
 
   const handleSignOut = async () => {
+    // Wipe all localStorage project data before signing out so a subsequent
+    // user on the same browser cannot see the previous account's projects.
+    clearAllProjectStorage();
     await signOut();
-    // onAuthStateChange will clear user state
+    // onAuthStateChange will clear user/profile state
   };
 
   useEffect(() => {

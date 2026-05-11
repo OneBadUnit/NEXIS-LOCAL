@@ -115,6 +115,17 @@ export function countAllOutputs() {
 
 
 // ------------------------------------------------------------
+// FULL STORAGE WIPE  (call on sign-out to prevent data leakage
+// between accounts sharing the same browser)
+// ------------------------------------------------------------
+
+export function clearAllProjectStorage() {
+  try { localStorage.removeItem(KEYS.PROJECTS); } catch {}
+  try { localStorage.removeItem(KEYS.RAW_ITEMS); } catch {}
+  try { localStorage.removeItem(KEYS.OUTPUTS); } catch {}
+}
+
+// ------------------------------------------------------------
 // CLEANUP  (call when a project is deleted)
 // ------------------------------------------------------------
 
