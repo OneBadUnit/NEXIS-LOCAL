@@ -1361,7 +1361,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
               <textarea
                 value={refineInstruction}
                 onChange={(e) => setRefineInstruction(e.target.value)}
-                placeholder="e.g. Make this shorter, focus on key facts, improve clarity..."
+                placeholder="e.g. Change all results tables to pie charts and rewrite for a business audience..."
                 style={{
                   width: "100%",
                   minHeight: 80,
