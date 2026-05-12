@@ -1156,12 +1156,12 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                           style={{
                             padding: "3px 10px",
                             fontSize: "0.8rem",
-                            borderColor: "rgba(56,189,248,0.4)",
-                            color: "rgba(56,189,248,0.85)",
+                            borderColor: "rgba(243, 195, 39, 0.85)",
+                            color: "rgba(243, 195, 39, 0.85)",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "rgba(56,189,248,0.75)";
-                            e.currentTarget.style.color = "#38bdf8";
+                            e.currentTarget.style.borderColor = "rgba(80, 243, 39, 0.85)";
+                            e.currentTarget.style.color = "rgba(80, 243, 39, 0.85)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = "rgba(243, 195, 39, 0.85)";
