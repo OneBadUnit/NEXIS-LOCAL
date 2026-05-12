@@ -1029,6 +1029,9 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                       ? "Processing..."
                       : "Create"}
                   </button>
+                  <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.28)", marginTop: -6 }}>
+                    Costs 1 action
+                  </span>
                 </div>
               ))}
             </div>
@@ -1146,7 +1149,20 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                         </button>
                         <button
                           className="btn"
-                          style={{ padding: "3px 10px", fontSize: "0.8rem" }}
+                          style={{
+                            padding: "3px 10px",
+                            fontSize: "0.8rem",
+                            borderColor: "rgba(56,189,248,0.4)",
+                            color: "rgba(56,189,248,0.85)",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(56,189,248,0.75)";
+                            e.currentTarget.style.color = "#38bdf8";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(56,189,248,0.4)";
+                            e.currentTarget.style.color = "rgba(56,189,248,0.85)";
+                          }}
                           onClick={() => openRefine(out)}
                         >
                           Refine
@@ -1357,15 +1373,24 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
               />
             </div>
 
-            {/* Run Refine button */}
-            <button
-              className="btn primary"
-              style={{ marginBottom: 20 }}
-              onClick={handleRunRefine}
-              disabled={!refineInstruction.trim() || refineStatus === "running"}
-            >
-              {refineStatus === "running" ? "Running..." : "Run Refine"}
-            </button>
+            {/* Run Refine button + cost hint */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                <button
+                  className="btn primary"
+                  onClick={handleRunRefine}
+                  disabled={!refineInstruction.trim() || refineStatus === "running"}
+                >
+                  {refineStatus === "running" ? "Running..." : "Run Refine"}
+                </button>
+                <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.28)" }}>
+                  Costs 1 action
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "0.78rem", color: "rgba(255,255,255,0.35)", lineHeight: 1.5, paddingTop: 6 }}>
+                Refines cost one action. Make sure your refine request is clear and detailed for best results.
+              </p>
+            </div>
 
             {/* Refined Result */}
             {(refineStatus === "done" || refineStatus === "error") && (
