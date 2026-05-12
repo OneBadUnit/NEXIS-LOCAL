@@ -939,7 +939,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
           <div className="panel" style={{ marginBottom: 0 }}>
             <div
               className="subtle"
-              style={{ fontSize: "1.72rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}
+              style={{ fontSize: "1.72rem", letterSpacing: "0.08em", marginBottom: 10 }}
             >
               3. Model
             </div>
