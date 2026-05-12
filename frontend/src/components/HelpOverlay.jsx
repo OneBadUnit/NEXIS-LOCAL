@@ -525,7 +525,7 @@ export default function HelpOverlay({ onClose }) {
               <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "1.9", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)" }}>
                 <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> - requires an installer that needs system permission. NEXIS provides the download link.</li>
                 <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> - you must run it once per session. After the first time, it is quick.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> - if your computer has a GPU, drivers are managed by the GPU manufacturer.</li>
+                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> - install or update GPU drivers.</li>
               </ul>
             </Collapsible>
           </div>
@@ -540,7 +540,7 @@ export default function HelpOverlay({ onClose }) {
             </p>
             <p style={{ marginBottom: 0, fontSize: "0.88rem", color: "rgba(255,255,255,0.55)" }}>
               Provider mode sends your text to the provider's cloud servers. The provider's
-              usage costs apply ? NEXIS does not cover them. Local AI mode is recommended
+              usage costs apply - NEXIS does not cover them. Local AI mode is recommended
               for privacy and offline use.
             </p>
           </div>
@@ -586,7 +586,7 @@ export default function HelpOverlay({ onClose }) {
 
             <TroubleBlock title='3. "Ollama is installed but not open."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                Click <strong>Start Ollama</strong> ? NEXIS will open it automatically.
+                Click <strong>Start Ollama</strong> - NEXIS will open it automatically.
                 If it does not respond within 20 seconds, click <strong>Restart Ollama</strong>.
               </p>
             </TroubleBlock>
@@ -628,7 +628,7 @@ export default function HelpOverlay({ onClose }) {
                 <li>If Ollama shows as stuck, click <strong>Restart Ollama</strong>.</li>
                 <li>If the problem persists, restart your computer and try again.</li>
               </ol>
-              <Collapsible label="Advanced ? manual commands (only if asked by support)">
+              <Collapsible label="Advanced - Manual commands">
                 <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)" }}>
                   Open a terminal from AI Model Settings ? Advanced ? Troubleshooting, or
                   open Command Prompt manually.
