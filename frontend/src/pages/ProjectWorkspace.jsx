@@ -1379,11 +1379,15 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
             {/* Run Refine button + cost hint */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0, background: "rgba(234, 179, 8, 0.95)",
-                borderColor: "rgba(234, 179, 8, 1)",
-                color: "rgba(17, 24, 39, 1)", }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
                 <button
                   className="btn primary"
+                  style={{
+                  alignSelf: "flex-start",
+                  background: "rgba(234, 179, 8, 0.95)",
+                  borderColor: "rgba(234, 179, 8, 1)",
+                  color: "rgba(17, 24, 39, 1)",
+                }}
                   onClick={handleRunRefine}
                   disabled={!refineInstruction.trim() || refineStatus === "running"}
                 >
