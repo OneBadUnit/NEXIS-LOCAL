@@ -1156,16 +1156,16 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                           style={{
                             padding: "3px 10px",
                             fontSize: "0.8rem",
-                            borderColor: "rgba(243, 195, 39, 0.85)",
-                            color: "rgba(243, 195, 39, 0.85)",
+                            borderColor: "rgba(80, 243, 39, 0.85)",
+                            color: "rgba(80, 243, 39, 0.85)",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = "rgba(80, 243, 39, 0.85)";
-                            e.currentTarget.style.color = "rgba(80, 243, 39, 0.85)";
-                          }}
-                          onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = "rgba(243, 195, 39, 0.85)";
                             e.currentTarget.style.color = "rgba(243, 195, 39, 0.85)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(80, 243, 39, 0.85)";
+                            e.currentTarget.style.color = "rgba(80, 243, 39, 0.85)";
                           }}
                           onClick={() => openRefine(out)}
                         >
