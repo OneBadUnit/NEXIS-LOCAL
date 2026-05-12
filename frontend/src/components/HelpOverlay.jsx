@@ -630,8 +630,7 @@ export default function HelpOverlay({ onClose }) {
               </ol>
               <Collapsible label="Advanced - Manual commands">
                 <p style={{ margin: "0 0 8px", fontSize: "0.82rem", color: "rgba(255,255,255,0.5)" }}>
-                  Open a terminal from AI Model Settings ? Advanced ? Troubleshooting, or
-                  open Command Prompt manually.
+                  Open a terminal (Windows key + R, then type cmd and Enter) and run these commands to check the status of Ollama and manage it manually.
                 </p>
                 <p style={{ margin: "0 0 4px", fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
                   Check if Ollama is running:
