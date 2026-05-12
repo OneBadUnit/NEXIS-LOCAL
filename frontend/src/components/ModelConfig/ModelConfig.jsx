@@ -70,7 +70,7 @@ const TESTED_MODELS = [
     hardware: "Mid-range GPU recommended",
   },
   {
-    name: "llama3.1:8b",
+    name: "qwen2.5:7b",
     tag: "Popular",
     tagColor: "rgba(255,255,255,0.25)",
     bestFor: ["Conversation", "Brainstorming", "Creative generation"],

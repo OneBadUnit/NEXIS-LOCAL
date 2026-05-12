@@ -1023,7 +1023,11 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                     className="btn primary"
                     disabled={includedItems.length === 0 || convertLoading || !modelReady}
                     onClick={() => handleCreateClick(key)}
-                    style={{ alignSelf: "flex-start" }}
+                    style={{ alignSelf: "flex-start",
+                      background: "rgba(234, 179, 8, 0.95)",
+                      borderColor: "rgba(234, 179, 8, 1)",
+                      color: "rgba(17, 24, 39, 1)",
+                     }}
                   >
                     {convertLoading && selectedPackage === key
                       ? "Processing..."
@@ -1160,8 +1164,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                             e.currentTarget.style.color = "#38bdf8";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = "rgba(56,189,248,0.4)";
-                            e.currentTarget.style.color = "rgba(56,189,248,0.85)";
+                            e.currentTarget.style.borderColor = "rgba(243, 195, 39, 0.85)";
+                            e.currentTarget.style.color = "rgba(243, 195, 39, 0.85)";
                           }}
                           onClick={() => openRefine(out)}
                         >
@@ -1374,7 +1378,9 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
             </div>
 
             {/* Run Refine button + cost hint */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "flex-start",background: "rgba(234, 179, 8, 0.95)",
+                  borderColor: "rgba(234, 179, 8, 1)",
+                  color: "rgba(17, 24, 39, 1)", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
                 <button
                   className="btn primary"

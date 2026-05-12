@@ -186,7 +186,7 @@ NEXIS/
 
 • Ollama
 • qwen2.5:7b recommended for structured workflows
-• llama3.1:8b supported for conversational/creative workflows
+• qwen2.5:7b supported for conversational/creative workflows
 
 ---
 

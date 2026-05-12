@@ -23,7 +23,7 @@ from fastapi import HTTPException
 # LLM_URL is read from env. Empty string means "not configured".
 # ------------------------------------------------------------
 LLM_URL = os.environ.get("OLLAMA_URL", "")
-DEFAULT_MODEL = "llama3.1:8b"
+DEFAULT_MODEL = "qwen2.5:7b"
 
 
 # ------------------------------------------------------------

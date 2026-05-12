@@ -161,7 +161,7 @@ export default function Help() {
 
           <Step number="3" title="Download and Run a Model">
             <p style={{ marginTop: 0 }}>Run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run qwen2.5:7b</pre>
             <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
           </Step>
 
@@ -204,7 +204,7 @@ export default function Help() {
 
           <Step number="3" title="Download and Run a Model">
             <p style={{ marginTop: 0 }}>Run:</p>
-            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run llama3.1:8b</pre>
+            <pre style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "10px 14px", fontFamily: "monospace", fontSize: "0.82rem", overflowX: "auto", margin: "8px 0 8px" }}>ollama run qwen2.5:7b</pre>
             <p style={{ margin: 0 }}>Ollama will download and start the model. This may take a few minutes the first time.</p>
           </Step>
 

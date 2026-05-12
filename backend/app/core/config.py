@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # MODEL CONFIG (matches current services)
     # --------------------------------------------------------
-    LLM_MODEL: str = "llama3.1:8b"
+    LLM_MODEL: str = "qwen2.5:7b"
     VISION_MODEL: str = "llava:34b"
     OLLAMA_URL: str = "http://localhost:11434"
 

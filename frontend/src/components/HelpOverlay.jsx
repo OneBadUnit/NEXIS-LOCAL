@@ -594,7 +594,7 @@ export default function HelpOverlay({ onClose }) {
             <TroubleBlock title='4. "No AI model found."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 Click <strong>Download Recommended Model</strong>. NEXIS will download
-                llama3.1:8b (~4.7 GB). This takes several minutes depending on your connection.
+                qwen2.5:7b (~4.7 GB). This takes several minutes depending on your connection.
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
                 Make sure Ollama is open during the download.
@@ -643,7 +643,7 @@ export default function HelpOverlay({ onClose }) {
                 <p style={{ margin: "8px 0 4px", fontSize: "0.78rem", color: "rgba(255,255,255,0.35)" }}>
                   Download the recommended model manually:
                 </p>
-                <pre style={codeStyle}>ollama pull llama3.1:8b</pre>
+                <pre style={codeStyle}>ollama pull qwen2.5:7b</pre>
               </Collapsible>
             </TroubleBlock>
 
@@ -754,7 +754,7 @@ curl http://host.docker.internal:11434`}</pre>
             />
             <FAQ
               q="What model does NEXIS recommend?"
-              a="llama3.1:8b. It is a good balance of quality and speed for most computers. NEXIS will offer to download it for you."
+              a="Qwen2.5:7b is recommended for most users. It offers a strong balance of speed, instruction-following, and output quality for collection, conversion, and refine tasks. NEXIS will offer to download it for you."
             />
             <FAQ
               q="Can I delete raw files or outputs?"

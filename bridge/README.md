@@ -47,7 +47,7 @@ NEXIS Local Companion  <-- this binary
      Ollama
         |
         v
-  Local AI Model (e.g. llama3.1:8b)
+  Local AI Model (e.g. qwen2.5:7b)
 ```
 
 ---

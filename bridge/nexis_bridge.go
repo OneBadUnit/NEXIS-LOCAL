@@ -56,7 +56,7 @@ const (
 	ollamaBase       = "http://localhost:11434"
 	httpTimeout      = 180 * time.Second
 	ollamaStartWait  = 20 * time.Second // max time to wait for ollama to come up
-	recommendedModel = "llama3.1:8b"
+	recommendedModel = "qwen2.5:7b"
 )
 
 // Trusted frontend origins.

@@ -26,7 +26,7 @@ Browser (Vercel)  →  NEXIS Local Companion (localhost:8765)  →  Ollama (loca
 | Companion port | 8765 |
 | Ollama port | 11434 |
 | Frontend | `http://localhost:3000` (dev) or `https://nexis-psi.vercel.app` (prod) |
-| Recommended model | `llama3.1:8b` |
+| Recommended model | `qwen2.5:7b` |
 
 ---
 
@@ -83,7 +83,7 @@ Browser (Vercel)  →  NEXIS Local Companion (localhost:8765)  →  Ollama (loca
 - [ ] Works even if Ollama was not running (kill is non-fatal)
 
 ### 2.6 GET /models
-- [ ] Returns `{ models: [...], recommended_model: "llama3.1:8b" }` when Ollama running with models
+- [ ] Returns `{ models: [...], recommended_model: "qwen2.5:7b" }` when Ollama running with models
 - [ ] Returns `OLLAMA_NOT_RUNNING` error when Ollama installed but not running
 - [ ] Returns `OLLAMA_NOT_INSTALLED` error when Ollama not found
 - [ ] Returns `NO_MODELS` error (not empty array) when Ollama running but `models: []` from `/api/tags`
@@ -92,7 +92,7 @@ Browser (Vercel)  →  NEXIS Local Companion (localhost:8765)  →  Ollama (loca
 ### 2.7 POST /models/pull
 - [ ] Returns `{ job_id, model, started: true }` immediately (async)
 - [ ] Returns `OLLAMA_NOT_RUNNING` if Ollama not reachable
-- [ ] Defaults to `llama3.1:8b` if no model in request body
+- [ ] Defaults to `qwen2.5:7b` if no model in request body
 
 ### 2.8 GET /models/pull/progress?job=<id>
 - [ ] SSE stream: sends `data: {...}\n\n` events
@@ -289,7 +289,7 @@ Browser (Vercel)  →  NEXIS Local Companion (localhost:8765)  →  Ollama (loca
 5. [ ] NEXIS shows "Ollama is installed but not open" → user clicks Start Ollama → NEXIS starts it
 6. [ ] NEXIS shows "No AI model found" → user clicks Download Recommended Model → progress bar appears
 7. [ ] Download completes → NEXIS shows "Local AI is ready" with model selected
-8. [ ] User clicks Save → modal closes → workspace row shows "Local AI is ready — llama3.1:8b"
+8. [ ] User clicks Save → modal closes → workspace row shows "Local AI is ready — qwen2.5:7b"
 9. [ ] User creates a package → generation routes through companion → output appears
 10. [ ] User closes browser and reopens → config restored from localStorage → workspace row shows "Saved — not checked"
 
