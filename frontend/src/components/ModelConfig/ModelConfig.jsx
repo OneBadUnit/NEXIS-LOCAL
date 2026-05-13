@@ -263,6 +263,12 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
           </button>
         </div>
 
+        {/* Browser security note */}
+        <p style={{ margin: "0 0 18px", fontSize: "0.8rem", color: "rgba(255,255,255,0.38)", lineHeight: 1.6, padding: "8px 12px", borderRadius: 6, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          For security reasons, web browsers cannot directly start programs on your computer.
+          Open NEXIS Companion manually from the saved location below, then click Recheck.
+        </p>
+
         {/* What / Why */}
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 6px" }}>What is the NEXIS Companion?</p>
@@ -386,10 +392,6 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
               After starting - click Recheck
             </button>
           </div>
-          <p style={{ margin: "6px 0 0", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", lineHeight: 1.5 }}>
-            Note: For security reasons, browsers cannot start programs on your computer directly.
-            You must start the companion manually. NEXIS will detect it automatically once running.
-          </p>
         </div>
 
         {/* Troubleshooting */}
@@ -434,7 +436,7 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
 function CompanionPill({ status, onClick }) {
   const colors = {
     running:   { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.35)", dot: "#22c55e",  text: "Running" },
-    start:     { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", dot: "#f59e0b", text: "Start" },
+    start:     { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", dot: "#f59e0b", text: "Companion Setup" },
     configure: { bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.35)",  dot: "rgba(239,68,68,0.8)", text: "Configure" },
     checking:  { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", dot: "rgba(255,255,255,0.25)", text: "Checking..." },
   };
