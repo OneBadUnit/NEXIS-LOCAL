@@ -558,7 +558,51 @@ export default function ModelConfig({ config, onConfigChange }) {
 
   // ???? Companion pill click ????????????????????????????????????????????????????????????????????????????????????????????????????
   const handleCompanionPillClick = () => {
-    // All states open the companion overlay for full context
+    // "start" = saved path exists but bridge not reachable.
+    // In Electron we can launch the executable directly.
+    // In a plain browser we cannot spawn processes, so fall through to the overlay.
+    if (companionStatus === "start" && savedCompanionPath) {
+      const isElectron = !!(
+        typeof window !== "undefined" &&
+        window.process &&
+        window.process.versions &&
+        window.process.versions.electron
+      );
+
+      if (isElectron) {
+        try {
+          const fs    = window.require("fs");
+          const child = window.require("child_process");
+
+          if (!fs.existsSync(savedCompanionPath)) {
+            // Saved path no longer valid — reset and open setup
+            clearCompanionPath();
+            setSavedCompanionPath("");
+            checkCompanionStatus();
+            setCompanionOverlayOpen(true);
+            return;
+          }
+
+          // Launch the companion detached so it outlives the renderer
+          const proc = child.spawn(savedCompanionPath, [], {
+            detached: true,
+            stdio: "ignore",
+          });
+          proc.unref();
+
+          // Re-check status after a short delay to update the pill automatically
+          setTimeout(() => checkCompanionStatus(), 3000);
+          return; // do NOT open the overlay — companion is being launched
+        } catch (err) {
+          // Launch attempt failed — fall through to overlay so user can troubleshoot
+          console.error("[Companion] launch failed:", err);
+          setCompanionOverlayOpen(true);
+          return;
+        }
+      }
+      // Browser: cannot launch; open overlay (existing behaviour)
+    }
+
     setCompanionOverlayOpen(true);
   };
 
