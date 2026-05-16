@@ -43,7 +43,7 @@ import {
 } from "../../lib/bridge.js";
 
 // ???? localStorage key for saved companion exe path ????????????????????????????????????????????????
-const COMPANION_PATH_KEY = "nexis_companion_path";
+const COMPANION_PATH_KEY = "nexis_local_nexis_companion_path";
 
 function getSavedCompanionPath() {
   try { return localStorage.getItem(COMPANION_PATH_KEY) || ""; } catch { return ""; }
@@ -761,7 +761,7 @@ export default function ModelConfig({ config, onConfigChange }) {
 
   const handleSaveLocal = () => {
     const newConfig = { type: "local", endpoint: localEndpoint, model: selectedModel };
-    localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
+    localStorage.setItem("nexis_local_nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
     setModalOpen(false);
   };
@@ -769,13 +769,13 @@ export default function ModelConfig({ config, onConfigChange }) {
   const handleSaveProvider = () => {
     if (!providerName.trim() || !providerKey.trim()) return;
     const newConfig = { type: "provider", providerName: providerName.trim(), providerKey: providerKey.trim() };
-    localStorage.setItem("nexis_model_config", JSON.stringify(newConfig));
+    localStorage.setItem("nexis_local_nexis_model_config", JSON.stringify(newConfig));
     onConfigChange(newConfig);
     setModalOpen(false);
   };
 
   const handleClear = () => {
-    localStorage.removeItem("nexis_model_config");
+    localStorage.removeItem("nexis_local_nexis_model_config");
     onConfigChange(null);
     setModalOpen(false);
   };

@@ -17,8 +17,8 @@ export const ArcNProvider = ({ children }) => {
   const [activeModule, setActiveModule] = useState(null);
 
   useEffect(() => {
-    const storedPage = localStorage.getItem("arcn_active_page");
-    const storedModule = localStorage.getItem("arcn_active_module");
+    const storedPage = localStorage.getItem("nexis_local_arcn_active_page");
+    const storedModule = localStorage.getItem("nexis_local_arcn_active_module");
 
     if (storedPage) setActivePage(storedPage);
     if (storedModule) setActiveModule(storedModule);
@@ -26,13 +26,13 @@ export const ArcNProvider = ({ children }) => {
 
   useEffect(() => {
     if (activePage) {
-      localStorage.setItem("arcn_active_page", activePage);
+      localStorage.setItem("nexis_local_arcn_active_page", activePage);
     }
   }, [activePage]);
 
   useEffect(() => {
     if (activeModule !== null) {
-      localStorage.setItem("arcn_active_module", activeModule);
+      localStorage.setItem("nexis_local_arcn_active_module", activeModule);
     }
   }, [activeModule]);
 
@@ -66,13 +66,13 @@ export const ArcNProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("arcn_assimilation_state");
+    const stored = localStorage.getItem("nexis_local_arcn_assimilation_state");
 
     if (stored) {
       try {
         setAssimilationState(JSON.parse(stored));
       } catch {
-        localStorage.removeItem("arcn_assimilation_state");
+        localStorage.removeItem("nexis_local_arcn_assimilation_state");
       }
     }
   }, []);
@@ -84,7 +84,7 @@ export const ArcNProvider = ({ children }) => {
     };
 
     localStorage.setItem(
-      "arcn_assimilation_state",
+      "nexis_local_arcn_assimilation_state",
       JSON.stringify(safeState)
     );
   }, [assimilationState]);
@@ -95,20 +95,20 @@ export const ArcNProvider = ({ children }) => {
   const [savedAssimilations, setSavedAssimilations] = useState([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("arcn_saved_assimilations");
+    const stored = localStorage.getItem("nexis_local_arcn_saved_assimilations");
 
     if (stored) {
       try {
         setSavedAssimilations(JSON.parse(stored));
       } catch {
-        localStorage.removeItem("arcn_saved_assimilations");
+        localStorage.removeItem("nexis_local_arcn_saved_assimilations");
       }
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
-      "arcn_saved_assimilations",
+      "nexis_local_arcn_saved_assimilations",
       JSON.stringify(savedAssimilations)
     );
   }, [savedAssimilations]);
@@ -142,7 +142,7 @@ export const ArcNProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("arcn_reconstruction_state");
+    const stored = localStorage.getItem("nexis_local_arcn_reconstruction_state");
 
     if (stored) {
       try {
@@ -156,14 +156,14 @@ export const ArcNProvider = ({ children }) => {
           selectedOption: parsed.selectedOption || parsed.option || "Short",
         }));
       } catch {
-        localStorage.removeItem("arcn_reconstruction_state");
+        localStorage.removeItem("nexis_local_arcn_reconstruction_state");
       }
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
-      "arcn_reconstruction_state",
+      "nexis_local_arcn_reconstruction_state",
       JSON.stringify(reconstructionState)
     );
   }, [reconstructionState]);
@@ -174,20 +174,20 @@ export const ArcNProvider = ({ children }) => {
   const [savedReconstructions, setSavedReconstructions] = useState([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("arcn_saved_reconstructions");
+    const stored = localStorage.getItem("nexis_local_arcn_saved_reconstructions");
 
     if (stored) {
       try {
         setSavedReconstructions(JSON.parse(stored));
       } catch {
-        localStorage.removeItem("arcn_saved_reconstructions");
+        localStorage.removeItem("nexis_local_arcn_saved_reconstructions");
       }
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(
-      "arcn_saved_reconstructions",
+      "nexis_local_arcn_saved_reconstructions",
       JSON.stringify(savedReconstructions)
     );
   }, [savedReconstructions]);
@@ -251,7 +251,7 @@ export const ArcNProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("arcn_create_state");
+    const stored = localStorage.getItem("nexis_local_arcn_create_state");
 
     if (stored) {
       try {
@@ -264,13 +264,13 @@ export const ArcNProvider = ({ children }) => {
           option: parsed.option || parsed.style || "Medium",
         }));
       } catch {
-        localStorage.removeItem("arcn_create_state");
+        localStorage.removeItem("nexis_local_arcn_create_state");
       }
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("arcn_create_state", JSON.stringify(createState));
+    localStorage.setItem("nexis_local_arcn_create_state", JSON.stringify(createState));
   }, [createState]);
 
   // ============================================================

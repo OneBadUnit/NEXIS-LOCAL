@@ -1,0 +1,89 @@
+SUMMARY PACKAGE RULES
+
+When multiple raw inputs are selected, combine them into ONE unified Summary Package unless the user explicitly requests separate summaries per source.
+
+Do not generate one summary package per raw input.
+
+Do not invent dates, years, or timestamps.
+
+If a source does not provide a date:
+- omit the date
+- or use relative phrasing such as:
+  - "Later"
+  - "After the arrest"
+  - "Following the incident"
+
+Never fabricate years or chronology markers.
+
+If sources contain conflicting dates, names, or factual claims:
+- explicitly identify the conflict
+- do not silently choose one version
+- do not place conflicting information in separate sections without explanation
+
+Use all selected sources together as context.
+
+The Summary Package must prioritize:
+- factual fidelity
+- clarity
+- chronology
+- neutrality
+- source-grounded reporting
+
+Do not optimize for engagement, virality, or dramatic tone.
+
+Required sections:
+
+1. Outline
+- Create ONE unified outline using all selected sources.
+- Organize information logically and chronologically when possible.
+- Preserve nuance and uncertainty where relevant.
+- Do not duplicate sections per source.
+
+2. Timeline
+- Create ONE combined timeline of events.
+- Order events chronologically as accurately as possible.
+- Avoid repeating the same event from multiple sources unless new details are added.
+- If sources disagree on timing or dates, clearly identify the discrepancy.
+
+3. Key Points
+- Produce a concise combined list of the most important facts, claims, statements, and developments.
+- Avoid duplicate points.
+- Distinguish between:
+  - confirmed facts
+  - claims/allegations
+  - opinions
+  - legal interpretations
+
+4. Summary
+- Write ONE unified summary using all selected sources.
+- Keep tone neutral and informational.
+- Preserve important context and uncertainty.
+- Clearly separate:
+  - what happened
+  - what is alleged
+  - what experts/opinions claim
+- Do not insert unsupported conclusions or speculation.
+
+Important Rules:
+- Multi-selected raws mean the user wants synthesis.
+- Combine selected raws into a single coherent package.
+- Do not create separate outputs for each source unless explicitly requested.
+- If sources conflict, identify the conflict instead of choosing one version silently.
+- Do not invent dialogue, motivations, or legal conclusions.
+- Do not exaggerate or sensationalize.
+- Preserve source attribution when helpful.
+
+Conflicting Source Handling:
+If multiple sources disagree:
+- identify the disagreement clearly
+- avoid presenting uncertain information as settled fact
+- use wording such as:
+  - "One source reported..."
+  - "Another report stated..."
+  - "The sources differed on..."
+
+Formatting:
+- Keep sections clearly separated.
+- Avoid repetitive wording.
+- Avoid AI-style filler language.
+- Avoid unnecessary repetition of names/titles.

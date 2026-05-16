@@ -4,11 +4,31 @@
 # Version: 015 (Summary + Creator Package Refinement)
 # ============================================================
 
+import os
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Literal
 
 from app.services.llm_service import run_llm
+
+# Summary Package rules — loaded once at startup and prepended to all
+# Summary Package section prompts (Outline, Timeline, Key Points, Summary).
+_RULES_PATH = os.path.join(os.path.dirname(__file__), "prompts", "summary_package_rules.txt")
+try:
+    with open(_RULES_PATH, encoding="utf-8") as _f:
+        _SUMMARY_RULES = _f.read().strip()
+except Exception:
+    _SUMMARY_RULES = ""
+
+# Creator Package rules — loaded once at startup and prepended to all
+# Creator Package section prompts (Make Engaging, Short Video Script, etc.).
+_CREATOR_RULES_PATH = os.path.join(os.path.dirname(__file__), "prompts", "creator_package_rules.txt")
+try:
+    with open(_CREATOR_RULES_PATH, encoding="utf-8") as _f:
+        _CREATOR_RULES = _f.read().strip()
+except Exception:
+    _CREATOR_RULES = ""
 
 router = APIRouter(tags=["nexis-understand"])
 
@@ -45,7 +65,7 @@ def validate(preset: str, action: str, option: str):
         "creator": {
             "summarize": ["Short", "Medium"],
             "extract": ["Key Points", "Quotes", "Timeline"],
-            "transform": ["Make Engaging", "Hook Script", "Dialogue Script", "Title Suggestions", "Keywords"],
+            "transform": ["Make Engaging", "Short Video Script", "Hook Options", "Quote Pulls", "Title Suggestions", "Keywords"],
         },
         "explained": {
             "summarize": ["Short", "Medium"],
@@ -75,12 +95,16 @@ def validate(preset: str, action: str, option: str):
 # ============================================================
 
 def transform_prompt(text: str, preset: str, option: str) -> str:
+    # Prepend synthesis rules to Summary Package section prompts only.
+    # _SUMMARY_RULES is loaded from summary_package_rules.txt at module startup.
+    _rules_block = (_SUMMARY_RULES + "\n\n") if _SUMMARY_RULES else ""
+    _creator_block = (_CREATOR_RULES + "\n\n") if _CREATOR_RULES else ""
 
     # ------------------------------------------------------------
     # SUMMARY PACKAGE — OUTLINE
     # ------------------------------------------------------------
     if option == "Outline":
-        return f"""SOURCE TEXT:
+        return f"""{_rules_block}SOURCE TEXT:
 {text}
 
 TASK:
@@ -115,7 +139,7 @@ III. <main section or topic>
     # (also available as extract for other presets)
     # ------------------------------------------------------------
     if option == "Timeline":
-        return f"""SOURCE TEXT:
+        return f"""{_rules_block}SOURCE TEXT:
 {text}
 
 TASK:
@@ -136,7 +160,7 @@ RULES:
     # SUMMARY PACKAGE — KEY POINTS
     # ------------------------------------------------------------
     if option == "Key Points":
-        return f"""SOURCE TEXT:
+        return f"""{_rules_block}SOURCE TEXT:
 {text}
 
 TASK:
@@ -153,7 +177,7 @@ RULES:
     # SUMMARY PACKAGE — SUMMARY
     # ------------------------------------------------------------
     if option == "Summary":
-        return f"""SOURCE TEXT:
+        return f"""{_rules_block}SOURCE TEXT:
 {text}
 
 TASK:
@@ -234,25 +258,25 @@ Return ONLY the rewritten text.
 """
 
     # ------------------------------------------------------------
-    # MAKE ENGAGING
+    # CREATOR — MAKE ENGAGING
     # ------------------------------------------------------------
     if option == "Make Engaging":
-        return f"""SOURCE TEXT:
+        return f"""{_creator_block}SOURCE TEXT:
 {text}
 
 TASK:
-Rewrite to be more engaging and readable.
+Rewrite the combined source material into a clear, engaging narrative.
 
 RULES:
-- Keep all facts accurate
+- Preserve factual accuracy
 - Add natural, active tone
 - Improve sentence rhythm and variety
-- Do NOT invent information
+- Do NOT invent claims, motives, facts, or legal conclusions not in the sources
 - Do NOT change meaning
-- Do NOT summarize
+- Do NOT summarize aggressively
 
 OUTPUT:
-Return rewritten text only.
+Return rewritten narrative only.
 """
 
     # ------------------------------------------------------------
@@ -334,87 +358,110 @@ RULES:
 """
 
     # ------------------------------------------------------------
-    # CREATOR — DIALOGUE SCRIPT
+    # CREATOR — HOOK OPTIONS
     # ------------------------------------------------------------
-    if option == "Dialogue Script":
-        return f"""SOURCE TEXT:
+    if option == "Hook Options":
+        return f"""{_creator_block}SOURCE TEXT:
 {text}
 
 TASK:
-Transform the source into a dialogue script.
+Write 3 short opening hook lines for a creator video.
 
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Do NOT write an overview
-- Create usable dialogue based only on source content
+RULES:
+- Each hook must be grounded in the source material
+- Do NOT invent claims or facts not present in the source
+- Use tension, stakes, surprise, or urgency from the source
+- Write each hook as a single spoken sentence or short pair of lines
+- Do NOT fabricate dates or events not in the source
 
 RETURN ONLY:
 
-Title:
-<short title>
-
-Speaker 1:
-<spoken line>
-
-Speaker 2:
-<spoken line>
-
-Speaker 1:
-<spoken line>
-
-Speaker 2:
-<spoken line>
-
-Speaker 1:
-<spoken line>
-
-Speaker 2:
-<spoken line>
+1. <hook>
+2. <hook>
+3. <hook>
 """
 
     # ------------------------------------------------------------
-    # CREATOR — HOOK SCRIPT
+    # CREATOR — QUOTE PULLS
     # ------------------------------------------------------------
-    if option == "Hook Script":
-        return f"""SOURCE TEXT:
+    if option == "Quote Pulls":
+        return f"""{_creator_block}SOURCE TEXT:
 {text}
 
 TASK:
-Transform the source into creator-ready hook content.
+Extract direct quote pulls from the source material.
 
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Do NOT write an overview
-- Write directly to an audience
-- Use tension, stakes, surprise, warning, or practical insight
+RULES:
+- Use only text that appears verbatim or near-verbatim in the source
+- If the source does not contain direct quotes, pull the most quotable lines
+- Do NOT invent or paraphrase into quotes without clearly labeling the paraphrase
+- Do NOT add commentary or explanation
 
 RETURN ONLY:
 
-Hook:
-<one or two high-impact spoken lines>
+Quote 1:
+"<quote from source>"
 
-Why it matters:
-<one or two lines explaining the stakes>
+Quote 2:
+"<quote from source>"
 
-Script:
-<short spoken line>
-<short spoken line>
-<short spoken line>
-<short spoken line>
+Quote 3:
+"<quote from source>"
 
-CTA:
-<one short closing line>
+Quote 4:
+"<quote from source>"
+"""
+
+    # ------------------------------------------------------------
+    # CREATOR — SHORT VIDEO SCRIPT
+    # ------------------------------------------------------------
+    if option == "Short Video Script":
+        return f"""{_creator_block}SOURCE TEXT:
+{text}
+
+TASK:
+Write a complete 30–60 second spoken video script using the source material.
+
+The script must follow this structure:
+- Hook: one or two attention-grabbing opening lines
+- Context: who, what, where — set the scene briefly
+- Conflict or tension: the central issue, event, or stakes
+- Key facts: the most important details from the source
+- Closing line or CTA: a direct, punchy conclusion or call to action
+
+STRICT RULES:
+- Write in natural spoken language — do NOT write for print
+- Do NOT output disconnected quote fragments
+- Do NOT invent dialogue
+- Do NOT invent dates, timestamps, or events not in the source
+- If sources conflict on facts, identify the conflict — do NOT silently pick one version
+- Do NOT use academic or formal tone
+
+RETURN ONLY:
+
+HOOK:
+<one or two opening lines>
+
+CONTEXT:
+<brief scene-setting>
+
+CONFLICT/TENSION:
+<central issue or stakes>
+
+KEY FACTS:
+<fact line>
+<fact line>
+<fact line>
+
+CLOSING:
+<closing line or CTA>
 """
 
     # ------------------------------------------------------------
     # CREATOR PACKAGE — TITLE SUGGESTIONS
     # ------------------------------------------------------------
     if option == "Title Suggestions":
-        return f"""SOURCE TEXT:
+        return f"""{_creator_block}SOURCE TEXT:
 {text}
 
 TASK:
@@ -439,7 +486,7 @@ RETURN ONLY:
     # CREATOR PACKAGE — KEYWORDS
     # ------------------------------------------------------------
     if option == "Keywords":
-        return f"""SOURCE TEXT:
+        return f"""{_creator_block}SOURCE TEXT:
 {text}
 
 TASK:

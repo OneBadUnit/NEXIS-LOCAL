@@ -17,10 +17,170 @@
 // Called for: Summary Package, Creator Package
 // ------------------------------------------------------------
 
+// ------------------------------------------------------------
+// FRONTEND FALLBACK COPY — SUMMARY PACKAGE RULES
+// Client-side mirror of backend/app/prompts/summary_package_rules.txt.
+// Used ONLY when modelConfig.type === "local" (bridge/Ollama mode).
+// MUST be kept in sync with backend/app/prompts/summary_package_rules.txt.
+// ------------------------------------------------------------
+const SUMMARY_PACKAGE_RULES = `SUMMARY PACKAGE RULES
+
+When multiple raw inputs are selected, combine them into ONE unified Summary Package unless the user explicitly requests separate summaries per source.
+
+Do not generate one summary package per raw input.
+
+Use all selected sources together as context.
+
+The Summary Package must prioritize:
+- factual fidelity
+- clarity
+- chronology
+- neutrality
+- source-grounded reporting
+
+Do not optimize for engagement, virality, or dramatic tone.
+
+Required sections:
+
+1. Outline
+- Create ONE unified outline using all selected sources.
+- Organize information logically and chronologically when possible.
+- Preserve nuance and uncertainty where relevant.
+- Do not duplicate sections per source.
+
+2. Timeline
+- Create ONE combined timeline of events.
+- Order events chronologically as accurately as possible.
+- Avoid repeating the same event from multiple sources unless new details are added.
+- If sources disagree on timing or dates, clearly identify the discrepancy.
+
+3. Key Points
+- Produce a concise combined list of the most important facts, claims, statements, and developments.
+- Avoid duplicate points.
+- Distinguish between:
+  - confirmed facts
+  - claims/allegations
+  - opinions
+  - legal interpretations
+
+4. Summary
+- Write ONE unified summary using all selected sources.
+- Keep tone neutral and informational.
+- Preserve important context and uncertainty.
+- Clearly separate:
+  - what happened
+  - what is alleged
+  - what experts/opinions claim
+- Do not insert unsupported conclusions or speculation.
+
+Important Rules:
+- Multi-selected raws mean the user wants synthesis.
+- Combine selected raws into a single coherent package.
+- Do not create separate outputs for each source unless explicitly requested.
+- If sources conflict, identify the conflict instead of choosing one version silently.
+- Do not invent dialogue, motivations, or legal conclusions.
+- Do not exaggerate or sensationalize.
+- Preserve source attribution when helpful.
+
+Conflicting Source Handling:
+If multiple sources disagree:
+- identify the disagreement clearly
+- avoid presenting uncertain information as settled fact
+- use wording such as:
+  - "One source reported..."
+  - "Another report stated..."
+  - "The sources differed on..."
+
+Formatting:
+- Keep sections clearly separated.
+- Avoid repetitive wording.
+- Avoid AI-style filler language.
+- Avoid unnecessary repetition of names/titles.`;
+
+// ------------------------------------------------------------
+// FRONTEND FALLBACK COPY — CREATOR PACKAGE RULES
+// Client-side mirror of backend/app/prompts/creator_package_rules.txt.
+// Used ONLY when modelConfig.type === "local" (bridge/Ollama mode).
+// MUST be kept in sync with backend/app/prompts/creator_package_rules.txt.
+// ------------------------------------------------------------
+const CREATOR_PACKAGE_RULES = `CREATOR PACKAGE RULES
+
+When multiple raw inputs are selected, combine them into ONE unified creator package unless the user explicitly asks for separate outputs per source.
+
+Do not generate one package per raw input.
+
+Do not invent dates, years, or timestamps.
+
+If a source does not provide a date:
+- omit the date
+- or use relative phrasing such as:
+  - "Later"
+  - "After the arrest"
+  - "Following the incident"
+
+If sources contain conflicting dates, names, or factual claims:
+- explicitly identify the conflict
+- do not silently choose one version
+- do not place conflicting information in separate sections without explanation
+
+Never fabricate years or chronology markers.
+
+Use all selected sources together as context.
+
+The Creator Package must produce usable creator assets, not just summaries or quote fragments.
+
+Required sections:
+
+1. Make Engaging
+- Rewrite the combined source material into a clear, engaging narrative.
+- Preserve factual accuracy.
+- Do not add claims, motives, facts, or legal conclusions not supported by the sources.
+
+2. Short Video Script
+- Create a complete 30–60 second spoken video script.
+- Must include:
+  - Hook
+  - Context
+  - Conflict/tension
+  - Key facts
+  - Closing line or CTA
+- Write in natural spoken language.
+- Do not output disconnected quote fragments.
+- Do not invent dialogue.
+
+3. Hook Options
+- Provide 3 short opening hooks only.
+- Hooks must be grounded in the source.
+- Avoid exaggerated or legally overconfident claims.
+
+4. Quote Pulls
+- Extract memorable direct quotes from the sources.
+- Do not rewrite quotes unless clearly labeled as paraphrase.
+
+5. Title Suggestions
+- Provide 5 title options.
+- Titles should be clear, clickable, and fact-grounded.
+
+6. Keywords
+- Provide relevant keywords from the combined topic.
+
+Important:
+- "Script" means a usable spoken narration script with flow.
+- "Hook" means only the opening line.
+- "Quote Pulls" means extracted source lines.
+- Do not confuse these sections.`;
+
+
 function transformPrompt(text, option) {
+  // Prepend synthesis rules to Summary Package prompts.
+  // Mirrors reconstruction.py → transform_prompt → _rules_block.
+  const _rulesPreamble = SUMMARY_PACKAGE_RULES ? `${SUMMARY_PACKAGE_RULES}\n\n` : "";
+  // Prepend creator rules to Creator Package prompts.
+  // Mirrors reconstruction.py → transform_prompt → _creator_block.
+  const _creatorPreamble = CREATOR_PACKAGE_RULES ? `${CREATOR_PACKAGE_RULES}\n\n` : "";
 
   if (option === "Outline") {
-    return `SOURCE TEXT:
+    return `${_rulesPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
@@ -52,7 +212,7 @@ III. <main section or topic>
   }
 
   if (option === "Timeline") {
-    return `SOURCE TEXT:
+    return `${_rulesPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
@@ -71,7 +231,7 @@ RULES:
   }
 
   if (option === "Key Points") {
-    return `SOURCE TEXT:
+    return `${_rulesPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
@@ -86,7 +246,7 @@ RULES:
   }
 
   if (option === "Summary") {
-    return `SOURCE TEXT:
+    return `${_rulesPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
@@ -119,100 +279,121 @@ Key Information:
   }
 
   if (option === "Make Engaging") {
-    return `SOURCE TEXT:
+    return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
-Rewrite to be more engaging and readable.
+Rewrite the combined source material into a clear, engaging narrative.
 
 RULES:
-- Keep all facts accurate
+- Preserve factual accuracy
 - Add natural, active tone
 - Improve sentence rhythm and variety
-- Do NOT invent information
+- Do NOT invent claims, motives, facts, or legal conclusions not in the sources
 - Do NOT change meaning
-- Do NOT summarize
+- Do NOT summarize aggressively
 
 OUTPUT:
-Return rewritten text only.
+Return rewritten narrative only.
 `;
   }
 
-  if (option === "Hook Script") {
-    return `SOURCE TEXT:
+  if (option === "Short Video Script") {
+    return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
-Transform the source into creator-ready hook content.
+Write a complete 30–60 second spoken video script using the source material.
 
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Do NOT write an overview
-- Write directly to an audience
-- Use tension, stakes, surprise, warning, or practical insight
+The script must follow this structure:
+- Hook: one or two attention-grabbing opening lines
+- Context: who, what, where — set the scene briefly
+- Conflict or tension: the central issue, event, or stakes
+- Key facts: the most important details from the source
+- Closing line or CTA: a direct, punchy conclusion or call to action
+
+STRICT RULES:
+- Write in natural spoken language — do NOT write for print
+- Do NOT output disconnected quote fragments
+- Do NOT invent dialogue
+- Do NOT invent dates, timestamps, or events not in the source
+- If sources conflict on facts, identify the conflict — do NOT silently pick one version
+- Do NOT use academic or formal tone
 
 RETURN ONLY:
 
-Hook:
-<one or two high-impact spoken lines>
+HOOK:
+<one or two opening lines>
 
-Why it matters:
-<one or two lines explaining the stakes>
+CONTEXT:
+<brief scene-setting>
 
-Script:
-<short spoken line>
-<short spoken line>
-<short spoken line>
-<short spoken line>
+CONFLICT/TENSION:
+<central issue or stakes>
 
-CTA:
-<one short closing line>
+KEY FACTS:
+<fact line>
+<fact line>
+<fact line>
+
+CLOSING:
+<closing line or CTA>
 `;
   }
 
-  if (option === "Dialogue Script") {
-    return `SOURCE TEXT:
+  if (option === "Hook Options") {
+    return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
-Transform the source into a dialogue script.
+Write 3 short opening hook lines for a creator video.
 
-CRITICAL:
-- Do NOT summarize
-- Do NOT describe the source
-- Do NOT say "this appears to be"
-- Do NOT write an overview
-- Create usable dialogue based only on source content
+RULES:
+- Each hook must be grounded in the source material
+- Do NOT invent claims or facts not present in the source
+- Use tension, stakes, surprise, or urgency from the source
+- Write each hook as a single spoken sentence or short pair of lines
+- Do NOT fabricate dates or events not in the source
 
 RETURN ONLY:
 
-Title:
-<short title>
+1. <hook>
+2. <hook>
+3. <hook>
+`;
+  }
 
-Speaker 1:
-<spoken line>
+  if (option === "Quote Pulls") {
+    return `${_creatorPreamble}SOURCE TEXT:
+${text}
 
-Speaker 2:
-<spoken line>
+TASK:
+Extract direct quote pulls from the source material.
 
-Speaker 1:
-<spoken line>
+RULES:
+- Use only text that appears verbatim or near-verbatim in the source
+- If the source does not contain direct quotes, pull the most quotable lines
+- Do NOT invent or paraphrase into quotes without clearly labeling the paraphrase
+- Do NOT add commentary or explanation
 
-Speaker 2:
-<spoken line>
+RETURN ONLY:
 
-Speaker 1:
-<spoken line>
+Quote 1:
+"<quote from source>"
 
-Speaker 2:
-<spoken line>
+Quote 2:
+"<quote from source>"
+
+Quote 3:
+"<quote from source>"
+
+Quote 4:
+"<quote from source>"
 `;
   }
 
   if (option === "Title Suggestions") {
-    return `SOURCE TEXT:
+    return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
@@ -235,7 +416,7 @@ RETURN ONLY:
   }
 
   if (option === "Keywords") {
-    return `SOURCE TEXT:
+    return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:

@@ -5,12 +5,14 @@
 //               calls when backend integration is ready)
 // ============================================================
 
+const LOCAL_PREFIX = "nexis_local_";
+
 const KEYS = {
-  PROJECTS: "arcn_projects",
-  RAW_ITEMS: "arcn_raw_items",
-  OUTPUTS: "arcn_outputs",
+  PROJECTS:     LOCAL_PREFIX + "arcn_projects",
+  RAW_ITEMS:    LOCAL_PREFIX + "arcn_raw_items",
+  OUTPUTS:      LOCAL_PREFIX + "arcn_outputs",
   // Model config is user-scoped: provider API keys must not persist between accounts.
-  MODEL_CONFIG: "nexis_model_config",
+  MODEL_CONFIG: LOCAL_PREFIX + "nexis_model_config",
 };
 
 // ------------------------------------------------------------
@@ -157,5 +159,44 @@ export function deleteProjectData(projectId) {
     );
   } catch {
     console.warn("[projectStorage] Could not clean outputs for project.");
+  }
+}
+
+// ------------------------------------------------------------
+// LOCAL-CLONE NAMESPACE MIGRATION  (call once before React renders)
+// Copies each un-namespaced key into its nexis_local_ counterpart
+// only when the new key does not yet exist. Old keys are never
+// removed so the main app continues to work unchanged.
+// ------------------------------------------------------------
+
+export function runLocalNamespaceMigration() {
+  const pairs = [
+    ["arcn_projects",              LOCAL_PREFIX + "arcn_projects"],
+    ["arcn_raw_items",             LOCAL_PREFIX + "arcn_raw_items"],
+    ["arcn_outputs",               LOCAL_PREFIX + "arcn_outputs"],
+    ["nexis_model_config",         LOCAL_PREFIX + "nexis_model_config"],
+    ["nexis_companion_path",       LOCAL_PREFIX + "nexis_companion_path"],
+    ["arcn_active_page",           LOCAL_PREFIX + "arcn_active_page"],
+    ["arcn_active_module",         LOCAL_PREFIX + "arcn_active_module"],
+    ["arcn_assimilation_state",    LOCAL_PREFIX + "arcn_assimilation_state"],
+    ["arcn_saved_assimilations",   LOCAL_PREFIX + "arcn_saved_assimilations"],
+    ["arcn_reconstruction_state",  LOCAL_PREFIX + "arcn_reconstruction_state"],
+    ["arcn_saved_reconstructions", LOCAL_PREFIX + "arcn_saved_reconstructions"],
+    ["arcn_create_state",          LOCAL_PREFIX + "arcn_create_state"],
+    ["arcn_ack_version",           LOCAL_PREFIX + "arcn_ack_version"],
+    ["nexusOnboardingSkipped",     LOCAL_PREFIX + "nexusOnboardingSkipped"],
+  ];
+
+  for (const [oldKey, newKey] of pairs) {
+    try {
+      if (localStorage.getItem(newKey) === null) {
+        const oldValue = localStorage.getItem(oldKey);
+        if (oldValue !== null) {
+          localStorage.setItem(newKey, oldValue);
+        }
+      }
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.)
+    }
   }
 }

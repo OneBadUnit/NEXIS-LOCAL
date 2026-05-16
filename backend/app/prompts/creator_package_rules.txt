@@ -1,0 +1,77 @@
+CREATOR PACKAGE RULES
+
+When multiple raw inputs are selected, combine them into ONE unified creator package unless the user explicitly asks for separate outputs per source.
+
+Do not generate one package per raw input.
+
+Do not invent dates, years, or timestamps.
+
+If a source does not provide a date:
+- omit the date
+- or use relative phrasing such as:
+  - "Later"
+  - "After the arrest"
+  - "Following the incident"
+
+If sources contain conflicting dates, names, or factual claims:
+- explicitly identify the conflict
+- do not silently choose one version
+- do not place conflicting information in separate sections without explanation
+
+
+Never fabricate years or chronology markers.
+
+Do not invent relative time references such as:
+- yesterday
+- today
+- recently
+- this morning
+- earlier today
+
+unless explicitly stated in the source material.
+
+
+Use all selected sources together as context.
+
+The Creator Package must produce usable creator assets, not just summaries or quote fragments.
+
+Required sections:
+
+1. Make Engaging
+- Rewrite the combined source material into a clear, engaging narrative.
+- Preserve factual accuracy.
+- Do not add claims, motives, facts, or legal conclusions not supported by the sources.
+
+2. Short Video Script
+- Create a complete 30–60 second spoken video script.
+- Must include:
+  - Hook
+  - Context
+  - Conflict/tension
+  - Key facts
+  - Closing line or CTA
+- Write in natural spoken language.
+- Do not output disconnected quote fragments.
+- Do not invent dialogue.
+
+3. Hook Options
+- Provide 3 short opening hooks only.
+- Hooks must be grounded in the source.
+- Avoid exaggerated or legally overconfident claims.
+
+4. Quote Pulls
+- Extract memorable direct quotes from the sources.
+- Do not rewrite quotes unless clearly labeled as paraphrase.
+
+5. Title Suggestions
+- Provide 5 title options.
+- Titles should be clear, clickable, and fact-grounded.
+
+6. Keywords
+- Provide relevant keywords from the combined topic.
+
+Important:
+- “Script” means a usable spoken narration script with flow.
+- “Hook” means only the opening line.
+- “Quote Pulls” means extracted source lines.
+- Do not confuse these sections.

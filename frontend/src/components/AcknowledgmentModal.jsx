@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
 const ACK_VERSION = "1.0.7";
-const STORAGE_KEY = "arcn_ack_version";
+const STORAGE_KEY = "nexis_local_arcn_ack_version";
 
 export default function AcknowledgmentModal({ onAcknowledge }) {
   const [canAcknowledge, setCanAcknowledge] = useState(false);

@@ -11,7 +11,7 @@ import OnboardingOverlay from "./components/OnboardingOverlay";
 import Layout from "./layout/AppLayout";
 import { ArcNProvider } from "./context/ArcNContext";
 
-const STORAGE_KEY = "arcn_ack_version";
+const STORAGE_KEY = "nexis_local_arcn_ack_version";
 const CURRENT_VERSION = "1.0.7";
 
 function App() {

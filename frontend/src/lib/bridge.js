@@ -67,12 +67,12 @@ export function isLegacyOllamaEndpoint(endpoint) {
 
 export function getModelConfigWithMigration() {
   try {
-    const raw = localStorage.getItem("nexis_model_config");
+    const raw = localStorage.getItem("nexis_local_nexis_model_config");
     if (!raw) return null;
     const config = JSON.parse(raw);
     if (config?.type === "local" && isLegacyOllamaEndpoint(config?.endpoint)) {
       config.endpoint = BRIDGE_DEFAULT_URL;
-      localStorage.setItem("nexis_model_config", JSON.stringify(config));
+      localStorage.setItem("nexis_local_nexis_model_config", JSON.stringify(config));
     }
     return config;
   } catch {

@@ -30,7 +30,7 @@ const PACKAGES = {
   creator: {
     label: "Creator Package",
     // Display label only -- backend receives "Title Suggestions" + "Keywords" separately
-    items: ["Make Engaging", "Hook Script", "Dialogue Script", "Titles & Keywords"],
+    items: ["Make Engaging", "Short Video Script", "Hook Options", "Quote Pulls", "Titles & Keywords"],
   },
 };
 
@@ -38,7 +38,7 @@ const PACKAGES = {
 // "Titles & Keywords" expands into two separate API calls.
 const BACKEND_ITEMS = {
   summary: ["Outline", "Timeline", "Key Points", "Summary"],
-  creator: ["Make Engaging", "Hook Script", "Dialogue Script", "Title Suggestions", "Keywords"],
+  creator: ["Make Engaging", "Short Video Script", "Hook Options", "Quote Pulls", "Title Suggestions", "Keywords"],
 };
 
 // Keep in sync with ArcNexusApp.jsx CURRENT_VERSION.
@@ -383,7 +383,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   // ----------------------------------------------------------
   const [modelConfig, setModelConfig] = useState(() => {
     try {
-      const raw = localStorage.getItem("nexis_model_config");
+      const raw = localStorage.getItem("nexis_local_nexis_model_config");
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -462,47 +462,136 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       // This is the single gate for the entire package run.
       await checkConvertLimits();
 
-      // ── Per-source loop ───────────────────────────────────────
-      // Each source is processed independently so no source is
-      // silently truncated or blended with another.
-      for (const source of includedItems) {
-        console.log("[Convert] processing source:", source.id, "|", source.title);
-        const sourceSections = [];
-        let sourceFailed = false;
+      // ── Summary Package: multi-source → unified synthesis ─────
+      // When selectedPackage is "summary" and multiple raws are selected,
+      // all source texts are combined into one labeled context block and
+      // the backend is called ONCE per section (4 total calls). This
+      // produces ONE unified Outline / Timeline / Key Points / Summary.
+      //
+      // Single-source Summary and all Creator Package runs fall through
+      // to the per-source loop below (original behavior unchanged).
+      if (selectedPackage === "summary" && includedItems.length > 1) {
+        const combinedText = includedItems
+          .map((src, idx) => `--- Source ${idx + 1}: ${src.title} ---\n${src.text}`)
+          .join("\n\n");
+
+        console.log("[Convert] multi-source summary synthesis | sources:", includedItems.length);
+        const unifiedSections = [];
+        let synthesisFailed = false;
 
         for (const section of backendItems) {
           const payload = {
-            text: source.text,
+            text: combinedText,
             preset: selectedPackage,
             action: "transform",
             option: section,
           };
-          console.log("[Convert] request:", {
-            source: source.title,
+          console.log("[Convert] synthesis request:", {
             preset: payload.preset,
             option: payload.option,
+            sources: includedItems.length,
           });
           try {
             const result = await nexisUnderstand(payload);
-            console.log("[Convert] response ok:", section, "for source:", source.title);
-            sourceSections.push(`=== ${section} ===\n\n${result.output || ""}`);
+            console.log("[Convert] synthesis ok:", section);
+            unifiedSections.push(`=== ${section} ===\n\n${result.output || ""}`);
           } catch (sectionErr) {
-            // One section failing should not drop the entire source.
-            console.error("[Convert] section failed:", section, "source:", source.title, sectionErr);
-            sourceSections.push(`=== ${section} ===\n\n[Could not generate: ${sectionErr?.message || "unknown error"}]`);
-            sourceFailed = true;
+            console.error("[Convert] synthesis section failed:", section, sectionErr);
+            unifiedSections.push(`=== ${section} ===\n\n[Could not generate: ${sectionErr?.message || "unknown error"}]`);
+            synthesisFailed = true;
           }
         }
 
-        if (sourceFailed) {
-          failedNames.push(source.title);
+        if (synthesisFailed) {
+          failedNames.push("[synthesis error]");
         }
 
-        const divider = "-".repeat(48);
-        sourceBlocks.push(
-          `SOURCE: ${source.title}\n${divider}\n\n` +
-          sourceSections.join("\n\n\n")
-        );
+        sourceBlocks.push(unifiedSections.join("\n\n\n"));
+      } else if (selectedPackage === "creator" && includedItems.length > 1) {
+        // ── Creator Package: multi-source → unified synthesis ─────
+        // All source texts are combined into one labeled context block
+        // and the backend is called ONCE per section. This produces ONE
+        // unified Make Engaging / Short Video Script / Hook Options /
+        // Quote Pulls / Title Suggestions / Keywords from all sources.
+        const combinedText = includedItems
+          .map((src, idx) => `--- Source ${idx + 1}: ${src.title} ---\n${src.text}`)
+          .join("\n\n");
+
+        console.log("[Convert] multi-source creator synthesis | sources:", includedItems.length);
+        const unifiedSections = [];
+        let synthesisFailed = false;
+
+        for (const section of backendItems) {
+          const payload = {
+            text: combinedText,
+            preset: selectedPackage,
+            action: "transform",
+            option: section,
+          };
+          console.log("[Convert] synthesis request:", {
+            preset: payload.preset,
+            option: payload.option,
+            sources: includedItems.length,
+          });
+          try {
+            const result = await nexisUnderstand(payload);
+            console.log("[Convert] synthesis ok:", section);
+            unifiedSections.push(`=== ${section} ===\n\n${result.output || ""}`);
+          } catch (sectionErr) {
+            console.error("[Convert] synthesis section failed:", section, sectionErr);
+            unifiedSections.push(`=== ${section} ===\n\n[Could not generate: ${sectionErr?.message || "unknown error"}]`);
+            synthesisFailed = true;
+          }
+        }
+
+        if (synthesisFailed) {
+          failedNames.push("[synthesis error]");
+        }
+
+        sourceBlocks.push(unifiedSections.join("\n\n\n"));
+      } else {
+        // ── Per-source loop ───────────────────────────────────────
+        // Single-source any package: each source is processed
+        // independently (original behavior unchanged).
+        for (const source of includedItems) {
+          console.log("[Convert] processing source:", source.id, "|", source.title);
+          const sourceSections = [];
+          let sourceFailed = false;
+
+          for (const section of backendItems) {
+            const payload = {
+              text: source.text,
+              preset: selectedPackage,
+              action: "transform",
+              option: section,
+            };
+            console.log("[Convert] request:", {
+              source: source.title,
+              preset: payload.preset,
+              option: payload.option,
+            });
+            try {
+              const result = await nexisUnderstand(payload);
+              console.log("[Convert] response ok:", section, "for source:", source.title);
+              sourceSections.push(`=== ${section} ===\n\n${result.output || ""}`);
+            } catch (sectionErr) {
+              // One section failing should not drop the entire source.
+              console.error("[Convert] section failed:", section, "source:", source.title, sectionErr);
+              sourceSections.push(`=== ${section} ===\n\n[Could not generate: ${sectionErr?.message || "unknown error"}]`);
+              sourceFailed = true;
+            }
+          }
+
+          if (sourceFailed) {
+            failedNames.push(source.title);
+          }
+
+          const divider = "-".repeat(48);
+          sourceBlocks.push(
+            `SOURCE: ${source.title}\n${divider}\n\n` +
+            sourceSections.join("\n\n\n")
+          );
+        }
       }
 
       // ── Assemble final output ─────────────────────────────────

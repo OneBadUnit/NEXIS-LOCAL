@@ -14,7 +14,7 @@ const OnboardingOverlay = ({ onComplete }) => {
   useEffect(() => {
     let isOnboardingSkipped = false;
     try {
-      isOnboardingSkipped = localStorage.getItem('nexusOnboardingSkipped') === 'true';
+      isOnboardingSkipped = localStorage.getItem('nexis_local_nexusOnboardingSkipped') === 'true';
     } catch {
       // Ignore localStorage access errors (e.g., privacy mode, sandboxed iframe)
     }
@@ -29,7 +29,7 @@ const OnboardingOverlay = ({ onComplete }) => {
 
   const skipOnboarding = () => {
     try {
-      localStorage.setItem('nexusOnboardingSkipped', 'true');
+      localStorage.setItem('nexis_local_nexusOnboardingSkipped', 'true');
     } catch {
       // Ignore localStorage setItem errors
     }
