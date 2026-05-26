@@ -1,7 +1,7 @@
 // ============================================================
 // ARC-NEXUS - DIAGNOSTICS OVERLAY
 // File: src/components/DiagnosticsOverlay.jsx
-// Version: 001
+// Version: 002 (OCR diagnostics section)
 // ============================================================
 // User-controlled diagnostic report for troubleshooting
 // NEXIS Companion / Local AI issues.
@@ -23,6 +23,7 @@ import {
   getModelConfigWithMigration,
   BRIDGE_DEFAULT_URL,
 } from "../lib/bridge.js";
+import { systemCheck } from "../api/system.jsx";
 
 // Increment when the NEXIS app version changes.
 const NEXIS_APP_VERSION = "1.0.0";
@@ -50,9 +51,17 @@ async function buildReport(advanced) {
     diag = await getDiagnostics(bridgeUrl);
     companionReachable = diag !== null;
   } catch {
-    // Defensive ? getDiagnostics should never throw, but guard anyway.
+    // Defensive — getDiagnostics should never throw, but guard anyway.
     companionReachable = false;
     diag = null;
+  }
+
+  // ── 1b. Fetch backend system check (OCR diagnostics) ──────
+  let sysCheck = null;
+  try {
+    sysCheck = await systemCheck();
+  } catch {
+    sysCheck = null;
   }
 
   // ?? 2. Browser-sourced system info (no sensitive data) ??
@@ -129,13 +138,29 @@ async function buildReport(advanced) {
 
   lines.push(
     "",
-    "? CONNECTION STATUS",
+    "⬡ CONNECTION STATUS",
     `  ${pad("Companion Reachable")} ${companionReachable ? "Yes" : "No"}`,
     `  ${pad("Local AI Ready")} ${
       localReady ? "Yes" : (companionReachable ? "No" : "Unknown")
     }`,
     "",
-    "? SESSION DATA",
+    "⬡ OCR / IMAGE INPUT",
+  );
+
+  if (!sysCheck) {
+    lines.push(`  ${pad("Status")} Unknown — backend not reachable`);
+  } else {
+    const ocr = sysCheck.ocr || {};
+    lines.push(
+      `  ${pad("Executable Found")} ${ocr.executable_found ? "Yes" : "No"}`,
+      `  ${pad("OCR Available")}   ${ocr.ocr_available ? "Yes" : "No"}`,
+      `  ${pad("Tesseract Path")}  ${ocr.tesseract_path || "Unknown"}`,
+    );
+  }
+
+  lines.push(
+    "",
+    "⬡ SESSION DATA",
     `  ${pad("Recent Error Codes")} None recorded in this session`,
     `  ${pad("Response Timing")} Not tracked in this session`
   );
@@ -314,6 +339,8 @@ export default function DiagnosticsOverlay({ onClose }) {
               "AI mode: Local or Provider",
               "Recent session error codes",
               "Response timing data",
+              "OCR / Tesseract status",
+              "Tesseract executable path",
             ].map((item) => (
               <li key={item} style={bulletItem}>{item}</li>
             ))}

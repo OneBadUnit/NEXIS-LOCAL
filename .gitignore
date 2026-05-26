@@ -35,6 +35,10 @@ bridge/*.exe
 *.cache
 backend/temp_vision_image.jpg
 
+# --- DATABASES ---
+*.db
+*.sqlite
+
 # --- VIDEO / AUDIO DOWNLOADS ---
 backend/*.webm
 backend/*.mp4

@@ -207,6 +207,21 @@ pre {
   margin-top: 12px;
 }
 
+/* ============================================================
+   OUTPUT VIEWER
+   Reusable class for all long AI / extract output panels.
+   Applied to <pre> elements showing briefs, transcripts,
+   document text, package outputs, and generated content.
+
+   Inherits all base styles from `pre` above.
+   Adds: max-height cap, scrolling, margin reset.
+   ============================================================ */
+.output-viewer {
+  max-height: 65vh;
+  overflow: auto;
+  margin: 0;
+}
+
 /* ------------------------------------------------------------
    TEXT HELPERS
 ------------------------------------------------------------ */

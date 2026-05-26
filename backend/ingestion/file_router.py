@@ -55,9 +55,9 @@ async def process_uploaded_file(uploaded_file: UploadFile) -> str:
         return await extract_docx_text(data)
 
     if ext in IMAGE_EXT:
-        from app.core.config import settings
-        if not settings.OCR_ENABLED:
-            return "OCR is not available in hosted beta mode."
+        # OCR gating is handled inside extract_text_from_image:
+        #   - hosted mode: blocked unless OCR_ENABLED=True
+        #   - local mode:  always attempted; clear error if Tesseract missing
         from .ocr_utils import extract_text_from_image
         return await extract_text_from_image(data)
 

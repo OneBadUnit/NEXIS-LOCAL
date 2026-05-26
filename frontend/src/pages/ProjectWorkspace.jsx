@@ -159,6 +159,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const [editingItemName, setEditingItemName] = useState("");
   // IDs of items whose text is currently shown
   const [expandedRawIds, setExpandedRawIds] = useState([]);
+  // IDs of items where the raw source sub-section is expanded (when brief exists)
+  const [expandedRawSourceIds, setExpandedRawSourceIds] = useState([]);
   // ID of last-copied item (for "Copied" feedback)
   const [copiedRawId, setCopiedRawId] = useState(null);
 
@@ -206,8 +208,14 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     );
   };
 
+  const toggleRawSourceExpanded = (id) => {
+    setExpandedRawSourceIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const copyRawItem = (item) => {
-    navigator.clipboard.writeText(item.text).catch(() => {});
+    navigator.clipboard.writeText(item.rawContent || item.text).catch(() => {});
     setCopiedRawId(item.id);
     setTimeout(() => setCopiedRawId(null), 1400);
   };
@@ -228,6 +236,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
       setRawItems((prev) => prev.filter((item) => item.id !== deleteTarget.id));
       // Clean expanded/copied state for deleted item
       setExpandedRawIds((prev) => prev.filter((x) => x !== deleteTarget.id));
+      setExpandedRawSourceIds((prev) => prev.filter((x) => x !== deleteTarget.id));
       if (copiedRawId === deleteTarget.id) setCopiedRawId(null);
       // Free storage slot on backend (fire-and-forget; no monthly refund)
       removeRawInputUsage().catch(() => {});
@@ -321,14 +330,18 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
     setCollectLoading(true);
 
     try {
-      let text = "";
-      let type = collectMode;
+      let rawContent = "";
+      let brief = "";
+      let sourceType = collectMode;
+      const type = collectMode;
 
       if (collectMode === "image") {
         const fd = new FormData();
         fd.append("file", fileInput);
         const data = await analyzeImage(fd);
-        text = data.description || "";
+        rawContent = data.raw_content || data.ocr_text || "";
+        brief     = data.brief || data.description || "";
+        sourceType = "image";
       } else {
         const fd = new FormData();
         if (collectMode === "file") {
@@ -339,10 +352,12 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
           fd.append("content", urlInput);
         }
         const data = await collectSource(fd);
-        text = data.text || "";
+        rawContent = data.raw_content || data.text || "";
+        brief      = data.brief || "";
+        sourceType = data.source_type || collectMode;
       }
 
-      if (!text) {
+      if (!rawContent) {
         setCollectError("No content could be extracted.");
         setCollectLoading(false);
         return;
@@ -359,7 +374,10 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         projectId: project.id,
         title: label,
         type,
-        text,
+        text: rawContent,     // raw source content — used by Convert/Create
+        rawContent,           // explicit raw source field
+        brief,                // AI analysis (separate from raw)
+        sourceType,
         included: true,
         createdAt: now,
         updatedAt: now,
@@ -840,8 +858,6 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
             <div
               style={{
-                maxHeight: 420,
-                overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
                 gap: 10,
@@ -850,6 +866,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
             >
               {rawItems.map((item) => {
                 const isExpanded = expandedRawIds.includes(item.id);
+                const isRawSourceExpanded = expandedRawSourceIds.includes(item.id);
                 const isCopied = copiedRawId === item.id;
 
                 return (
@@ -983,7 +1000,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                       </button>
                     </div>
 
-                    {/* Expanded raw text */}
+                    {/* Expanded content: brief first, raw source collapsible */}
                     {isExpanded && (
                       <div
                         style={{
@@ -991,18 +1008,43 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                           padding: "12px",
                         }}
                       >
-                        <pre
-                          style={{
-                            margin: 0,
-                            fontSize: "0.82rem",
-                            maxHeight: 240,
-                            overflow: "auto",
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {item.text}
-                        </pre>
+                        {item.brief ? (
+                          <>
+                            {/* COLLECTION BRIEF — shown by default */}
+                            <p style={{ margin: "0 0 6px", fontSize: "0.72rem", fontWeight: 700, color: "var(--arc-accent)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              Collection Brief
+                            </p>
+                            <pre
+                              className="output-viewer"
+                              style={{ marginBottom: 10 }}
+                            >
+                              {item.brief}
+                            </pre>
+                            {/* RAW SOURCE — collapsible toggle */}
+                            <button
+                              className="btn"
+                              style={{ padding: "2px 8px", fontSize: "0.75rem", marginBottom: isRawSourceExpanded ? 8 : 0 }}
+                              onClick={() => toggleRawSourceExpanded(item.id)}
+                            >
+                              {isRawSourceExpanded ? "Hide Raw Source" : "Show Raw Source"}
+                            </button>
+                            {isRawSourceExpanded && (
+                              <>
+                                <p style={{ margin: "8px 0 4px", fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                  Raw Source Content
+                                </p>
+                                <pre className="output-viewer">
+                                  {item.rawContent || item.text}
+                                </pre>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          /* Backward compat: items without a brief show text directly */
+                          <pre className="output-viewer">
+                            {item.text}
+                          </pre>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1169,8 +1211,6 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
             <div
               style={{
-                maxHeight: 540,
-                overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
                 gap: 12,
@@ -1284,13 +1324,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
 
                       {isExpanded && (
                         <div style={{ padding: "14px" }}>
-                          <pre
-                            style={{
-                              marginTop: 0,
-                              maxHeight: 400,
-                              overflow: "auto",
-                            }}
-                          >
+                          <pre className="output-viewer">
                             {out.content}
                           </pre>
                         </div>
@@ -1498,18 +1532,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                   Refined Result
                 </div>
                 <pre
-                  style={{
-                    margin: "0 0 14px",
-                    fontSize: "0.82rem",
-                    maxHeight: 260,
-                    overflow: "auto",
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 6,
-                    padding: "10px 12px",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
+                  className="output-viewer"
+                  style={{ marginBottom: 14 }}
                 >
                   {refineResult}
                 </pre>

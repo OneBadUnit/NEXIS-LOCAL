@@ -1,6 +1,6 @@
 # ============================================================
 # PDF INGESTION MODULE
-# Version: 008 (Lazy imports + OCR feature flag)
+# Version: 009 (NEXIS_TESSERACT_PATH via settings)
 #
 # SEARCH TAGS:
 #   ARC_TESSERACT_PATH
@@ -30,19 +30,10 @@ async def extract_pdf_text(data: bytes) -> str:
             from app.core.config import settings
 
             # ----------------------------------------------------
-            # 🔥 ARC_TESSERACT_PATH (AUTO-DETECT)
+            # 🔥 ARC_TESSERACT_PATH — resolved from settings/env
             # ----------------------------------------------------
-            POSSIBLE_PATHS = [
-                r"D:\NEXIS\Tesseract-OCR\tesseract.exe",
-                r"D:\arc-nexus\Tesseract-OCR\tesseract.exe",
-            ]
-            tesseract_path = None
-            for p in POSSIBLE_PATHS:
-                if os.path.exists(p):
-                    tesseract_path = p
-                    break
-            if not tesseract_path:
-                tesseract_path = "tesseract"
+            from ingestion.ocr_utils import resolve_tesseract_path
+            tesseract_path = resolve_tesseract_path()
 
             tesseract_dir = os.path.dirname(tesseract_path)
 

@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - APP CONFIG
 # File: app/core/config.py
-# Version: 003 (Feature Flags + Hosted Mode)
+# Version: 005 (NEXIS_VISION_MODEL for multimodal image collect)
 # ============================================================
 
 from pydantic_settings import BaseSettings
@@ -41,6 +41,22 @@ class Settings(BaseSettings):
     VISION_ENABLED: bool = False
     YOUTUBE_INGESTION_ENABLED: bool = False
     NEXIS_HOSTED_MODE: bool = False
+
+    # --------------------------------------------------------
+    # TESSERACT OCR PATH
+    # Override via NEXIS_TESSERACT_PATH env var.
+    # Falls back to the bundled install for NEXIS-LOCAL.
+    # --------------------------------------------------------
+    NEXIS_TESSERACT_PATH: str = r"D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe"
+
+    # --------------------------------------------------------
+    # LOCAL VISION MODEL (Ollama)
+    # Name must match exactly what `ollama list` shows.
+    # Override via NEXIS_VISION_MODEL env var.
+    # If this model is not installed, vision description is
+    # skipped gracefully and OCR-only output is returned.
+    # --------------------------------------------------------
+    NEXIS_VISION_MODEL: str = "llava:13b"
 
     class Config:
         env_file = ".env"

@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - SYSTEM CHECK API
 # File: app/api/routes/system.py
-# Version: 003 (local-AI-first — no subprocess Ollama calls)
+# Version: 004 (OCR diagnostics added to /check)
 #
 # Ollama runs on the USER's machine, not on this Render server.
 # Subprocess calls to `ollama` were removed because they always
@@ -38,6 +38,8 @@ def check_config_ready() -> bool:
 # ------------------------------------------------------------
 @router.get("/check")
 def system_check():
+    from ingestion.ocr_utils import get_ocr_diagnostics
+    ocr = get_ocr_diagnostics()
     return {
         "ollama": {
             "note": (
@@ -48,6 +50,11 @@ def system_check():
         "config": {
             "path": CONFIG_PATH,
             "isReady": check_config_ready(),
+        },
+        "ocr": {
+            "executable_found": ocr["executable_found"],
+            "ocr_available": ocr["ocr_available"],
+            "tesseract_path": ocr["tesseract_path"],
         },
     }
 

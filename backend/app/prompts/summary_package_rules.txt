@@ -1,24 +1,8 @@
-SUMMARY PACKAGE RULES
+﻿SUMMARY PACKAGE RULES
 
 When multiple raw inputs are selected, combine them into ONE unified Summary Package unless the user explicitly requests separate summaries per source.
 
 Do not generate one summary package per raw input.
-
-Do not invent dates, years, or timestamps.
-
-If a source does not provide a date:
-- omit the date
-- or use relative phrasing such as:
-  - "Later"
-  - "After the arrest"
-  - "Following the incident"
-
-Never fabricate years or chronology markers.
-
-If sources contain conflicting dates, names, or factual claims:
-- explicitly identify the conflict
-- do not silently choose one version
-- do not place conflicting information in separate sections without explanation
 
 Use all selected sources together as context.
 
@@ -31,49 +15,43 @@ The Summary Package must prioritize:
 
 Do not optimize for engagement, virality, or dramatic tone.
 
-Required sections:
+TONE:
+- Neutral and analytical -- not cinematic, not emotional, not persuasive
+- Reads like a research briefing or analyst prep notes
+- Avoid narrative padding, filler sentences, and AI-style transitions
 
-1. Outline
-- Create ONE unified outline using all selected sources.
-- Organize information logically and chronologically when possible.
-- Preserve nuance and uncertainty where relevant.
-- Do not duplicate sections per source.
+LIGHT ATTRIBUTION AWARENESS:
+Do not harden interpretive or disputed claims into plain facts.
+When a claim is sourced, contested, or interpretive, use safer phrasing:
+  "Sources suggest..."
+  "According to the document..."
+  "The infographic argues..."
+  "The sources collectively describe..."
+  "The document claims..."
+Do NOT present disputed interpretations as established fact.
+Do NOT use emotionally loaded certainty language.
 
-2. Timeline
-- Create ONE combined timeline of events.
-- Order events chronologically as accurately as possible.
-- Avoid repeating the same event from multiple sources unless new details are added.
-- If sources disagree on timing or dates, clearly identify the discrepancy.
+ANTI-GENERIC-FALLBACK:
+Avoid filler phrases that weaken analytical output.
+BANNED phrases:
+  "complex relationship"
+  "nuanced issue"
+  "multifaceted dynamic"
+  "evolving landscape"
+  "complicated history"
+  "long-standing tensions"
+Instead, state the specific facts, specific contradictions, or what is specifically unresolved.
+WRONG: "The relationship is complex and multifaceted."
+RIGHT: "The sources describe strategic cooperation alongside documented policy disagreements."
 
-3. Key Points
-- Produce a concise combined list of the most important facts, claims, statements, and developments.
-- Avoid duplicate points.
-- Distinguish between:
-  - confirmed facts
-  - claims/allegations
-  - opinions
-  - legal interpretations
+DATE AND TIMELINE SAFETY:
+- Do NOT infer exact dates unless directly supported by source material
+- Do NOT fabricate years, exact decades, or chronology markers
+- If a date is uncertain, use approximate framing: "early 1980s", "mid-2010s", "around 2003"
+- If no date is available: omit the date, or use relative markers ("Before X", "Following the incident")
+- If sources disagree on timing or dates, explicitly flag the discrepancy
 
-4. Summary
-- Write ONE unified summary using all selected sources.
-- Keep tone neutral and informational.
-- Preserve important context and uncertainty.
-- Clearly separate:
-  - what happened
-  - what is alleged
-  - what experts/opinions claim
-- Do not insert unsupported conclusions or speculation.
-
-Important Rules:
-- Multi-selected raws mean the user wants synthesis.
-- Combine selected raws into a single coherent package.
-- Do not create separate outputs for each source unless explicitly requested.
-- If sources conflict, identify the conflict instead of choosing one version silently.
-- Do not invent dialogue, motivations, or legal conclusions.
-- Do not exaggerate or sensationalize.
-- Preserve source attribution when helpful.
-
-Conflicting Source Handling:
+CONFLICTING SOURCE HANDLING:
 If multiple sources disagree:
 - identify the disagreement clearly
 - avoid presenting uncertain information as settled fact
@@ -81,9 +59,16 @@ If multiple sources disagree:
   - "One source reported..."
   - "Another report stated..."
   - "The sources differed on..."
+- do not silently choose one version
 
-Formatting:
-- Keep sections clearly separated.
-- Avoid repetitive wording.
-- Avoid AI-style filler language.
-- Avoid unnecessary repetition of names/titles.
+SECTION DISCIPLINE:
+- Output ONLY the section requested
+- Do NOT generate other sections unprompted
+- Avoid repetition across sections
+
+FORMATTING:
+- Keep sections clearly separated
+- Avoid repetitive wording
+- Avoid AI-style filler language
+- Use concise bullets or sentences -- no paragraph-sized bullet points
+- Avoid dense unbroken blocks

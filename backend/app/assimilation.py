@@ -1,7 +1,7 @@
 # ============================================================
 # ARC-NEXUS - INGESTION ENGINE
 # File: app/assimilation.py
-# Version: 002 (Stability + Validation + UI Consistency)
+# Version: 004 (Document intelligence brief via doc_intel.py)
 # ============================================================
 
 import os
@@ -35,6 +35,8 @@ _FFPROBE = r"C:\ffmpeg\bin\ffprobe.exe"
 _AUDIO_EXT = {".mp3", ".wav", ".m4a", ".ogg"}
 _VIDEO_EXT = {".mp4", ".mov", ".mkv", ".avi"}
 _MEDIA_EXT = _AUDIO_EXT | _VIDEO_EXT
+# Document types that get an AI-generated DOCUMENT COLLECTION BRIEF
+_DOC_EXT = {".pdf", ".docx", ".doc", ".txt", ".md", ".rtf", ".odt"}
 
 
 def _get_media_duration_minutes(data: bytes, ext: str) -> float | None:
@@ -117,12 +119,15 @@ async def process_assimilation(
     # -----------------------------
     result_type = source_type
     result_text: str
+    result_brief: str = ""
+    result_source_type: str = source_type
 
     if source_type == "text":
         clean = content.strip()
         if not clean:
             raise HTTPException(status_code=400, detail="Text content is empty.")
         result_text = clean
+        result_source_type = "text"
 
     elif source_type == "url":
         if not content.strip():
@@ -130,16 +135,20 @@ async def process_assimilation(
 
         extracted = await process_url_or_youtube(content)
 
-        if not extracted:
+        # extracted is now always a dict { raw_content, brief, source_type }
+        raw_content = extracted.get("raw_content", "") if isinstance(extracted, dict) else extracted
+        if not raw_content:
             raise HTTPException(status_code=400, detail="Failed to extract content from URL.")
 
         # Check extracted content size against plan limit before saving
-        content_kb = len(extracted.encode("utf-8")) / 1024
+        content_kb = len(raw_content.encode("utf-8")) / 1024
         content_size_error = usage_tracker.check_url_content_size(db, content_kb, DEFAULT_USER_ID)
         if content_size_error:
             raise HTTPException(status_code=413, detail=content_size_error)
 
-        result_text = extracted
+        result_text = raw_content
+        result_brief = extracted.get("brief", "") if isinstance(extracted, dict) else ""
+        result_source_type = extracted.get("source_type", "url") if isinstance(extracted, dict) else "url"
 
     elif source_type == "file":
         if not file:
@@ -169,6 +178,27 @@ async def process_assimilation(
             raise HTTPException(status_code=400, detail="Failed to extract content from file.")
 
         result_text = extracted
+        result_source_type = "document"
+
+        # Generate document intelligence brief for document-type files.
+        # Audio/video transcripts are excluded here (separate brief path).
+        if ext in _DOC_EXT:
+            try:
+                from app.core.config import settings as _doc_settings
+                from app.services.doc_intel import generate_document_brief
+                _doc_result = await generate_document_brief(
+                    filename=file.filename or "document",
+                    extension=ext,
+                    text=extracted,
+                    ollama_url=_doc_settings.OLLAMA_URL.rstrip("/"),
+                    model=_doc_settings.LLM_MODEL,
+                )
+                result_brief = _doc_result.get("brief", "")
+            except Exception as _doc_err:
+                print(f">>> DOC BRIEF: generation failed: {_doc_err}")
+                result_brief = ""
+        else:
+            result_brief = ""
 
     # ----------------------------------------------------------
     # COMMIT USAGE — only reached on successful extraction
@@ -178,5 +208,8 @@ async def process_assimilation(
 
     return {
         "type": result_type,
-        "text": result_text
+        "text": result_text,
+        "raw_content": result_text,
+        "brief": result_brief,
+        "source_type": result_source_type,
     }
