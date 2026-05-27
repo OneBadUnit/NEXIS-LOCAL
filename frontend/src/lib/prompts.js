@@ -234,10 +234,50 @@ UNCERTAINTY HANDLING:
 - Do not present ambiguous information as settled fact
 - If the source omits key context, say so explicitly
 
+MULTI-THEME SYNTHESIS:
+When source material covers multiple distinct themes, detect and preserve all major thematic lanes.
+Do NOT collapse everything into one dominant narrative thread.
+Prioritize DISTINCT themes -- the strongest distinct angle matters more than the most repeated angle.
+One representative item per distinct lane is more valuable than three variants of the same theme.
+
+THEME PRIORITIZATION LOGIC:
+Do NOT use: "most repeated topic wins"
+DO use: "highest-impact distinct themes survive"
+Goal: represent the true breadth of the source material, not just the loudest thread.
+
+REDUNDANCY REDUCTION:
+To gain thematic breadth, reduce:
+- Repeated alliance or relationship phrasing
+- Duplicate aid or policy references covering the same angle
+- Near-identical bullets restating the same point
+Trade redundancy for thematic breadth.
+
+CREATOR VALUE TEST:
+Each section must pass: "If a creator consumed all source material, would this package feel representative of what they provided?"
+If not -- expand thematic preservation before adding more detail on any single theme.
+
+CONCEPT DISTRIBUTION DISCIPLINE:
+Each Creator Package section serves a DISTINCT purpose. Do NOT re-explain the same concept in every section.
+  Creator Angle Map:      broad content strategy; identify major angles; establish why topic is discussable
+  Video Script Framework: pacing and flow; develop angles into beats -- do NOT restate the angle map
+  Real Quote Pulls:       source-backed direct material only; no strategic framing; no commentary
+  Commentary Lines:       creator-usable spoken riffs; do NOT repeat phrasing from the angle map or script
+  Title Suggestions:      discovery and packaging only
+  Keywords:               platform discoverability only
+
+KEY RULE:
+Introduce a concept ONCE in the section where it belongs. Do NOT re-explain it in every subsequent section.
+If a concept appears in the Creator Angle Map, the Video Script Framework should DEVELOP it into beats -- not restate it.
+If a concept appears in the Video Script Framework, Commentary Lines should RIFF on it -- not restate it.
+Redundancy across sections wastes space. Each section must add NEW value.
+
 SECTION DISCIPLINE:
 - Output ONLY the section requested
 - Do NOT generate other sections unprompted
-- Do NOT confuse sections (Hook is not Script; Script is not Quote Pulls)`;
+- Do NOT confuse sections (Hook Options is not Video Script Framework; Real Quote Pulls is not Commentary Lines)
+- Real Quote Pulls: DIRECT QUOTES only -- no paraphrased claims, no source summaries
+- Commentary Lines: generated creator voice only -- no source attribution as if quoting
+- Video Script Framework: do NOT append a "Modular Material for Adaptation" section -- the acts are the modular material`;
 
 
 function transformPrompt(text, option) {
@@ -368,119 +408,160 @@ What Remains Unclear:
 ${text}
 
 TASK:
-Produce a structured evidence-first breakdown of the source material for creator research.
-Tone: analytical, skeptical, concise. NOT documentary narration. NOT activist framing.
+Build a creator angle map from the source material.
+Purpose: help a creator identify what angles exist, where the discussable tension lives, and what makes this worth covering.
+Tone: analytical, skeptical, concise. NOT a summary. NOT a report. NOT a policy brief.
 
 REQUIRED STRUCTURE:
 
-Core Angle:
+=== Creator Angle Map ===
+
+Main Angle:
 The central claim or finding the source supports. One to three sentences. Direct.
 Attribute if interpretive: use "source argues", "analysis claims", "document shows".
 
-Strongest Evidence:
-The most concrete, directly documented facts from the source.
-Label each item:
-  VERIFIED: <directly documented or officially recorded fact>
-  CLAIMED:  <stated by a source party, not independently verified>
-  INFERRED: <conclusion drawn from evidence, not explicitly stated>
+Supporting Angles:
+The additional distinct angles present in the source.
+Do NOT collapse everything into the main angle -- preserve thematic breadth.
+List each as:
+  - [Angle]: brief one-line description
+  - [Angle]: brief one-line description
 
-Tension/Contradiction:
-What in the source conflicts with official positions, prior claims, or expected narratives?
-What is denied, unresolved, or contradicted?
+Contradiction / Tension:
+What in the source conflicts, contradicts, or complicates the main angle?
+If multiple tensions exist, list each separately -- do NOT compress into one.
 Attribute competing positions: "Source A states X; Source B states Y."
 
-=== Evidence Confidence ===
+What Makes This Discussable:
+What is hook-worthy, debatable, surprising, or shareable about this material?
+What would make a viewer pause, push back, or want to share?
+State it bluntly. Do NOT write in narrator voice.
 
-HIGH:
-- [directly documented events, official agreements, established historical records from this source]
+What Remains Unclear:
+Gaps, conflicts, or unresolved questions in the source material.
+Omit this section entirely if nothing is unclear.
 
-MEDIUM:
-- [analytical interpretations, disputed framing, contextual conclusions drawn from the evidence]
+=== Evidence & Source Notes ===
 
-LOW:
-- [motive assumptions, implied intentionality, unsupported extrapolations]
+Strongest Evidence:
+The most concrete facts from the source.
+MULTI-THEME RULE: one item per distinct angle where possible. Do NOT give three bullets from the same angle.
+Label each:
+  VERIFIED: <directly documented or officially recorded fact>
+  CLAIMED:  <stated by a party, not independently verified>
+  INFERRED: <conclusion drawn from evidence, not explicitly stated>
 
-=== Source Reliability Signals ===
+Source Reliability:
+Label each source with its framing type and reliability tier:
+  OFFICIAL FRAMING      | HIGH RELIABILITY     -- government docs, treaties, institutional records
+  HISTORICAL CRITICISM  | MEDIUM RELIABILITY   -- historical analysis, academic review
+  COMMENTARY FRAMING    | MEDIUM RELIABILITY   -- editorial, pundit, video commentary
+  INFOGRAPHIC NARRATIVE | LOWER RELIABILITY    -- visual media claims, advocacy graphics
+  DOCUMENTARY CLAIMS    | LOWER RELIABILITY    -- film, docuseries assertions
+Note briefly what each source contributes. Do NOT dismiss lower-reliability sources.
 
-Rate each source used, based on signal strength:
-
-HIGH RELIABILITY:
-- [official document, treaty, institutional record, on-the-record primary statement]
-
-MEDIUM RELIABILITY:
-- [policy analysis, expert interpretation, historical synthesis with stated methodology]
-
-LOWER RELIABILITY:
-- [infographic without citations, unsourced assertion, anonymous claim, implied motive without documentation]
-
-Explain briefly why each source is weighted where it is.
-Do NOT dismiss lower-reliability sources -- flag the signal level and note what they contribute.
-Do NOT use politically biased language when describing source reliability.
-
-=== Source Position Comparison ===
-
-| Source / Stakeholder | Position |
-|----------------------|----------|
-| [source or party]    | [what they assert] |
-| [source or party]    | [what they assert] |
-
-Add one row per distinct position present in the sources.
-
-Narrative:
-Synthesize the sources into a concise, creator-ready summary.
-Use analytical commentary tone: "The sources collectively show..." / "What the evidence establishes..." / "What remains unclear..."
-Attribute all interpretive language. Flag gaps explicitly.
-Do NOT write in cinematic or documentary voice.
-Do NOT invent context. Do NOT smooth contradictions.
+Source Position Comparison:
+| Source / Stakeholder | Framing Type | Position |
+|----------------------|--------------|----------|
+| [source or party]    | [type]       | [what they assert] |
+Add one row per distinct position.
 
 STRICT RULES:
+- Do NOT write this as a summary, report, or policy brief
 - Do NOT merge interpretation with verified fact without labeling
 - Do NOT soften documented specifics into vague language
 - Attribute non-verified claims: "source claims", "document argues", "analysis suggests"
 - Flag every interpretive conclusion with [interpretive]
-- Do NOT write "in a world where..." or "this story reveals..."
-- Do NOT introduce loaded wording unless directly present in the source; if present, attribute it
 - Do NOT use generic fallback phrases: "complex relationship", "nuanced issue", "multifaceted dynamic"
   Instead: state the specific contradiction, evidence, or gap directly
 `;
   }
 
-  if (option === "Short Video Script") {
+  if (option === "Video Script Framework") {
     return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
-Write a complete 30-60 second spoken video script grounded in the source.
+Build a modular video script framework from the source material.
+Purpose: give the creator structured material they can adapt -- NOT a rigid monologue to read verbatim.
 Tone: analytical commentary. NOT documentary narration. NOT activist framing.
+
+Each act provides: purpose, talking points, a suggested visual, and an audience reaction target.
+Acts must PROGRESS -- each act advances the video. No act restates content from a previous act.
+Do NOT re-introduce angles already covered in the Creator Angle Map -- develop them into specific beats.
 
 REQUIRED STRUCTURE:
 
-HOOK:
-One sentence. The most striking documented fact or contradiction from the source. Specific.
+ACT 1 — Opening / Hook
+Purpose: Grab attention with the sharpest documented fact or contradiction from the source.
+Hook Options:
+  Neutral:   <a factual opening that states clearly what this is about>
+  Skeptical: <a hook that questions or challenges the surface-level framing>
+  Punchy:    <a blunt, direct opening that names the tension immediately>
+Talking Points (2-3 max):
+- <talking point from source>
+- <talking point from source>
+Suggested Visual: <brief practical note: text card, opening graphic, or footage type>
+Audience Reaction Target: <what the viewer should think or feel at this point>
 
-CONTEXT:
-Two to three spoken lines. Who, what, where.
-Use attribution when stating claims: "According to [source]..."
+ACT 2 — Context
+Purpose: Establish the background clearly and efficiently. Who, what, where. No essays.
+Key Setup: Use attribution where needed: "According to [source]..."
+Talking Points (2-3 max):
+- <contextual fact or framing -- must be NEW, not a restatement of ACT 1>
+- <contextual fact or framing -- must be NEW, not a restatement of ACT 1>
+Suggested Visual: <brief practical note: map, timeline, document screenshot, or infographic>
+Audience Reaction Target: <what the viewer should understand at this point>
 
-CONFLICT/TENSION:
-The core contradiction or unanswered question.
-State competing positions if present. Do not resolve what the source leaves unresolved.
+ACT 3 — Tension / Contradiction
+Purpose: Show the gap between the public narrative and what the source actually documents.
+Transition Line: <one line that moves the viewer from context into the core tension>
+Talking Points (2-3 max):
+- <tension point -- must be NEW, not a restatement of ACT 1 or ACT 2>
+- <tension point from source>
+Suggested Visual: <brief practical note: comparison graphic, side-by-side, or contrast text card>
+Audience Reaction Target: "Wait, how can both be true?" or similar moment of productive doubt
 
-KEY FACTS:
-Three to five lines. One per line, in spoken language.
-Label where the distinction matters: VERIFIED: / CLAIMED: / INFERRED:
+ACT 4 — Evidence / Examples
+Purpose: Ground the tension with specific documented material. Names, numbers, events.
+Evidence Beats:
+  VERIFIED: <directly documented fact>
+  CLAIMED:  <party assertion not independently verified>
+  INFERRED: <conclusion drawn from evidence>
+Talking Points (2-3 max):
+- <evidence-grounded talking point -- must be a specific fact, not a restatement of ACT 3 framing>
+- <evidence-grounded talking point>
+Suggested Visual: <brief practical note: data chart, document excerpt, or event timeline>
+Audience Reaction Target: <viewer should feel the evidence is concrete and specific>
 
-CLOSING:
-One to two sentences grounded in what the evidence actually shows.
-Do NOT invent a CTA, upcoming projects, or series.
+ACT 5 — What Remains Unclear
+Purpose: Acknowledge what the source does not resolve. Builds credibility.
+Open Questions:
+- <gap or unresolved question from the source>
+- <gap or unresolved question from the source>
+Talking Points (2-3 max):
+- <how to raise these questions on camera without overreaching>
+Suggested Visual: <brief practical note: question card or unresolved thread graphic>
+Audience Reaction Target: <viewer should feel the creator is being honest about limits>
+
+ACT 6 — Closing / Viewer Takeaway
+Purpose: Give the creator a strong, grounded exit. No overreach beyond what the source supports.
+Closing Options:
+  Neutral:        <restates what is established without overreaching>
+  Strong:         <names the most important implication the source supports>
+  Question-based: <leaves the audience with the sharpest open question>
+Suggested Visual: <brief practical note: title card, outro graphic, or final text>
+Audience Reaction Target: <viewer should leave with a clear takeaway or a specific open question>
 
 STRICT RULES:
-- Do NOT write in cinematic or documentary voice
-- Do NOT write "in a world where..." or "this story reveals..."
+- Do NOT write one rigid monologue
+- Provide modular material the creator adapts to their own voice
+- Each act must ADVANCE the video -- do NOT restate content from previous acts
+- Do NOT append a "Modular Material for Adaptation" section -- the acts themselves are the modular material
 - Do NOT invent dialogue, dates, or events not in the source
 - Attribute interpretive claims: "source argues", "critics claim", "document suggests"
 - Do NOT soften hard claims
-- No CTAs
+- No CTAs, no series promotions, no invented projects
 - Do NOT introduce loaded wording unless directly present in the source; if present, attribute it
 - Do NOT use generic fallback phrases: "complex relationship", "nuanced issue", "multifaceted dynamic"
 `;
@@ -530,57 +611,89 @@ RETURN ONLY:
 `;
   }
 
-  if (option === "Quote Pulls") {
+  if (option === "Real Quote Pulls") {
     return `${_creatorPreamble}SOURCE TEXT:
 ${text}
 
 TASK:
-Extract quote pulls from the source material.
+Extract real direct quotes from the source material only.
+These are for direct on-screen use or spoken citation in a video.
 
-CRITICAL FORMATTING RULE:
-ONLY DIRECT QUOTE sections may contain quotation marks.
-PARAPHRASED CLAIM sections must NEVER use quotation marks.
-SOURCE SUMMARY sections must NEVER use quotation marks.
+CRITICAL RULES:
+- ONLY DIRECT QUOTES are permitted in this section -- verbatim or near-verbatim text from the source
+- If no exact quote exists for a pull slot, OMIT that slot entirely -- do NOT substitute a paraphrase or source summary
+- Do NOT use quotation marks for anything other than verbatim source text
+- Do NOT invent quotes
+- Max 5 pulls. If fewer than 5 real quotes exist in the source, stop early -- output fewer pulls
+- Prioritize the most striking, creator-usable verbatim lines first
+- If the source contains strong or controversial statements, pull those -- do NOT substitute softer versions
+- Paraphrased claims and source summaries belong in Commentary Lines, not here
 
-Use ONLY the label that matches what the source actually contains:
+Speaker/source labels:
+- Use named speaker if available
+- If unknown, label: "Source document" / "Video transcript" / "Infographic text"
 
-DIRECT QUOTE:
-  For text that appears verbatim or near-verbatim in the source.
-  Wrap in quotation marks: "exact text from source"
+RETURN only pull entries where a real direct quote exists:
 
-PARAPHRASED CLAIM:
-  For a clear claim in the source that has no quotable exact text.
-  Do NOT use quotation marks.
-  Format: PARAPHRASED CLAIM: [reworded claim, attributed to source]
+Pull [N]:
+Type: DIRECT QUOTE
+Quote: "<verbatim text>"
+Source/Speaker: <name or label>
+Why it matters: <one line -- why a creator would use this>
 
-SOURCE SUMMARY:
-  For a factual pattern or position with no specific quotable line.
-  Format: SOURCE SUMMARY: [compressed representation of source position]
+Stop at 5. Do NOT invent extra pulls. Do NOT fill empty slots with paraphrase.
+`;
+  }
+
+  if (option === "Commentary Lines") {
+    return `${_creatorPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Generate original creator-ready commentary lines based on the source material.
+
+CRITICAL DISTINCTION:
+These are NOT real quotes from any source or person.
+Every line must be labeled: Generated commentary line
+Do NOT mix these with real quotes. Do NOT present them as attributed to anyone.
+
+PURPOSE:
+Give the creator usable spoken lines -- grounded in the source evidence, written in creator voice.
+These are RHETORICAL RIFFS on what the source shows, not information restatements.
+A creator should be able to say these on camera as their own lines, not read them as summaries.
+
+TONE VARIETY:
+Generate at least one line per tone category:
+  Neutral analyst  -- states what the evidence shows without loading it
+                     EXAMPLE: "Public alliances and operational realities are not always the same thing."
+  Skeptical        -- questions the official framing or raises doubt grounded in the source
+                     EXAMPLE: "If there's no formal defense treaty, what obligations actually exist in practice?"
+  Punchy           -- blunt, direct, names the tension immediately
+                     EXAMPLE: "The story isn't just support versus opposition -- it's public language versus operational behavior."
+  Humorous/blunt   -- calls it plainly; use only if source material supports it
 
 RULES:
-- Pull the most striking and usable lines first
-- If the source contains strong or controversial statements, pull those -- do NOT substitute softer versions
-- Do NOT put paraphrases in quotation marks
-- Do NOT invent or fabricate quotes
-- Do NOT sanitize or soften pulled content
+- Each line must be directly grounded in source material -- note which claim or angle it draws from
+- Do NOT repeat phrasing already present in the Creator Angle Map or Video Script Framework
+- Lines add RHETORICAL VALUE -- they are spoken riffs, not information restatements
+- Do NOT pretend these lines are quotes from anyone
+- Do NOT soften the source material when building lines
+- Keep each line to 1-2 spoken sentences maximum
+- Make them sound like something a creator would naturally say on camera, not read from a report
 
-RETURN:
+FORMAT:
+Generated commentary line:
+"<line>"
+Tone: <Neutral / Skeptical / Punchy / Humorous/blunt>
+Grounded in: <which source claim or angle this draws from>
 
-Pull 1:
-[DIRECT QUOTE / PARAPHRASED CLAIM / SOURCE SUMMARY]
-"<verbatim text>" or <paraphrase>
+(generate 4-6 lines total, varying tones)
 
-Pull 2:
-[DIRECT QUOTE / PARAPHRASED CLAIM / SOURCE SUMMARY]
-"<verbatim text>" or <paraphrase>
-
-Pull 3:
-[DIRECT QUOTE / PARAPHRASED CLAIM / SOURCE SUMMARY]
-"<verbatim text>" or <paraphrase>
-
-Pull 4:
-[DIRECT QUOTE / PARAPHRASED CLAIM / SOURCE SUMMARY]
-"<verbatim text>" or <paraphrase>
+STRICT:
+- Do NOT use this section to summarize the source
+- Do NOT write essay sentences
+- Do NOT write lines a creator could not naturally say out loud
+- Label every line "Generated commentary line" -- no exceptions
 `;
   }
 

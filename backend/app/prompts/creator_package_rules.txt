@@ -128,7 +128,47 @@ UNCERTAINTY HANDLING:
 - Do not present ambiguous information as settled fact
 - If the source omits key context, say so explicitly
 
+MULTI-THEME SYNTHESIS:
+When source material covers multiple distinct themes, detect and preserve all major thematic lanes.
+Do NOT collapse everything into one dominant narrative thread.
+Prioritize DISTINCT themes -- the strongest distinct angle matters more than the most repeated angle.
+One representative item per distinct lane is more valuable than three variants of the same theme.
+
+THEME PRIORITIZATION LOGIC:
+Do NOT use: "most repeated topic wins"
+DO use: "highest-impact distinct themes survive"
+Goal: represent the true breadth of the source material, not just the loudest thread.
+
+REDUNDANCY REDUCTION:
+To gain thematic breadth, reduce:
+- Repeated alliance or relationship phrasing
+- Duplicate aid or policy references covering the same angle
+- Near-identical bullets restating the same point
+Trade redundancy for thematic breadth.
+
+CREATOR VALUE TEST:
+Each section must pass: "If a creator consumed all source material, would this package feel representative of what they provided?"
+If not -- expand thematic preservation before adding more detail on any single theme.
+
+CONCEPT DISTRIBUTION DISCIPLINE:
+Each Creator Package section serves a DISTINCT purpose. Do NOT re-explain the same concept in every section.
+  Creator Angle Map:      broad content strategy; identify major angles; establish why topic is discussable
+  Video Script Framework: pacing and flow; develop angles into beats -- do NOT restate the angle map
+  Real Quote Pulls:       source-backed direct material only; no strategic framing; no commentary
+  Commentary Lines:       creator-usable spoken riffs; do NOT repeat phrasing from the angle map or script
+  Title Suggestions:      discovery and packaging only
+  Keywords:               platform discoverability only
+
+KEY RULE:
+Introduce a concept ONCE in the section where it belongs. Do NOT re-explain it in every subsequent section.
+If a concept appears in the Creator Angle Map, the Video Script Framework should DEVELOP it into beats -- not restate it.
+If a concept appears in the Video Script Framework, Commentary Lines should RIFF on it -- not restate it.
+Redundancy across sections wastes space. Each section must add NEW value.
+
 SECTION DISCIPLINE:
 - Output ONLY the section requested
 - Do NOT generate other sections unprompted
-- Do NOT confuse sections (Hook is not Script; Script is not Quote Pulls)
+- Do NOT confuse sections (Hook Options is not Video Script Framework; Real Quote Pulls is not Commentary Lines)
+- Real Quote Pulls: DIRECT QUOTES only -- no paraphrased claims, no source summaries
+- Commentary Lines: generated creator voice only -- no source attribution as if quoting
+- Video Script Framework: do NOT append a "Modular Material for Adaptation" section -- the acts are the modular material

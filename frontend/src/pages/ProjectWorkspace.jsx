@@ -30,7 +30,7 @@ const PACKAGES = {
   creator: {
     label: "Creator Package",
     // Display label only -- backend receives "Title Suggestions" + "Keywords" separately
-    items: ["Make Engaging", "Short Video Script", "Hook Options", "Quote Pulls", "Titles & Keywords"],
+    items: ["Make Engaging", "Video Script Framework", "Hook Options", "Real Quote Pulls", "Commentary Lines", "Titles & Keywords"],
   },
 };
 
@@ -38,7 +38,7 @@ const PACKAGES = {
 // "Titles & Keywords" expands into two separate API calls.
 const BACKEND_ITEMS = {
   summary: ["Outline", "Timeline", "Key Points", "Summary"],
-  creator: ["Make Engaging", "Short Video Script", "Hook Options", "Quote Pulls", "Title Suggestions", "Keywords"],
+  creator: ["Make Engaging", "Video Script Framework", "Hook Options", "Real Quote Pulls", "Commentary Lines", "Title Suggestions", "Keywords"],
 };
 
 // Keep in sync with ArcNexusApp.jsx CURRENT_VERSION.
@@ -529,8 +529,8 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         // ── Creator Package: multi-source → unified synthesis ─────
         // All source texts are combined into one labeled context block
         // and the backend is called ONCE per section. This produces ONE
-        // unified Make Engaging / Short Video Script / Hook Options /
-        // Quote Pulls / Title Suggestions / Keywords from all sources.
+        // unified Make Engaging / Video Script Framework / Hook Options /
+        // Real Quote Pulls / Commentary Lines / Title Suggestions / Keywords from all sources.
         const combinedText = includedItems
           .map((src, idx) => `--- Source ${idx + 1}: ${src.title} ---\n${src.text}`)
           .join("\n\n");
