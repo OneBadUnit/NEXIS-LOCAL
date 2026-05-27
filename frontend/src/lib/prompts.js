@@ -33,25 +33,46 @@ Use all selected sources together as context.
 
 The Summary Package must prioritize:
 - factual fidelity
+- thematic breadth
+- institutional and strategic synthesis
 - clarity
-- chronology
 - neutrality
 - source-grounded reporting
 
-Do not optimize for engagement, virality, or dramatic tone.
+The Summary Package must NOT optimize for:
+- chronology at the expense of thematic synthesis
+- event extraction over pattern recognition
+- engagement, virality, or dramatic tone
+- creator framing or content scaffolding
 
 TONE:
 - Neutral and analytical -- not cinematic, not emotional, not persuasive
 - Reads like a research briefing or analyst prep notes
 - Avoid narrative padding, filler sentences, and AI-style transitions
 
+JARGON SUPPRESSION:
+Avoid institutional analyst jargon that creates bureaucratic tone.
+BANNED phrases (replace with direct behavioral alternatives):
+  "the sources collectively indicate"  → state what the sources show directly
+  "operational integration"            → describe the actual coordination behavior
+  "strategic commitment"               → state what was concretely committed or done
+  "institutionally frames"             → use "official language treats" or "documents describe"
+  "deepening strategic partnership"    → describe the specific pattern of action
+  "bilateral relationship"             → describe what each side actually does
+WRONG: "institutionally frames Israel as an ally"
+RIGHT: "official U.S. language consistently treats Israel as an ally in practice"
+WRONG: "deepening operational integration"
+RIGHT: "documents describe sustained military coordination from [period]"
+Sound analytical -- NOT bureaucratic.
+
 LIGHT ATTRIBUTION AWARENESS:
 Do not harden interpretive or disputed claims into plain facts.
 When a claim is sourced, contested, or interpretive, use safer phrasing:
-  "Sources suggest..."
+  "Sources describe..."
+  "Documents indicate..."
   "According to the document..."
   "The infographic argues..."
-  "The sources collectively describe..."
+  "Some materials frame..."
   "The document claims..."
 Do NOT present disputed interpretations as established fact.
 Do NOT use emotionally loaded certainty language.
@@ -69,12 +90,75 @@ Instead, state the specific facts, specific contradictions, or what is specifica
 WRONG: "The relationship is complex and multifaceted."
 RIGHT: "The sources describe strategic cooperation alongside documented policy disagreements."
 
+DIRECT ANALYTICAL PHRASING:
+State what the sources show -- directly and specifically.
+WRONG: "The sources collectively describe a complex and multifaceted relationship."
+RIGHT: "The sources describe operational cooperation alongside recurring strategic disagreements,
+       with documented coordination at military and intelligence levels."
+Prefer specific structural statements over vague synthesis language.
+State the pattern -- do not merely gesture at it.
+
 DATE AND TIMELINE SAFETY:
 - Do NOT infer exact dates unless directly supported by source material
 - Do NOT fabricate years, exact decades, or chronology markers
 - If a date is uncertain, use approximate framing: "early 1980s", "mid-2010s", "around 2003"
 - If no date is available: omit the date, or use relative markers ("Before X", "Following the incident")
 - If sources disagree on timing or dates, explicitly flag the discrepancy
+
+THEMATIC SYNTHESIS PRIORITY:
+The Summary Package prioritizes thematic synthesis over event extraction.
+When source material covers multiple conceptual themes:
+- Identify and preserve all major thematic lanes
+- Do NOT collapse everything into a single dominant thread
+- Do NOT over-force chronology onto thematic material
+- Prefer structural patterns and institutional dynamics over isolated incidents
+WRONG: Listing every documented incident or controversy
+RIGHT: Identifying the institutional patterns and strategic tensions those incidents represent
+
+TIMELINE DISCIPLINE:
+Timeline is a SUPPORT TOOL for analytical synthesis -- not the primary analysis vehicle.
+QUALITY THRESHOLD: Each entry must pass HIGH CONFIDENCE historical grounding.
+Only include timeline entries that are:
+- Clearly and explicitly stated in the source (not inferred or synthesized)
+- Historically meaningful -- not routine or minor
+- Confidently dateable -- no broad decade-level speculation without direct source support
+- A concrete, identifiable event -- not a vague thematic pattern cast as a date
+PREFER FEWER STRONG ENTRIES OVER MORE WEAK ENTRIES.
+Do NOT force thematic material into chronological format.
+HARD LIMIT: 8 timeline entries maximum.
+
+ADAPTIVE TIMELINE SUPPRESSION:
+Not all source sets are chronology-heavy.
+If the source corpus is primarily thematic, institutional, analytical, or commentary-based:
+- Reduce timeline entries to 3-4 maximum
+- Do NOT pad the timeline to reach the hard limit
+If the source has no strong chronological spine: produce fewer entries, or none at all.
+Timeline should SUPPORT synthesis -- it should NEVER dominate the output.
+
+OCR CONTAMINATION CLEANUP:
+If source text shows signs of OCR extraction artifacts (garbled characters, fractured sentences, merged words):
+- Do NOT extract contaminated text as key findings or timeline entries
+- Prefer clean synthesis over malformed extraction
+- Skip uncertain entries rather than guessing at partial text
+- Flag OCR-contaminated sources as lower-confidence where relevant
+
+ANTI-INCIDENT-DUMP:
+Do NOT produce a sequential list of incidents or controversies.
+Do NOT treat "more events = more complete."
+Prefer: identifying the structural pattern those incidents represent.
+WRONG: Listing 4 separate intelligence disputes as separate key points
+RIGHT: "Sources describe a pattern of intelligence-sharing cooperation alongside documented inter-agency disputes."
+
+SECTION DISTINCTIVENESS:
+Each Summary Package section must contribute UNIQUE analytical value.
+Do NOT repeat the same conceptual framing across sections.
+ANTI-REPETITION RULES:
+- Avoid restating the same phrase across multiple sections (e.g., "de facto alliance", "no formal treaty", "strategic integration")
+- Core Themes: high-level conceptual lanes -- not event lists, not institutional analysis
+- Key Findings: concrete, evidence-backed conclusions -- not thematic labels or abstract patterns
+- Institutional Dynamics: behavioral postures only -- not strategic abstractions or themes
+- Analytical Summary: synthesis narrative -- not a re-enumeration of themes or findings already stated
+If a concept was established in one section, subsequent sections must DEVELOP or APPLY it -- not restate it.
 
 CONFLICTING SOURCE HANDLING:
 If multiple sources disagree:
@@ -90,8 +174,11 @@ SECTION DISCIPLINE:
 - Output ONLY the section requested
 - Do NOT generate other sections unprompted
 - Avoid repetition across sections
-
-FORMATTING:
+- Do NOT drift into Creator Package mode (no hooks, no angles, no content scaffolding)
+- Core Themes: thematic map only -- not events, not institutional analysis
+- Institutional Dynamics: institutional behavior only -- not themes, not timelines
+- Analytical Summary: direct synthesis only -- not a theme list, not a timeline
+- Open Questions: gaps and conflicts only -- not resolved facts restated as questions
 - Keep sections clearly separated
 - Avoid repetitive wording
 - Avoid AI-style filler language
@@ -318,6 +405,250 @@ II. <main section or topic>
    B. <concise subpoint>
 
 (continue up to 6 top-level sections maximum)
+`;
+  }
+
+  if (option === "Core Themes") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Identify the major conceptual themes present across the source material.
+Purpose: produce a thematic map of the corpus -- not an event list, not a timeline.
+
+RULES:
+- Identify DISTINCT themes -- do NOT repeat the same concept under different labels
+- Prioritize thematic breadth -- surface all major lanes, not just the loudest one
+- Do NOT collapse everything into one dominant frame
+- Each theme must represent a meaningful analytical category
+- 5-8 themes maximum
+- Concise analytical phrasing -- no narrative sentences
+
+ANTI-INCIDENT-DUMP:
+Do NOT list events. List THEMES.
+WRONG: "U.S. attack on USS Liberty, 1967"
+RIGHT: "Intelligence cooperation and inter-agency tensions"
+WRONG: "Aid package signed in 1985"
+RIGHT: "Congressional funding structures and executive aid commitments"
+
+RETURN ONLY:
+
+=== Core Themes ===
+
+[Theme name]: [one analytical line -- what this theme captures from the source material]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+
+(5-8 themes maximum; each must be analytically distinct from the others)
+`;
+  }
+
+  if (option === "Strategic Timeline") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Extract a disciplined chronological timeline of historically meaningful events from the source.
+
+QUALITY THRESHOLD:
+Each entry must pass HIGH CONFIDENCE historical grounding.
+Only include entries that are:
+- Clearly and explicitly stated in the source (not inferred or synthesized from patterns)
+- Confidently dateable -- no broad decade-level speculation without direct source support
+- A concrete, identifiable event -- not a vague thematic claim cast as a date
+- Historically meaningful -- not routine or minor
+PREFER FEWER STRONG ENTRIES OVER MORE WEAK ENTRIES.
+
+ADAPTIVE SUPPRESSION:
+If the source corpus is primarily thematic, analytical, or commentary-based:
+- Reduce entries to 3-4 maximum; do NOT pad the timeline to reach the hard limit
+If there is no strong chronological spine in the source, produce fewer entries or none.
+
+FORMAT:
+<date or period> -- <event>
+
+RULES:
+- HARD LIMIT: 8 entries (3-4 for thematic/analytical corpora)
+- Use ONLY dates and events explicitly stated in the source
+- Do NOT infer, synthesize, or guess -- extract only what is clearly stated
+- Do NOT include synthesized claims cast as timeline entries
+- If a date is uncertain, use approximate framing: "early 1980s", "mid-2010s"
+- If no date is available, use relative markers: "Before X", "After Y", "Following the incident"
+- Do NOT anchor events to years not present in the source
+- Do NOT duplicate events -- one entry per distinct event
+- Order chronologically
+- One sentence maximum per entry
+- Prefer strategically significant, concrete events over vague geopolitical patterns
+
+OCR CAUTION:
+If source text shows signs of OCR extraction (garbled characters, fractured sentences):
+- Do NOT extract partial or malformed events as timeline entries
+- Skip uncertain entries rather than guessing
+`;
+  }
+
+  if (option === "Institutional Dynamics") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Summarize the institutional behaviors, roles, and postures described in the source material.
+Purpose: produce a structured analytical view of how institutions behave -- not a history lesson.
+
+COVER WHERE SOURCE MATERIAL IS PRESENT:
+- Government and executive branch behavior
+- Military coordination and command posture
+- Intelligence cooperation or tensions
+- Congressional role (funding, oversight, legislation)
+- Diplomatic posture and State Department framing
+- Inter-agency dynamics or disputes
+
+RULES:
+- Use ONLY material present in the source
+- Write in concise analytical bullets -- no narrative sentences
+- Label each entry by institution type
+- Use attribution phrasing for non-verified claims: "sources indicate", "documents describe", "according to the material"
+- Do NOT import outside knowledge -- stay within the source corpus
+- 2-5 bullets per institution type; skip categories where the source provides nothing
+
+RETURN ONLY:
+
+=== Institutional Dynamics ===
+
+[Institution type]:
+- [concise analytical bullet]
+- [concise analytical bullet]
+
+[Institution type]:
+- [concise analytical bullet]
+
+(include only institution types the source addresses; omit empty categories)
+`;
+  }
+
+  if (option === "Key Findings") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Extract the strongest analytical findings from the source material as a structured list.
+Purpose: surface the most significant thematic insights, institutional realities, and contradictions.
+
+NOT an event list. NOT a controversy catalog. NOT an incident dump.
+If the strongest material is a pattern, tension, or structural fact -- state that.
+
+RULES:
+- HARD LIMIT: 10 points maximum -- prioritize the strongest and most analytically significant
+- Strongest thematic and structural insights first
+- Each finding must be a complete, standalone sentence
+- Merge overlapping or near-duplicate points into one
+- Prefer patterns, tensions, and structural findings over isolated incidents
+- Use only content from the source
+- Apply attribution phrasing where claims are interpretive: "sources indicate", "the material shows"
+- Avoid rephrasing the same fact multiple ways
+- Do NOT list consecutive incident entries -- one finding per distinct conceptual area
+
+OCR CAUTION:
+If source text shows signs of OCR contamination, do NOT extract malformed or partial sentences.
+Synthesize cleanly from what is clearly readable.
+
+HIGH-SIGNAL STANDARD:
+Each finding must be concrete and evidence-oriented -- not an abstract label.
+PREFER: "Congress approved [specific aid type] despite executive branch opposition"
+AVOID: "The alliance operates as a de facto strategic commitment"
+The test: can this finding be challenged or supported with specific evidence from the source?
+If not, it is too abstract -- rephrase it or cut it.
+
+Do NOT repeat conceptual labels or thematic frames already established in Core Themes.
+Key Findings must deliver CONCRETE VALUE beyond what thematic labels capture.
+`;
+  }
+
+  if (option === "Analytical Summary") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Write a structured analytical summary of the source material.
+
+STRICT OUTPUT RULES:
+- Use ONLY content present in the source -- do NOT add outside knowledge
+- Do NOT infer, speculate, or assume anything not stated
+- Keep tone strictly neutral and analytical -- not cinematic, not narrative
+- Remove repetition and filler
+- Preserve important names, numbers, dates, and specifics
+- Write in concise paragraphs -- do NOT use bullet points
+- Do NOT create a conclusion section
+- Do NOT describe the document itself (e.g., "the source covers", "this document explains")
+- Apply attribution phrasing where claims are sourced or contested:
+    "Sources describe..." / "Documents indicate..." / "Some materials frame..."
+- Avoid generic fallback phrases: "complex relationship", "multifaceted", "nuanced"
+- Do NOT re-enumerate themes already listed in Core Themes
+- Do NOT restate findings already captured in Key Findings
+- Purpose: synthesis narrative -- integrate what was found, do not repeat it
+
+DIRECT SYNTHESIS:
+State what the sources collectively show -- directly and specifically.
+WRONG: "The sources collectively describe a complex and multifaceted relationship."
+RIGHT: "The sources describe operational cooperation alongside recurring strategic disagreements."
+
+DO NOT DRIFT into Creator Package mode -- no hooks, no angles, no content scaffolding.
+
+RETURN ONLY:
+
+=== Analytical Summary ===
+
+Topic:
+<one sentence: what this material is about, derived from source content only>
+
+Core Dynamics:
+<2-3 sentences: what the source corpus collectively indicates about the key institutional or strategic dynamics>
+
+Key Evidence:
+<tightly written sentences preserving the most important verified or attributed information; prioritize information density over narrative flow>
+
+What the Sources Show:
+<direct analytical synthesis of what the corpus collectively demonstrates; not a restatement of Key Evidence; prefer specific to general>
+
+What Remains Unclear:
+<gaps, conflicts, or unresolved questions; omit this section entirely if nothing is unclear>
+`;
+  }
+
+  if (option === "Open Questions") {
+    return `${_rulesPreamble}SOURCE TEXT:
+${text}
+
+TASK:
+Identify and surface the key unresolved questions, gaps, and conflicts in the source material.
+Purpose: give the researcher a clear view of what the source corpus does NOT resolve.
+
+RULES:
+- Surface genuine gaps -- questions the source raises but does not answer
+- Surface conflicts -- areas where sources disagree without resolution
+- Surface missing evidence -- where key context is absent
+- Do NOT invent gaps not implied by the source
+- Do NOT restate resolved facts as open questions
+- Concise analytical phrasing
+- 4-8 questions maximum
+
+CATEGORIZE where helpful:
+- Factual gaps: dates, actors, decisions not confirmed
+- Interpretive conflicts: sources disagree on meaning or significance
+- Missing context: relevant material absent from corpus
+- Verification gaps: claims made but not independently documented
+
+RETURN ONLY:
+
+=== Open Questions ===
+
+[Category if applicable]:
+- [specific unresolved question from the source material]
+- [specific unresolved question]
+
+(4-8 questions maximum; omit categories with no material)
 `;
   }
 

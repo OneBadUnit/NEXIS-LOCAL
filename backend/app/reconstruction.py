@@ -60,7 +60,7 @@ def validate(preset: str, action: str, option: str):
         "summary": {
             "summarize": ["Short", "Medium", "Long"],
             "extract": ["Quotes", "Entities"],
-            "transform": ["Outline", "Timeline", "Key Points", "Summary"],
+            "transform": ["Core Themes", "Strategic Timeline", "Institutional Dynamics", "Key Findings", "Analytical Summary", "Open Questions", "Outline"],
         },
         "creator": {
             "summarize": ["Short", "Medium"],
@@ -133,6 +133,255 @@ II. <main section or topic>
    B. <concise subpoint>
 
 (continue up to 6 top-level sections maximum)
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — CORE THEMES
+    # ------------------------------------------------------------
+    if option == "Core Themes":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Identify the major conceptual themes present across the source material.
+Purpose: produce a thematic map of the corpus -- not an event list, not a timeline.
+
+RULES:
+- Identify DISTINCT themes -- do NOT repeat the same concept under different labels
+- Prioritize thematic breadth -- surface all major lanes, not just the loudest one
+- Do NOT collapse everything into one dominant frame
+- Each theme must represent a meaningful analytical category
+- 5-8 themes maximum
+- Concise analytical phrasing -- no narrative sentences
+
+ANTI-INCIDENT-DUMP:
+Do NOT list events. List THEMES.
+WRONG: "U.S. attack on USS Liberty, 1967"
+RIGHT: "Intelligence cooperation and inter-agency tensions"
+WRONG: "Aid package signed in 1985"
+RIGHT: "Congressional funding structures and executive aid commitments"
+
+RETURN ONLY:
+
+=== Core Themes ===
+
+[Theme name]: [one analytical line -- what this theme captures from the source material]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+[Theme name]: [one analytical line]
+
+(5-8 themes maximum; each must be analytically distinct from the others)
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — STRATEGIC TIMELINE
+    # ------------------------------------------------------------
+    if option == "Strategic Timeline":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Extract a disciplined chronological timeline of historically meaningful events from the source.
+
+TIMELINE DISCIPLINE:
+Include ONLY entries that are:
+- Clearly stated in the source (not inferred)
+- Historically meaningful -- not every minor event
+- Confidently dateable without forced approximation
+If source material is primarily thematic rather than event-based, reduce entries accordingly.
+Do NOT force thematic material into chronological format.
+
+FORMAT:
+<date or period> -- <event>
+
+RULES:
+- HARD LIMIT: 8 entries maximum
+- Use ONLY dates and events explicitly stated in the source
+- Do NOT infer or guess exact dates -- use only what the source provides
+- If a date is uncertain, use approximate framing: \"early 1980s\", \"mid-2010s\"
+- If no date is available, use relative markers: \"Before X\", \"After Y\", \"Following the incident\"
+- Do NOT anchor events to years not present in the source
+- Do NOT duplicate events -- one entry per distinct event
+- Order chronologically
+- One sentence maximum per entry
+- Prefer strategically significant events over routine ones
+
+OCR CAUTION:
+If source text shows signs of OCR extraction (garbled characters, fractured sentences):
+- Do NOT extract partial or malformed events as timeline entries
+- Skip uncertain entries rather than guessing
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — INSTITUTIONAL DYNAMICS
+    # ------------------------------------------------------------
+    if option == "Institutional Dynamics":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Summarize the institutional behaviors, roles, and postures described in the source material.
+Purpose: produce a structured analytical view of how institutions behave -- not a history lesson.
+
+COVER WHERE SOURCE MATERIAL IS PRESENT:
+- Government and executive branch behavior
+- Military coordination and command posture
+- Intelligence cooperation or tensions
+- Congressional role (funding, oversight, legislation)
+- Diplomatic posture and State Department framing
+- Inter-agency dynamics or disputes
+
+RULES:
+- Use ONLY material present in the source
+- Write in concise analytical bullets -- no narrative sentences
+- Label each entry by institution type
+- Use attribution phrasing for non-verified claims: \"sources indicate\", \"documents describe\", \"according to the material\"
+- Do NOT import outside knowledge -- stay within the source corpus
+- 2-5 bullets per institution type; skip categories where the source provides nothing
+
+RETURN ONLY:
+
+=== Institutional Dynamics ===
+
+[Institution type]:
+- [concise analytical bullet]
+- [concise analytical bullet]
+
+[Institution type]:
+- [concise analytical bullet]
+
+(include only institution types the source addresses; omit empty categories)
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — KEY FINDINGS
+    # ------------------------------------------------------------
+    if option == "Key Findings":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Extract the strongest analytical findings from the source material as a structured list.
+Purpose: surface the most significant thematic insights, institutional realities, and contradictions.
+
+NOT an event list. NOT a controversy catalog. NOT an incident dump.
+If the strongest material is a pattern, tension, or structural fact -- state that.
+
+RULES:
+- HARD LIMIT: 10 points maximum -- prioritize the strongest and most analytically significant
+- Strongest thematic and structural insights first
+- Each finding must be a complete, standalone sentence
+- Merge overlapping or near-duplicate points into one
+- Prefer patterns, tensions, and structural findings over isolated incidents
+- Use only content from the source
+- Apply attribution phrasing where claims are interpretive: \"sources indicate\", \"the material shows\"
+- Avoid rephrasing the same fact multiple ways
+- Do NOT list consecutive incident entries -- one finding per distinct conceptual area
+
+OCR CAUTION:
+If source text shows signs of OCR contamination, do NOT extract malformed or partial sentences.
+Synthesize cleanly from what is clearly readable.
+
+HIGH-SIGNAL STANDARD:
+Each finding must be concrete and evidence-oriented -- not an abstract label.
+PREFER: "Congress approved [specific aid type] despite executive branch opposition"
+AVOID: "The alliance operates as a de facto strategic commitment"
+The test: can this finding be challenged or supported with specific evidence from the source?
+If not, it is too abstract -- rephrase it or cut it.
+
+Do NOT repeat conceptual labels or thematic frames already established in Core Themes.
+Key Findings must deliver CONCRETE VALUE beyond what thematic labels capture.
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — ANALYTICAL SUMMARY
+    # ------------------------------------------------------------
+    if option == "Analytical Summary":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Write a structured analytical summary of the source material.
+
+STRICT OUTPUT RULES:
+- Use ONLY content present in the source -- do NOT add outside knowledge
+- Do NOT infer, speculate, or assume anything not stated
+- Keep tone strictly neutral and analytical -- not cinematic, not narrative
+- Remove repetition and filler
+- Preserve important names, numbers, dates, and specifics
+- Write in concise paragraphs -- do NOT use bullet points
+- Do NOT create a conclusion section
+- Do NOT describe the document itself (e.g., \"the source covers\", \"this document explains\")
+- Apply attribution phrasing where claims are sourced or contested:
+    \"Sources describe...\" / \"Documents indicate...\" / \"Some materials frame...\"
+- Avoid generic fallback phrases: \"complex relationship\", \"multifaceted\", \"nuanced\"
+- Do NOT re-enumerate themes already listed in Core Themes
+- Do NOT restate findings already captured in Key Findings
+- Purpose: synthesis narrative -- integrate what was found, do not repeat it
+
+DIRECT SYNTHESIS:
+State what the sources collectively show -- directly and specifically.
+WRONG: \"The sources collectively describe a complex and multifaceted relationship.\"
+RIGHT: \"The sources describe operational cooperation alongside recurring strategic disagreements.\"
+
+DO NOT DRIFT into Creator Package mode -- no hooks, no angles, no content scaffolding.
+
+RETURN ONLY:
+
+=== Analytical Summary ===
+
+Topic:
+<one sentence: what this material is about, derived from source content only>
+
+Core Dynamics:
+<2-3 sentences: what the source corpus collectively indicates about the key institutional or strategic dynamics>
+
+Key Evidence:
+<tightly written sentences preserving the most important verified or attributed information; prioritize information density over narrative flow>
+
+What the Sources Show:
+<direct analytical synthesis of what the corpus collectively demonstrates; not a restatement of Key Evidence; prefer specific to general>
+
+What Remains Unclear:
+<gaps, conflicts, or unresolved questions; omit this section entirely if nothing is unclear>
+"""
+
+    # ------------------------------------------------------------
+    # SUMMARY PACKAGE — OPEN QUESTIONS
+    # ------------------------------------------------------------
+    if option == "Open Questions":
+        return f"""{_rules_block}SOURCE TEXT:
+{text}
+
+TASK:
+Identify and surface the key unresolved questions, gaps, and conflicts in the source material.
+Purpose: give the researcher a clear view of what the source corpus does NOT resolve.
+
+RULES:
+- Surface genuine gaps -- questions the source raises but does not answer
+- Surface conflicts -- areas where sources disagree without resolution
+- Surface missing evidence -- where key context is absent
+- Do NOT invent gaps not implied by the source
+- Do NOT restate resolved facts as open questions
+- Concise analytical phrasing
+- 4-8 questions maximum
+
+CATEGORIZE where helpful:
+- Factual gaps: dates, actors, decisions not confirmed
+- Interpretive conflicts: sources disagree on meaning or significance
+- Missing context: relevant material absent from corpus
+- Verification gaps: claims made but not independently documented
+
+RETURN ONLY:
+
+=== Open Questions ===
+
+[Category if applicable]:
+- [specific unresolved question from the source material]
+- [specific unresolved question]
+
+(4-8 questions maximum; omit categories with no material)
 """
 
     # ------------------------------------------------------------

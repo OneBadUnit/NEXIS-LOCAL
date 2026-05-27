@@ -25,7 +25,8 @@ import ModelConfig from "../components/ModelConfig/ModelConfig";
 const PACKAGES = {
   summary: {
     label: "Summary Package",
-    items: ["Outline", "Timeline", "Key Points", "Summary"],
+    // Analytical briefing package: thematic synthesis, institutional dynamics, strategic tensions
+    items: ["Core Themes", "Strategic Timeline", "Institutional Dynamics", "Key Findings", "Analytical Summary", "Open Questions"],
   },
   creator: {
     label: "Creator Package",
@@ -37,7 +38,7 @@ const PACKAGES = {
 // Actual option strings sent to the backend.
 // "Titles & Keywords" expands into two separate API calls.
 const BACKEND_ITEMS = {
-  summary: ["Outline", "Timeline", "Key Points", "Summary"],
+  summary: ["Core Themes", "Strategic Timeline", "Institutional Dynamics", "Key Findings", "Analytical Summary", "Open Questions"],
   creator: ["Make Engaging", "Video Script Framework", "Hook Options", "Real Quote Pulls", "Commentary Lines", "Title Suggestions", "Keywords"],
 };
 
