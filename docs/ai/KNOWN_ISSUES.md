@@ -1,251 +1,278 @@
-# NEXIS — KNOWN ISSUES / ACTIVE TECHNICAL NOTES
+# KNOWN ISSUES / ENGINEERING MEMORY
 
 ## Purpose
 
 This file tracks:
 - active bugs
-- confirmed technical concerns
+- fragile systems
+- deferred fixes
 - accepted MVP limitations
-- deferred architectural decisions
-- fragile flows requiring careful review
-- areas AI should avoid repeatedly suggesting
+- confirmed technical concerns
+- known workflow edge cases
 
 This file is:
-- practical development memory
-- MVP-focused guidance
-- a current-state technical reference
+- practical engineering memory
+- current-state technical reference
+- implementation-risk tracking
 
 This file is NOT:
-- a formal bug tracker
-- a conversation transcript
-- an AI behavior training log
-- a session summary archive
+- AI governance
+- prompting rules
+- architecture philosophy
+- behavioral conditioning
+- session transcript storage
 
 Those belong in:
+- AI_RULES.md
 - AI_BEHAVIOR_EXAMPLES.md
-- SESSION_NOTES.md
+- AI Rules Prompt.txt
 
 ---
 
 # CURRENT PROJECT STAGE
 
-NEXIS is currently focused on:
+Status:
 - MVP stabilization
-- onboarding refinement
-- authentication stabilization
-- local AI workflow integration
+- workflow refinement
+- local AI reliability
+- creator pipeline usability
 
-Priority order:
+Primary priorities:
 1. stable workflows
-2. maintainable code
-3. predictable behavior
-4. shipping usable features
-
-Not currently prioritized:
-- enterprise scalability
-- theoretical perfection
-- premature optimization
-
----
-
-# DEVELOPMENT PHILOSOPHY
-
-NEXIS is intentionally built around:
-- practical engineering
-- iterative refinement
-- controlled complexity
-- human-reviewed AI assistance
-- local-first architecture where practical
-
-Recommendations should align with this philosophy.
-
----
-
-# KNOWN ACCEPTED LIMITATIONS
-
-## Accessibility Refinement
-Status: Accepted for MVP
-
-Current accessibility is functional but not fully polished.
-
-Avoid repeatedly recommending:
-- enterprise accessibility audits
-- large accessibility refactors
-- accessibility frameworks
-
-Allowed:
-- minimal ARIA improvements
-- targeted accessibility fixes
-
----
-
-## Inline Styling
-Status: Accepted for MVP
-
-Some components intentionally use inline styles for:
-- iteration speed
-- readability
-- localized control
-
-Avoid repeatedly recommending:
-- styled-components
-- Emotion
-- CSS-in-JS migrations
-- unnecessary styling abstractions
-
-Only suggest refactors if:
-- duplication becomes excessive
-- maintainability significantly degrades
-- theming becomes difficult
-
----
-
-## No Global State Management
-Status: Intentional
-
-Large state-management systems are intentionally avoided during MVP stage.
-
-Avoid repeatedly recommending:
-- Redux
-- Zustand
-- MobX
-- large state architecture changes
-
-Preferred:
-- local state
-- simple prop flow
-- minimal complexity
-
----
-
-## AI-Assisted Development Workflow
-Status: Active
-
-AI-generated code is always human reviewed before application.
-
-Workflow:
-1. review first
-2. apply manually
-3. validate behavior
-4. commit after verification
-
-Do not assume autonomous edits are allowed.
-
----
-
-## Local-First Philosophy
-Status: Intentional
-
-NEXIS prefers:
-- local processing
-- controllable systems
-- minimal cloud dependency when practical
-
-Avoid repeatedly recommending:
-- cloud-only architectures
-- SaaS-heavy dependencies
-- unnecessary hosted infrastructure
+2. predictable behavior
+3. maintainable systems
+4. usable creator tooling
 
 ---
 
 # KNOWN FRAGILE AREAS
 
 ## Startup / Overlay Flow
-Status: Under Review
+Status: Active Review Area
 
-Current flow includes:
+Related systems:
 - LogoOverlay
 - OnboardingOverlay
-- ArcNexusApp
-
-Potential fragility:
-- transition timing
-- overlay sequencing
+- startup transitions
 - onboarding visibility state
-- timeout cleanup behavior
 
-Review guidance:
-- prefer bounded targeted validation
-- avoid broad rewrites
+Known risks:
+- overlay sequencing
+- timer cleanup
+- visibility persistence
+- startup timing edge cases
+- localStorage dependency behavior
+
+Confirmed findings:
+- safer localStorage access was required
+- overlay timing required cleanup validation
+
+Approved improvements:
+- localStorage try/catch protection
+- timer cleanup verification
+- bounded startup validation
+
+Deferred:
+- broader startup refactors
+- onboarding architecture redesign
+- global onboarding state system
+
+Guidance:
 - prefer minimal safe fixes
 - preserve working startup behavior
-
-### Confirmed Findings
-- OnboardingOverlay required safer localStorage handling
-- LogoOverlay timer cleanup required verification
-
-### Approved Improvements
-- localStorage try/catch protection
-- minimal ARIA improvements
-- timer cleanup validation
-
-### Deferred / Requires Additional Evidence
-- ArcNexusApp stale ref concerns
-- broader startup flow refactors
-- global onboarding state redesign
+- avoid broad rewrites unless evidence clearly justifies them
 
 ---
 
 ## localStorage Usage
 Status: Improving
 
-Some onboarding/configuration state still uses direct localStorage access.
+Current usage:
+- onboarding persistence
+- lightweight configuration state
+- temporary UI state
 
 Known concerns:
 - restricted browser environments
-- potential SecurityError exceptions
-- fragile persistence assumptions
+- SecurityError exceptions
+- persistence assumptions
+- unavailable storage contexts
 
-Preferred approach:
-- lightweight wrapper logic
+Preferred handling:
+- lightweight wrappers
 - minimal try/catch protection
-- preserve current architecture
+- graceful fallback behavior
 
 Avoid:
-- IndexedDB migrations
 - persistence rewrites
+- IndexedDB migration
 - backend persistence redesign
 
 ---
 
-# PLATFORM SCOPE RULES
+## Summary Package
+Status: Stabilizing
 
-- Always respect requested platform scope
-- React/web frontend reviews must remain within frontend scope unless explicitly expanded
-- Do not include Android, Kotlin, Java, backend, or infrastructure unless explicitly approved
-- Candidate files must be justified by exact references, not naming similarity
-- Do not infer architecture from filenames alone
+Current strengths:
+- thematic synthesis
+- institutional analysis
+- reduced OCR contamination
+- package identity separation
+- multi-source consolidation
+
+Known concerns:
+- narrative over-synthesis on legal/administrative documents
+- occasional chronology over-interpretation
+- context-heavy prompts can increase inference latency
+
+Guidance:
+- prefer structural synthesis for legislation/legal documents
+- avoid forcing geopolitical framing onto administrative text
+- preserve section identity separation
+
+Deferred:
+- document-type-aware synthesis weighting
+- confidence-weighted timeline generation
+
+---
+
+## Creator Package
+Status: Strong / Active Refinement
+
+Current strengths:
+- creator-focused structure
+- narrative pacing
+- commentary generation
+- hook generation
+- script framework quality
+
+Known concerns:
+- occasional report-style drift
+- excessive keyword expansion under large contexts
+- possible redundancy during oversized source ingestion
+
+Confirmed improvements:
+- "Short Video Script" replaced with "Video Script Framework"
+- stronger section identity separation
+- tighter keyword generation
+- reduced output redundancy
+
+Guidance:
+- maintain creator-first cognition
+- avoid report-style formatting
+- preserve pacing and narrative flow
+
+---
+
+## OCR / Source Ingestion
+Status: Stable but Sensitive
+
+Current strengths:
+- multi-source ingestion
+- image OCR extraction
+- transcript consolidation
+- collection brief generation
+
+Known concerns:
+- OCR contamination under poor-quality scans
+- fragmented chronology extraction
+- noisy infographic text
+- mixed-source weighting inconsistencies
+
+Guidance:
+- prioritize high-signal extraction
+- avoid over-preserving noisy OCR fragments
+- prefer synthesis over raw OCR accumulation
+
+---
+
+# ACCEPTED MVP LIMITATIONS
+
+## Accessibility
+Status: Accepted for MVP
+
+Current accessibility is functional but not fully polished.
+
+Allowed:
+- targeted ARIA improvements
+- small usability fixes
+
+Deferred:
+- major accessibility overhauls
+- enterprise accessibility compliance work
+
+---
+
+## Inline Styling
+Status: Intentional for MVP
+
+Some inline styling remains intentionally for:
+- iteration speed
+- localized control
+- readability
+
+Refactor only if:
+- duplication becomes excessive
+- maintainability significantly degrades
+- theming becomes difficult
+
+---
+
+## Local-First AI Workflow
+Status: Intentional
+
+The project intentionally prioritizes:
+- local inference
+- controllable systems
+- low recurring cost
+- minimal cloud dependence where practical
+
+Known tradeoffs:
+- larger prompts can increase latency
+- local models may require stronger conditioning
+- inference quality varies by model size
+
+---
+
+# DEFERRED ARCHITECTURE DECISIONS
+
+These are intentionally postponed unless evidence strongly justifies action:
+
+- large global state systems
+- Redux/Zustand/MobX adoption
+- major folder restructuring
+- backend-heavy orchestration
+- microservice architecture
+- aggressive abstraction layers
+- premature optimization work
+- enterprise scalability redesign
 
 ---
 
 # REVIEW PRIORITIES
 
-AI reviews should prioritize:
-1. real bugs
-2. runtime stability
-3. user-facing breakage
+Reviews should prioritize:
+1. runtime stability
+2. real user-facing issues
+3. fragile workflow behavior
 4. maintainability problems
-5. confusing logic
-6. fragile flows
+5. confusing implementation logic
 
 Lower priority:
-- theoretical scalability
-- textbook best practices
 - stylistic purity
-- enterprise architecture
+- theoretical scalability
+- textbook architecture
+- enterprise conventions
 
 ---
 
-# DO NOT REPEATEDLY SUGGEST
+# ENGINEERING MEMORY RULE
 
-Unless directly relevant and justified:
-- Redux
-- CSS-in-JS
-- TypeScript migration
-- microservice architecture
-- advanced state management
-- enterprise authentication redesign
-- large UI framework rewrites
-- aggressive folder restructuring
-- premature optimization
-- broad component abstraction
+If a fragile system is:
+- repeatedly reviewed
+- repeatedly questioned
+- repeatedly re-debugged
+
+and the current behavior is intentional or accepted,
+
+document it HERE instead of repeatedly rediscovering it in future sessions.

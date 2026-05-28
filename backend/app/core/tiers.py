@@ -24,64 +24,64 @@ PLANS: dict[str, dict] = {
         "label": "Free",
         "price": 0,
 
-        "max_projects": 1,
-        "max_saved_raw_inputs": 4,
-        "max_saved_outputs": 4,
+        "max_projects": 99999,
+        "max_saved_raw_inputs": 99999,
+        "max_saved_outputs": 99999,
 
-        "monthly_raw_inputs": 4,
-        "monthly_actions": 4,
+        "monthly_raw_inputs": 99999,
+        "monthly_actions": 99999,
 
-        "max_file_upload_mb": 5,
-        "max_url_extracted_kb": 100,
-        "max_audio_video_minutes": 5,
+        "max_file_upload_mb": 99999,
+        "max_url_extracted_kb": 99999,
+        "max_audio_video_minutes": 99999,
     },
 
     "base": {
         "label": "Core",
         "price": 9.99,
 
-        "max_projects": 2,
-        "max_saved_raw_inputs": 8,
-        "max_saved_outputs": 8,
+        "max_projects": 99999,
+        "max_saved_raw_inputs": 99999,
+        "max_saved_outputs": 99999,
 
-        "monthly_raw_inputs": 8,
-        "monthly_actions": 12,
+        "monthly_raw_inputs": 99999,
+        "monthly_actions": 99999,
 
-        "max_file_upload_mb": 10,
-        "max_url_extracted_kb": 250,
-        "max_audio_video_minutes": 15,
+        "max_file_upload_mb": 99999,
+        "max_url_extracted_kb": 99999,
+        "max_audio_video_minutes": 99999,
     },
 
     "middle": {
         "label": "Pro",
         "price": 14.99,
 
-        "max_projects": 3,
-        "max_saved_raw_inputs": 12,
-        "max_saved_outputs": 12,
+        "max_projects": 99999,
+        "max_saved_raw_inputs": 99999,
+        "max_saved_outputs": 99999,
 
-        "monthly_raw_inputs": 12,
-        "monthly_actions": 36,
+        "monthly_raw_inputs": 99999,
+        "monthly_actions": 99999,
 
-        "max_file_upload_mb": 15,
-        "max_url_extracted_kb": 500,
-        "max_audio_video_minutes": 30,
+        "max_file_upload_mb": 99999,
+        "max_url_extracted_kb": 99999,
+        "max_audio_video_minutes": 99999,
     },
 
     "high": {
         "label": "Max",
         "price": 19.99,
 
-        "max_projects": 5,
-        "max_saved_raw_inputs": 36,
-        "max_saved_outputs": 36,
+        "max_projects": 99999,
+        "max_saved_raw_inputs": 99999,
+        "max_saved_outputs": 99999,
 
-        "monthly_raw_inputs": 36,
-        "monthly_actions": 108,
+        "monthly_raw_inputs": 99999,
+        "monthly_actions": 99999,
 
-        "max_file_upload_mb": 25,
-        "max_url_extracted_kb": 1024,
-        "max_audio_video_minutes": 60,
+        "max_file_upload_mb": 99999,
+        "max_url_extracted_kb": 99999,
+        "max_audio_video_minutes": 99999,
     },
 }
 
