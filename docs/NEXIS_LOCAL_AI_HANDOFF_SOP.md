@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** AI Handoff / Onboarding Reference  
-**Last Updated:** 2026-05-28  
+**Last Updated:** 2026-05-29  
 **Scope:** NEXIS-LOCAL only — the single-user, local-machine deployment  
 
 ---
@@ -95,6 +95,8 @@ The user ingests raw source material into a project. Supported source types:
 - URLs (web extraction)
 - Images (OCR + optional vision model description)
 - Audio/video (transcription pipeline — in development)
+
+For article and news URLs, NEXIS isolates the article body before storing source content — webpage boilerplate (navigation, sidebars, ads, related articles) is filtered at ingestion time, before the source reaches any generation pipeline.
 
 Each source is stored in the local SQLite database attached to a project.
 

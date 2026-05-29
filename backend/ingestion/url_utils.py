@@ -1,6 +1,16 @@
 # ============================================================
 # URL INGESTION MODULE
-# Version: 006 (All branches return dict {raw_content, brief, source_type})
+# Version: 007 (Article body isolation + contamination detection)
+# ============================================================
+#
+# HTML extraction strategy (priority order):
+#   1. trafilatura   — text-density extraction (best for news/article URLs)
+#   2. BS4 selectors — article/main/[role]/common class patterns
+#   3. Noise-stripped full body — last resort, always contamination-checked
+#
+# A contamination warning is surfaced to the user when ≥3 boilerplate
+# markers are detected in the extracted text.  Raw content is never
+# blocked on contamination alone — the user can still generate from it.
 # ============================================================
 
 print(">>> URL_UTILS LOADED FROM ingestion/url_utils.py")
@@ -15,6 +25,231 @@ from requests.exceptions import SSLError
 # youtube_utils and file_router are imported lazily inside
 # functions — NOT at module level — to prevent cascading into
 # audio_utils and loading WhisperModel at startup.
+
+
+# ============================================================
+# ARTICLE EXTRACTION HELPERS
+# ============================================================
+
+# Boilerplate phrases that appear in navigation/ads/sidebars.
+# Matching ≥ _CONTAMINATION_THRESHOLD of these in extracted text
+# indicates the content was not cleanly isolated.
+_CONTAMINATION_MARKERS = [
+    "advertisement",
+    "most popular",
+    "latest articles",
+    "current top stories",
+    "join our community",
+    "sign in or register",
+    "already a member",
+    "back to top",
+    "related articles",
+    "promoted content",
+    "read more:",
+    "see all",
+    "today's daily briefing",
+    "latest blogs",
+    "top ops",
+    "homepage",
+    "skip to main content",
+    "newsletter",
+    "subscribe now",
+    "log in to comment",
+    "create an account",
+    "breaking news",
+    "trending now",
+    "today's top stories",
+    "more from",
+    "you may also like",
+]
+
+_CONTAMINATION_THRESHOLD = 3
+
+# Class/id fragments that reliably identify noise containers.
+# Only exact substring matches are used — conservative by design.
+_NOISE_ATTRS = [
+    "sidebar",
+    "widget",
+    "advertisement",
+    "ads-",
+    "-ads",
+    "ad-wrapper",
+    "ad-container",
+    "promo",
+    "newsletter",
+    "subscribe",
+    "signup",
+    "social-share",
+    "share-bar",
+    "share-buttons",
+    "related-articles",
+    "related-posts",
+    "most-popular",
+    "popular-posts",
+    "trending",
+    "cookie-banner",
+    "cookie-notice",
+    "gdpr",
+    "comment-section",
+    "comment-form",
+    "back-to-top",
+    "skip-to-content",
+    "top-stories-bar",
+    "breaking-news-bar",
+]
+
+# CSS selectors tried in priority order when trafilatura is unavailable
+# or returns insufficient content.
+_ARTICLE_SELECTORS = [
+    "article",
+    "[role='article']",
+    "[role='main']",
+    "main",
+    # Generic article body class patterns
+    ".article-body",
+    ".article-content",
+    ".article__body",
+    ".article__content",
+    ".articleBody",
+    ".story-body",
+    ".story-content",
+    ".storyBody",
+    ".post-body",
+    ".post-content",
+    ".entry-content",
+    ".content-body",
+    ".main-content",
+    # Times of Israel / WordPress-derived patterns
+    ".the-content",
+    # Structured data / test-id patterns
+    "[data-testid='article-body']",
+    "[data-module='ArticleBody']",
+    # ID fallbacks
+    "#article-body",
+    "#articleBody",
+    "#story-body",
+    "#main-content",
+    # Wikipedia
+    "#mw-content-text",
+]
+
+
+def _strip_noise_elements(soup: BeautifulSoup) -> None:
+    """Remove obvious non-content elements from soup in-place."""
+    for tag in soup(["script", "style", "noscript", "head",
+                     "header", "footer", "nav", "form",
+                     "iframe", "aside"]):
+        tag.extract()
+
+    # Remove elements whose class or id contains a noise fragment.
+    # Iterate over a snapshot (list()) because we mutate during traversal.
+    for el in list(soup.find_all(True)):
+        try:
+            el_classes = " ".join(el.get("class", [])).lower()
+            el_id = (el.get("id") or "").lower()
+            combined = el_classes + " " + el_id
+            if any(noise in combined for noise in _NOISE_ATTRS):
+                el.extract()
+        except Exception:
+            pass
+
+
+def _element_to_text(el: BeautifulSoup) -> str:
+    """Return clean, collapsed text from a BS4 element."""
+    for sup in el.find_all("sup"):
+        sup.extract()
+    for span in el.find_all("span", class_="mw-editsection"):
+        span.extract()
+    raw = el.get_text(separator="\n")
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    return "\n".join(lines)
+
+
+def _detect_contamination(text: str):
+    """Return (is_contaminated: bool, found_markers: list[str])."""
+    text_lower = text.lower()
+    found = [m for m in _CONTAMINATION_MARKERS if m in text_lower]
+    return len(found) >= _CONTAMINATION_THRESHOLD, found
+
+
+def _contamination_warning(markers) -> str:
+    return (
+        "Collected text may include webpage boilerplate. "
+        "Review source before generating."
+    )
+
+
+def _extract_article_content(html: str, url: str):
+    """
+    Return (cleaned_text: str, warning: str).
+
+    warning is "" when extraction confidence is high.
+    warning is a user-facing string when contamination markers are found.
+
+    Strategy:
+      1. trafilatura — text-density extraction (best for arbitrary news sites)
+      2. BS4 semantic selector priority
+      3. Noise-stripped full body (last resort, always contamination-checked)
+    """
+    # ── Strategy 1: trafilatura ───────────────────────────────
+    try:
+        import trafilatura
+        result = trafilatura.extract(
+            html,
+            include_comments=False,
+            include_tables=False,
+            favor_recall=True,
+            no_fallback=False,
+        )
+        if result and len(result.strip()) > 200:
+            print(">>> ARTICLE: extracted via trafilatura")
+            contaminated, found = _detect_contamination(result)
+            warning = _contamination_warning(found) if contaminated else ""
+            return result.strip(), warning
+        print(">>> ARTICLE: trafilatura returned insufficient content, falling back")
+    except ImportError:
+        print(">>> ARTICLE: trafilatura not installed — using BS4 fallback")
+    except Exception as e:
+        print(f">>> ARTICLE: trafilatura error ({e}), falling back")
+
+    # ── Strategy 2: BS4 semantic selector priority ────────────
+    soup = BeautifulSoup(html, "html.parser")
+    _strip_noise_elements(soup)
+
+    content = None
+    for selector in _ARTICLE_SELECTORS:
+        try:
+            candidates = soup.select(selector)
+        except Exception:
+            continue
+        if not candidates:
+            continue
+        best = max(candidates, key=lambda el: len(el.get_text()))
+        if len(best.get_text().strip()) > 200:
+            content = best
+            print(f">>> ARTICLE: content found via selector {selector!r}")
+            break
+
+    if content is not None:
+        text = _element_to_text(content)
+        if len(text) > 200:
+            contaminated, found = _detect_contamination(text)
+            warning = _contamination_warning(found) if contaminated else ""
+            return text, warning
+
+    # ── Strategy 3: noise-stripped full body (last resort) ────
+    print(">>> ARTICLE: falling back to full body extraction (may be contaminated)")
+    body = soup.find("body") or soup
+    text = _element_to_text(body)
+    if not text:
+        return "No readable text found.", ""
+
+    contaminated, found = _detect_contamination(text)
+    warning = _contamination_warning(found) if contaminated else (
+        "Article content could not be isolated. "
+        "Full page text was collected — review source before generating."
+    )
+    return text, warning
 
 
 MEDIA_EXT = {
@@ -289,42 +524,21 @@ async def process_url_or_youtube(url: str) -> dict:
             except Exception as e:
                 return _make(f"Error downloading media: {str(e)}", "media")
 
-    # ---------------- HTML ----------------
+    # ---------------- HTML (ARTICLE EXTRACTION) ----------------
     print(">>> HTML BRANCH HIT")
 
     try:
         resp = safe_get(url)
         resp.raise_for_status()
 
-        soup = BeautifulSoup(resp.text, "html.parser")
+        cleaned, warning = _extract_article_content(resp.text, url)
 
-        for tag in soup([
-            "script", "style", "noscript",
-            "header", "footer", "nav",
-            "form", "iframe", "table"
-        ]):
-            tag.extract()
-
-        # Wikipedia targeting
-        content = soup.find("div", id="mw-content-text")
-        if content:
-            soup = content
-
-        for sup in soup.find_all("sup"):
-            sup.extract()
-
-        for span in soup.find_all("span", class_="mw-editsection"):
-            span.extract()
-
-        text = soup.get_text(separator="\n")
-
-        cleaned = "\n".join(
-            line.strip()
-            for line in text.splitlines()
-            if line.strip()
-        )
-
-        return _make(cleaned if cleaned else "No readable text found.", "article")
+        return {
+            "raw_content": cleaned if cleaned else "No readable text found.",
+            "brief": "",
+            "source_type": "article",
+            "warning": warning,
+        }
 
     except Exception as e:
         return _make(f"Error processing URL: {str(e)}", "article")

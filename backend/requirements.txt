@@ -43,6 +43,15 @@ python-docx==1.1.0
 # --- HTML Parsing ---
 beautifulsoup4==4.12.3
 
+# --- Article Extraction ---
+# trafilatura: text-density-based article body extraction for arbitrary news
+# and article URLs. BeautifulSoup alone cannot distinguish article content from
+# sidebar/nav/ads without per-site knowledge. trafilatura solves this with
+# language-independent text density analysis and is widely deployed in
+# ingestion pipelines. Pure Python + lxml, no system dependencies.
+# Used in ingestion/url_utils.py (_extract_article_content, Strategy 1).
+trafilatura==1.12.2
+
 # --- YouTube Downloading ---
 yt-dlp==2024.03.10
 

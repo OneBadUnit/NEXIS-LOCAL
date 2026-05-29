@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Institutional Memory / Decision Record  
-**Last Updated:** 2026-05-28  
+**Last Updated:** 2026-05-29  
 **Audience:** AI assistants, engineers, future contributors  
 
 > This log records decisions that shaped NEXIS-LOCAL — why they were made, what alternatives were considered, and what tradeoffs were accepted. Before replacing logic, simplifying code, or removing complexity, read the relevant entries. The complexity may be solving a known historical problem.
@@ -564,6 +564,58 @@ Category:           Architecture
 
 ---
 
+```
+Decision ID:        D-028
+Status:             Verified
+Category:           Architecture
+```
+
+**Title:** URL Ingestion — Article Body Isolation via Text-Density Extraction
+
+**Problem:** The original HTML ingestion path called `BeautifulSoup.get_text()` on the entire DOM after stripping only a handful of structural tags (`script`, `style`, `nav`, etc.). Wikipedia was the only special case. For arbitrary news and article URLs, this returned the full page body — including navigation, sidebars, "Latest Articles," "Most Popular," ads, membership prompts, and footer content. This contaminated source material before it reached Summary Packages and Creator Packages, causing the generation pipeline to produce outputs about unrelated homepage stories rather than the selected article.
+
+**Verified Evidence of Problem:** Times of Israel article URL test — raw extraction before fix: 31,957 characters, 18 of 26 contamination markers detected. After fix: 3,654 characters, 0 contamination markers. All 8 expected article topic keywords present.
+
+**Options Considered:**
+- BS4 with per-site CSS selector knowledge — requires maintaining per-site patterns; breaks with redesigns; not viable for arbitrary URLs
+- `newspaper3k` — no longer actively maintained; inconsistent on modern SPAs
+- `readability-lxml` (python-readability) — viable but fewer active maintainers than trafilatura
+- `trafilatura` — text-density-based extraction, language-independent, actively maintained, pure Python + lxml, no system dependencies, widely deployed in ingestion pipelines
+- Prompt engineering (tell the model to ignore clutter) — explicitly rejected; the model should never receive contaminated input
+
+**Decision:** Three-strategy extraction pipeline with contamination detection:
+1. `trafilatura` — text-density extraction, primary path for arbitrary news/article URLs
+2. BS4 semantic selectors — ordered priority list of 15+ `article`, `[role=article]`, `main`, and common article-body class/id patterns; covers cases where trafilatura returns insufficient content
+3. Noise-stripped full body — last resort; always triggers contamination check and always sets a warning
+
+Contamination detection checks extracted text against 26 known boilerplate phrases ("Most Popular," "Advertisement," "Latest Articles," etc.). If ≥3 markers found, a `warning` field is set in the response and surfaced to the user in the frontend — but collection is not blocked.
+
+**Reason:** Text-density extraction is the only approach that works reliably for arbitrary news sites without per-site knowledge. CSS selectors are the right secondary layer for well-structured sites that trafilatura cannot confidently isolate. Full-body fallback is kept as a last resort with a mandatory warning rather than silently serving contaminated content.
+
+**Tradeoffs Accepted:**
+- New Python dependency (`trafilatura==1.12.2`) added to `requirements.txt`
+- Three-strategy pipeline is more complex than a single path — complexity is justified by the quality gap
+- Trafilatura may return insufficient content for very short or heavily JS-rendered pages — BS4 selector fallback handles this
+- Contamination warning does not block collection — user may still generate from flagged content; this is intentional
+
+**Implementation:**
+- `backend/ingestion/url_utils.py` — `_extract_article_content()` owns all three strategies; `_detect_contamination()` checks for boilerplate markers; `_strip_noise_elements()` removes sidebar/ad/cookie class patterns from BS4 soup; `_ARTICLE_SELECTORS` is the ordered selector priority list
+- `backend/app/assimilation.py` — extracts and passes through `warning` field in `/collect/process` response
+- `frontend/src/pages/ProjectWorkspace.jsx` — `collectWarning` state renders an amber warning box below the collect button when `data.warning` is set
+- `backend/requirements.txt` — `trafilatura==1.12.2` added with rationale comment
+
+**Related Files:**
+- `backend/ingestion/url_utils.py` — *"Version: 007 (Article body isolation + contamination detection)"*
+- `backend/app/assimilation.py` — `result_warning` field in response shape
+- `frontend/src/pages/ProjectWorkspace.jsx` — `collectWarning` state + amber warning display
+- `backend/requirements.txt` — trafilatura dependency with explanation
+
+**Lessons Learned:** BeautifulSoup is a parser, not a content extractor. It has no concept of text density or article boundaries. Stripping a handful of HTML tags is insufficient for modern news sites that embed navigation, promotions, and sidebar content inline in the DOM. Text-density extraction is required for reliable article isolation on arbitrary URLs.
+
+**Future Notes:** If trafilatura is ever removed or replaced, the BS4 selector list in `_ARTICLE_SELECTORS` must be validated as a standalone fallback. Do not replace the three-strategy pipeline with a single-strategy approach without testing against a representative set of news/article URLs.
+
+---
+
 ## Section 4 — Development Decisions
 
 ---
@@ -948,6 +1000,31 @@ Category:           Auth
 
 ---
 
+```
+Decision ID:        D-053
+Status:             Verified Failure
+Category:           Architecture
+```
+
+**Title:** Full-Body BeautifulSoup Extraction for Article URLs
+
+**Problem:** The original URL ingestion implementation used `BeautifulSoup.get_text(separator="\n")` on the entire DOM after stripping only `script`, `style`, `noscript`, `header`, `footer`, `nav`, `form`, `iframe`, and `table` tags. Wikipedia was the only special-case extraction path.
+
+**Why It Failed:**
+- Modern news sites embed navigation, sidebars, "Latest Articles" lists, ads, membership prompts, homepage modules, and footer content directly in the `<body>` — none of which is removed by stripping the handful of structural tags above
+- The extracted text for a single Times of Israel article included 18 of 26 known boilerplate contamination markers alongside the article content
+- The contaminated source text was stored and fed directly into Summary Package and Creator Package generation, causing the LLM to summarize homepage content rather than the selected article
+- There was no contamination detection, no warning, and no visible indication that extraction had failed
+
+**Measured Impact:** Times of Israel article URL — before fix: 31,957 chars, 18/26 contamination markers, generation output focused on unrelated current homepage stories. After fix (D-028): 3,654 chars, 0/26 contamination markers, all 8 article-specific topic keywords present.
+
+**Resolution:** Replaced with the three-strategy pipeline documented in D-028. `trafilatura` text-density extraction is the primary path. BS4 semantic selector fallback is the secondary path. Noise-stripped full body is the last resort, always accompanied by a user-visible warning.
+
+**Related Files:**
+- `backend/ingestion/url_utils.py` — prior approach was in the HTML branch; replaced in version 007
+
+---
+
 ## Section 7 — Open Questions
 
 ---
@@ -1065,6 +1142,7 @@ Specifically:
 - Before adding magic link auth back → Read **D-052**
 - Before hardcoding any service URLs → Read **D-050**
 - Before removing or changing `DEFAULT_USER_ID` → Read **D-002**
+- Before simplifying or removing the URL article extraction pipeline (trafilatura, BS4 selectors, contamination detection) → Read **D-028** and **D-053**
 
 ### Before Simplifying Code
 

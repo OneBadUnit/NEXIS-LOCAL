@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Technical Architecture Reference  
-**Last Updated:** 2026-05-28  
+**Last Updated:** 2026-05-29  
 **Audience:** Engineers, AI assistants, technical contributors  
 
 > This is a technical reference document. It documents what exists in the codebase as verified by direct file inspection. Items that could not be verified are explicitly marked.
@@ -95,7 +95,7 @@ ingestion/
 ├── pdf_utils.py         PDF text extraction
 ├── docx_utils.py        DOCX text extraction
 ├── ocr_utils.py         Tesseract OCR wrapper + diagnostics
-├── url_utils.py         URL fetch + YouTube routing
+├── url_utils.py         URL fetch, article body extraction (trafilatura + BS4 selector fallback + contamination detection), YouTube routing
 ├── youtube_utils.py     YouTube transcript + yt-dlp fallback
 ├── audio_utils.py       Audio processing utilities
 ├── video_utils.py       Video processing utilities
@@ -203,7 +203,7 @@ FRONTEND — ProjectWorkspace.jsx
 BACKEND — app/assimilation.py  (text/URL/file)
           app/vision.py         (images)
 │
-│  URL path:       ingestion/url_utils.py → fetch or YouTube pipeline
+│  URL path:       ingestion/url_utils.py → article body extraction (trafilatura primary, BS4 selector fallback, contamination detection) or YouTube pipeline
 │  File path:      ingestion/file_router.py → routes by extension:
 │                    .txt/.md       → direct decode
 │                    .pdf           → ingestion/pdf_utils.py
@@ -659,7 +659,16 @@ The Vercel URLs are remnants of a prior hosted deployment. They are harmless in 
 - Routes files by extension via `ingestion/file_router.py`
 - Audio/video: duration checked via `ffprobe` (hardcoded path: `C:\ffmpeg\bin\ffprobe.exe`)
 - Documents: `doc_intel.py` generates a DOCUMENT COLLECTION BRIEF via Ollama
-- Returns extracted text + optional brief as JSON
+- Returns extracted text + optional brief + optional `warning` field as JSON
+
+**URL article extraction pipeline** (verified in `ingestion/url_utils.py` version 007):
+1. **trafilatura** — text-density extraction; primary path for arbitrary news and article URLs; returns clean article body for most news sites without per-site knowledge
+2. **BS4 semantic selectors** — fallback; tries `article`, `[role=article]`, `main`, and 12+ common article-body class/id patterns in priority order
+3. **Noise-stripped full body** — last resort; always triggers contamination check and always sets a user-visible warning
+
+**Contamination detection:** Extracted URL content is checked against 26 known boilerplate phrases ("Most Popular," "Advertisement," "Latest Articles," etc.) before the response is returned. If ≥3 markers are detected, the `warning` field is set to a user-facing message. The `warning` field is displayed as an amber notice in `ProjectWorkspace.jsx` but does not block collection. If extraction falls back to the full-body path, a warning is always set regardless of marker count.
+
+**trafilatura dependency:** `trafilatura==1.12.2` added to `backend/requirements.txt`. Rationale documented in Decision Log D-028.
 
 **Feature flags that gate ingestion paths (from `config.py`):**
 - `WHISPER_ENABLED` — controls audio/video transcription
@@ -926,4 +935,4 @@ Correct the assumption here. Mark what was wrong and what the verified fact is.
 
 ---
 
-*Verified against codebase: 2026-05-28. Update this document after any major architectural change.*
+*Verified against codebase: 2026-05-29. Update this document after any major architectural change.*

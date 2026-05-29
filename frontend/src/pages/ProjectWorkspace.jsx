@@ -313,11 +313,13 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
   const [urlInput, setUrlInput] = useState("");
   const [fileInput, setFileInput] = useState(null);
   const [collectError, setCollectError] = useState(null);
+  const [collectWarning, setCollectWarning] = useState(null);
   const [collectLoading, setCollectLoading] = useState(false);
   const fileRef = useRef(null);
 
   const handleCollect = async () => {
     setCollectError(null);
+    setCollectWarning(null);
 
     if (collectMode === "url" && !urlInput.trim()) {
       setCollectError("Enter a URL.");
@@ -356,6 +358,7 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
         rawContent = data.raw_content || data.text || "";
         brief      = data.brief || "";
         sourceType = data.source_type || collectMode;
+        if (data.warning) setCollectWarning(data.warning);
       }
 
       if (!rawContent) {
@@ -820,6 +823,23 @@ export default function ProjectWorkspace({ project, onClose, onRename }) {
                 }}
               >
                 {collectError}
+              </p>
+            )}
+
+            {collectWarning && (
+              <p
+                style={{
+                  color: "var(--arc-warning, #c98a00)",
+                  background: "var(--arc-warning-bg, rgba(201,138,0,0.08))",
+                  border: "1px solid var(--arc-warning-border, rgba(201,138,0,0.25))",
+                  borderRadius: 6,
+                  padding: "7px 10px",
+                  margin: "0 0 10px",
+                  fontSize: "0.85rem",
+                  lineHeight: 1.45,
+                }}
+              >
+                ⚠ {collectWarning}
               </p>
             )}
 

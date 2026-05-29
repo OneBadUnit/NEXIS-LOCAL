@@ -121,6 +121,7 @@ async def process_assimilation(
     result_text: str
     result_brief: str = ""
     result_source_type: str = source_type
+    result_warning: str = ""
 
     if source_type == "text":
         clean = content.strip()
@@ -149,6 +150,7 @@ async def process_assimilation(
         result_text = raw_content
         result_brief = extracted.get("brief", "") if isinstance(extracted, dict) else ""
         result_source_type = extracted.get("source_type", "url") if isinstance(extracted, dict) else "url"
+        result_warning = extracted.get("warning", "") if isinstance(extracted, dict) else ""
 
     elif source_type == "file":
         if not file:
@@ -173,6 +175,12 @@ async def process_assimilation(
                     raise HTTPException(status_code=413, detail=dur_error)
 
         extracted = await process_uploaded_file(file)
+
+        # PDF extraction returns a dict with text + warning metrics;
+        # all other file types return a plain str.
+        if isinstance(extracted, dict):
+            result_warning = extracted.get("warning", "")
+            extracted = extracted.get("text", "")
 
         if not extracted:
             raise HTTPException(status_code=400, detail="Failed to extract content from file.")
@@ -212,4 +220,5 @@ async def process_assimilation(
         "raw_content": result_text,
         "brief": result_brief,
         "source_type": result_source_type,
+        "warning": result_warning,
     }
