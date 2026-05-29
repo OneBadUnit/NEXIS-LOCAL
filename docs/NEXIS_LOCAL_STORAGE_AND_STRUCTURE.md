@@ -300,8 +300,8 @@ SAVED OUTPUT
 | User account + usage counters | SQLite (`nexis.db`) | `account.py` |
 | Project records (DB-side) | SQLite (`nexis.db`) | `project.py` |
 | Source records (DB-side) | SQLite (`nexis.db`) | `source.py` |
-| User auth session | Supabase (cloud) | `auth.js` / `supabase.js` |
-| User profile | Supabase (cloud) | `auth.js` |
+| User auth session | Local constant (`LOCAL_USER`) in `AppLayout.jsx` | `AppLayout.jsx` v009 |
+| User profile | Local constant (`LOCAL_PROFILE`) in `AppLayout.jsx` | `AppLayout.jsx` v009 |
 
 **The frontend manages the primary project workflow through `localStorage`.** The SQLite database holds the usage/tier tracking account, and DB-side project/source records. `projectStorage.js` is explicitly commented as a temporary adapter: *"swap these functions for API calls when backend integration is ready."*
 
@@ -472,50 +472,64 @@ The following may exist but were not confirmed by direct inspection:
 
 ### Current Auth System
 
-Authentication is handled via Supabase. This is the **only required external cloud dependency** in NEXIS-LOCAL.
+Authentication is handled locally via hardcoded constants in `AppLayout.jsx`. There is no external authentication service required for NEXIS-LOCAL.
 
-**Verified files:** `frontend/src/lib/auth.js`, `frontend/src/lib/supabase.js`, `frontend/src/layout/AppLayout.jsx`
+**Verified in:** `frontend/src/layout/AppLayout.jsx` v009 (2026-05-29)
 
-**Supported flows (verified):**
-- Email + password sign-up (`supabase.auth.signUp`)
-- Email + password sign-in (`supabase.auth.signInWithPassword`)
-- Sign-out (`supabase.auth.signOut`)
-- Password reset via email (`supabase.auth.resetPasswordForEmail`)
-- Session check on load (`supabase.auth.getSession`)
-- Auth state change listener (`supabase.auth.onAuthStateChange`)
+**Local user constants (defined at module scope in `AppLayout.jsx`):**
+```js
+const LOCAL_USER = { id: "local-user", email: "local@nexis" };
+const LOCAL_PROFILE = {
+  id: "local-user",
+  email: "local@nexis",
+  tier: "free",
+  bonus_actions: 0,
+  first_name: "Local",
+  last_name: "User",
+  phone: null,
+  company: null,
+};
+```
 
-**Explicitly removed (verified in code comments):**
-- Magic links / OTP — intentionally absent
-- Social OAuth providers — not present
+These constants are passed directly to `NexusDashboard` and `TopBar` on every render. No session check, no network call, no loading state.
 
-**Auth gate behavior (verified in `AppLayout.jsx`):**
-- `authLoading` state is `true` until the initial Supabase session check resolves
-- The app does not render its main content until this check completes
-- No bypass via localStorage flags, URL params, or demo booleans
+**Auth gate status:** Removed. `AppLayout.jsx` v009 does not contain a `SignedOutScreen` gate, `authLoading` state, or any Supabase session check. The app renders immediately on load.
 
-**Profile storage:**
-- User profile stored in a Supabase `profiles` table (cloud)
-- `ensureProfile(user)` called on successful auth — upserts profile row
-- `getProfile(userId)` reads from Supabase
+**Sign-in/sign-out UI:** Removed from TopBar. `user={null}` is passed to `TopBar`; the existing `{user && ...}` guard means the email display, Account button, and Sign Out button are all hidden automatically.
 
-**Env vars required (frontend):**
-- `REACT_APP_SUPABASE_URL`
-- `REACT_APP_SUPABASE_ANON_KEY`
+**Supabase files still present (Phase 2 cleanup deferred):**
+- `frontend/src/lib/auth.js` — no longer imported by `AppLayout.jsx`; still contains all Supabase auth functions
+- `frontend/src/lib/supabase.js` — still imported by `NexusDashboard.jsx` for the app announcements fetch; if Supabase is unreachable (no valid env vars), the call fails silently and `announcements` is set to `null` via try/catch, and a fallback renders
+- `@supabase/supabase-js` — still in `package.json` and `node_modules`
+
+These files are harmless. Phase 2 cleanup will remove them deliberately.
+
+**Prior auth architecture (v008 — no longer active):**
+- Email + password sign-up and sign-in via `supabase.auth.signInWithPassword`
+- Session check on load via `supabase.auth.getSession`
+- Auth state change listener via `supabase.auth.onAuthStateChange`
+- `authLoading` state blocked entire app render until session resolved
+- Hard gate: `if (!user) return <SignedOutScreen>` — no bypass
+
+See Decision Log D-035 for full analysis and rationale.
+
+**Env vars:**
+- `REACT_APP_SUPABASE_URL` — no longer required for local operation; may be left empty
+- `REACT_APP_SUPABASE_ANON_KEY` — no longer required for local operation; may be left empty
 
 ---
 
 ### Current Requirements vs Future Possibilities
 
-**Current — required for NEXIS-LOCAL to function:**
-- Internet access to reach Supabase auth endpoints
-- A Supabase account/project configured
-- Both env vars set at build time
+**Current — what NEXIS-LOCAL requires:**
+- No auth service required
+- No internet access required for authentication
+- No account required
 
 **Future Possibility Only — NOT Current Architecture:**
-- Local-only authentication (no Supabase)
+- Return of Supabase auth gate for a future hosted product (would require full gate restoration)
+- Multi-user local accounts
 - JWT-based self-hosted auth
-- Optional anonymous/offline mode
-- Multi-user auth with real isolation
 
 ---
 
@@ -533,9 +547,8 @@ App mounts
 │    Key: nexis_local_arcn_ack_version
 │    Shows modal if stored version ≠ CURRENT_VERSION (1.0.7)
 ├─ OnboardingOverlay mounts after LogoOverlay completes
-└─ AppLayout mounts — runs Supabase auth check
-     └─ Renders SignedOutScreen if no session
-     └─ Renders NexusDashboard if session exists
+└─ AppLayout mounts — renders immediately with LOCAL_USER / LOCAL_PROFILE constants
+     └─ Renders NexusDashboard directly (no auth check, no loading state)
 ```
 
 ### Context Provider
@@ -830,8 +843,8 @@ The NEXIS Companion is a standalone Go binary that acts as the local AI health m
 
 ### `frontend/src/layout/AppLayout.jsx`
 
-**Why it matters:** Auth gate. Controls what the user sees before and after authentication.  
-**What breaks:** Removing the `authLoading` guard allows the app to flash unauthenticated state. Adding any bypass or demo flag would be a security regression. Changing the Supabase session check behavior affects auth reliability.
+**Why it matters:** Top-level layout and local user identity. Owns `LOCAL_USER` and `LOCAL_PROFILE` constants (defined at module scope) that are passed to `NexusDashboard` and `TopBar` on every render. Controls which overlays are mounted (Help, Diagnostics) and the scroll-to-top behavior. Prior to v009 this was the Supabase auth gate — see Decision Log D-035 for the full history.  
+**What breaks:** Changing `LOCAL_PROFILE.tier` changes the resolved tier config. All limits are `99999` locally — this is intentional per D-027. Removing or nulling `LOCAL_USER` breaks `TopBar` and `NexusDashboard` prop contracts.
 
 ### `frontend/src/context/ArcNContext.jsx`
 
@@ -880,7 +893,7 @@ These are verified architectural facts, not aspirational goals.
 
 ### No Required Cloud Processing
 
-- The only required external service is Supabase auth
+- No required external cloud services
 - All computation (ingestion, generation, refinement) happens on-machine
 - All generated output stays on-machine
 - Tesseract OCR: local binary

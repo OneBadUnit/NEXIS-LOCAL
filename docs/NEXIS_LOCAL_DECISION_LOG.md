@@ -691,7 +691,7 @@ Category:           Development
 
 ```
 Decision ID:        D-032
-Status:             Verified
+Status:             Verified — Superseded by D-035 (2026-05-29)
 Category:           Development
 ```
 
@@ -787,6 +787,57 @@ Category:           Development
 - `frontend/src/pages/ProjectWorkspace.jsx`
 
 **Lessons Learned:** This mapping is a silent contract between frontend display and backend API. Changing the display label or the backend option strings independently will break the mapping.
+
+---
+
+```
+Decision ID:        D-035
+Status:             Verified
+Category:           Auth
+```
+
+**Title:** Local Auth Removal Phase 1 — Supabase Gate Replaced with Local User Constants
+
+**Problem:** Supabase authentication was the only required cloud dependency in NEXIS-LOCAL. The entire frontend was gated behind `supabase.auth.getSession()`, meaning users needed a Supabase account and internet access to log in before any part of the app was accessible. This contradicted the local-first architecture principle (D-001) and the documented "no cloud account required" claim in the User Install Guide.
+
+**Analysis (2026-05-29):**
+- `AppLayout.jsx` v008 had a hard gate: `if (!user) return <SignedOutScreen>` — no bypass existed
+- `user` was populated exclusively by `supabase.auth.getSession()` and `onAuthStateChange()`
+- The backend has zero Supabase references — `DEFAULT_USER_ID = "default"` hardcoded in all usage paths
+- All tier limits in `tiers.js` are `99999` — enforcement never blocks a local user regardless of profile state
+- `NexusDashboard.jsx` already handles `profile?.tier || "free"` gracefully (null profile falls through to free tier)
+- Supabase auth was required only to unlock the UI, not to protect any backend data or enforce any meaningful rule
+
+**Options Considered:**
+- Keep Supabase, update docs to note it is required (preserves complexity, only fixes documentation)
+- Add an environment variable bypass flag
+- Replace the auth gate with local constants in `AppLayout.jsx` — Phase 1 (minimal, targeted)
+- Full cleanup: delete `auth.js`, `supabase.js`, remove package dependency — Phase 2, deferred
+
+**Decision:** Phase 1 only. Replace the Supabase auth gate in `AppLayout.jsx` with `LOCAL_USER` and `LOCAL_PROFILE` constants. All other Supabase files remain untouched.
+
+**Reason:** The backend never validated Supabase credentials. All tier limits are `99999` locally. The auth gate added a mandatory cloud dependency with no corresponding backend security or data protection benefit for a single-user local application.
+
+**Tradeoffs Accepted:**
+- `auth.js` and `supabase.js` remain as unused frontend code until Phase 2 cleanup
+- `NexusDashboard.jsx` still imports `supabase` for the app announcements fetch — call fails silently, caught by existing `try/catch`, `announcements` set to `null`, fallback renders
+- No Account overlay or sign-in/sign-out UI — appropriate for a local single-user application
+- `@supabase/supabase-js` remains as an unused package dependency until Phase 2
+- `AccountOverlay.jsx`, `SignedOutScreen.jsx`, `PasswordRecoveryOverlay.jsx`, `ResetPasswordOverlay.jsx` remain as dead code until Phase 2
+
+**Implementation:**
+- `AppLayout.jsx` v009 (2026-05-29): removed imports of `SignedOutScreen`, `PasswordRecoveryOverlay`, `AccountOverlay`, `supabase`, `auth.js`, `clearAllProjectStorage`; added `LOCAL_USER` and `LOCAL_PROFILE` constants at module scope; removed both auth `useEffect` blocks, the debug `useEffect` block, `handleSignIn/SignUp/SignOut` functions, and `authLoading`/`showAccount`/`showPasswordRecovery` state; removed the `if (!user) return <SignedOutScreen>` gate; passes `user={null}` to `TopBar` (email/Account/Sign Out hidden by existing `{user && ...}` guard)
+- `TopBar.jsx`: no changes required
+
+**Related Files:**
+- `frontend/src/layout/AppLayout.jsx` — v009, primary change
+- `frontend/src/layout/TopBar.jsx` — unchanged; `{user && ...}` guard hides auth controls automatically when `user` is null
+- `frontend/src/lib/auth.js` — unchanged; Supabase auth functions remain, no longer imported by AppLayout
+- `frontend/src/lib/supabase.js` — unchanged; still imported by `NexusDashboard` for announcements fetch
+
+**Lessons Learned:** A cloud auth gate is not appropriate for a local-first single-user tool. When the backend has no auth validation and uses `DEFAULT_USER_ID = "default"`, a frontend auth gate adds cloud friction without security. The gate was architecture for a future hosted product inadvertently deployed in a local one.
+
+**Future Notes:** Phase 2 cleanup — delete `auth.js`, `supabase.js`, remove `@supabase/supabase-js` from `package.json`, remove announcements fetch from `NexusDashboard.jsx`, remove Supabase env vars from `.env.example` and documentation. Phase 2 should be a deliberate tracked operation, not a side effect of another change.
 
 ---
 
@@ -1143,6 +1194,7 @@ Specifically:
 - Before hardcoding any service URLs → Read **D-050**
 - Before removing or changing `DEFAULT_USER_ID` → Read **D-002**
 - Before simplifying or removing the URL article extraction pipeline (trafilatura, BS4 selectors, contamination detection) → Read **D-028** and **D-053**
+- Before re-adding a Supabase auth gate or login screen → Read **D-035**
 
 ### Before Simplifying Code
 
