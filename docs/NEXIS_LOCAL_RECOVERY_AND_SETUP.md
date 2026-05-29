@@ -324,11 +324,24 @@ Both `qwen2.5:7b` and `llava:13b` must appear in the output.
 ### 7.1 What the Companion is
 
 NEXIS Companion is a compiled Go binary that runs a local HTTP server on
-**port 8765**. It bridges the frontend to Ollama, since browsers cannot call
-`http://localhost:11434` directly due to CORS restrictions.
+**port 8765**. It provides Ollama lifecycle management: detection, startup,
+restart, model downloads, and diagnostics.
 
-The frontend (`frontend/src/lib/bridge.js`) only talks to `localhost:8765`.
-It never calls Ollama directly.
+> **Phase A change (2026-05-29):** AI generation (Create / Refine) now goes
+> directly from the browser to Ollama at `localhost:11434` via
+> `generateDirectOllama()` in `bridge.js`. The Companion is **optional** for
+> users who manage Ollama independently. It is **recommended** for first-time
+> setup and for users who want one-click Ollama management and diagnostics.
+
+The Companion handles:
+- Checking whether Ollama is installed and where it lives
+- Starting and restarting Ollama
+- Downloading and listing models
+- Reporting diagnostics (GPU, version, model list)
+
+The frontend (`frontend/src/lib/bridge.js`) calls the Companion at
+`localhost:8765` for management operations, and calls Ollama directly at
+`localhost:11434` for generation.
 
 ### 7.2 Getting the binary
 
@@ -500,7 +513,11 @@ ollama serve
 
 Or start via the Ollama system tray icon.
 
-### Terminal 2 — NEXIS Companion
+### Terminal 2 — NEXIS Companion (optional)
+
+> **Optional:** The Companion is recommended for first-time setup and for
+> Ollama lifecycle management. If Ollama is already running with a model,
+> AI generation works without the Companion.
 
 ```bat
 "D:\ARC NEXUS LLC\NEXIS Companion.exe"

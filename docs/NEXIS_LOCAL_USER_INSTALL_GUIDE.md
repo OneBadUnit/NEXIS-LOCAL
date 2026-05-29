@@ -198,10 +198,14 @@ Size: approximately 8 GB. This is optional — NEXIS works without it.
 
 ## 6. Installing NEXIS Companion
 
-NEXIS Companion is a small background program that connects NEXIS (running in
-your browser) to Ollama (running on your computer). Your browser cannot talk
-to Ollama directly due to a browser security rule — the Companion handles
-that connection safely.
+NEXIS Companion is an optional management tool that helps with first-time
+Ollama setup, model downloads, and diagnostics. It can start Ollama for you,
+download AI models with progress tracking, and report system status.
+
+> **New in current version:** AI generation (Create / Refine) works directly
+> from NEXIS to Ollama without the Companion. The Companion is **recommended
+> for first-time users** — it makes setup easier. Experienced users who already
+> have Ollama running with a model can skip this section.
 
 **You do not install it. You just download it and double-click it.**
 
@@ -295,7 +299,7 @@ Step 5, everything should work automatically.
 ### Confirming your model in NEXIS
 
 1. Look for the **Model Config** or settings area in the top bar or settings overlay
-2. It should show **Local AI (NEXIS Companion + Ollama)** as the mode
+2. It should show **Local AI** as the mode (with Ollama)
 3. The model name should show `qwen2.5:7b`
 
 ### If you want to use a different model
@@ -347,12 +351,19 @@ If the AI produces a summary, everything is working end-to-end.
 
 ## 10. Common Problems and Fixes
 
-### NEXIS shows "Local AI Unavailable" or "Companion not running"
+### NEXIS shows "Local AI Unavailable" or AI operations fail
 
-**Cause:** NEXIS Companion is not running.
+**Cause:** Ollama is not running, or no model has been downloaded.
 
-**Fix:** Go to wherever you saved `NEXIS Companion.exe` and double-click it.
-Keep the window open. Refresh NEXIS in your browser.
+**Fix:**
+1. Look for the Ollama icon in the system tray (bottom-right near the clock) —
+   make sure it is running. Or open Command Prompt and type: `ollama serve`
+2. Make sure `qwen2.5:7b` is downloaded (`ollama list` to check)
+3. If NEXIS Companion is running, click **Recheck** in AI Model Settings
+
+> **Note:** NEXIS Companion not running does not block AI generation as long
+> as Ollama is running with a model. The Companion is used for management
+> features (start Ollama, download models, diagnostics).
 
 ---
 

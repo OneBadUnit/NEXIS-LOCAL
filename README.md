@@ -82,15 +82,15 @@ Examples:
 
 NEXIS currently supports:
 
-• Windows via NEXIS Companion
-• Linux / WSL2 via nexis-bridge-linux
+• Windows via NEXIS Companion (optional management layer)
+• Linux / WSL2 via nexis-bridge-linux (optional management layer)
 
-The local bridge system provides:
+The local AI system provides:
 
-• Safe local AI communication
-• Ollama detection and startup
-• Model detection
-• Diagnostics and troubleshooting
+• Direct browser-to-Ollama generation (`localhost:11434`) via `bridge.js`
+• NEXIS Companion for Ollama lifecycle management (optional)
+• Ollama detection, startup, and model downloads (via Companion)
+• Model detection and diagnostics (via Companion or direct check)
 • Local endpoint abstraction
 • Future-friendly companion architecture
 
@@ -139,7 +139,11 @@ Modular architecture with separation between:
 
 ## Companion Architecture
 
-Local AI communication is intentionally separated from the hosted backend.
+Local AI communication is separated into two layers.
+
+**Generation layer (direct):** `bridge.js` → `generateDirectOllama()` → Ollama (`localhost:11434`). The browser calls Ollama directly for all Create and Refine operations.
+
+**Management layer (optional):** NEXIS Companion (`localhost:8765`) handles Ollama lifecycle: detection, startup, restart, model pulls, and diagnostics. Recommended for first-time setup. Not required for generation once Ollama is running.
 
 This allows:
 
@@ -147,7 +151,8 @@ This allows:
 • Reduced hosted AI costs
 • Better GPU utilization
 • Offline/local workflows
-• Cleaner browser security handling
+• Beginner-friendly setup via Companion
+• Flexible operation without Companion for experienced users
 
 ---
 

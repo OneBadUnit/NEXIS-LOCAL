@@ -322,6 +322,10 @@ export function subscribePullProgress(jobId, bridgeUrl = BRIDGE_DEFAULT_URL, onP
  * Send a generation request through the companion to Ollama.
  * Returns { output } on success.
  * Returns { error, code } on failure. Never throws.
+ *
+ * NOTE: Used by ModelConfig and any code that explicitly routes
+ * through the Companion. For NEXIS-LOCAL generation (Create/Refine)
+ * use generateDirectOllama() below — no Companion required.
  */
 export async function generateViaBridge(prompt, model, bridgeUrl = BRIDGE_DEFAULT_URL) {
   const base = bridgeUrl.replace(/\/$/, "");
@@ -338,6 +342,53 @@ export async function generateViaBridge(prompt, model, bridgeUrl = BRIDGE_DEFAUL
     if (res.ok) {
       const data = await res.json();
       const output = (data.output || "").trim();
+      if (!output) return { error: "Generation returned an empty response.", code: "GENERATION_FAILED" };
+      return { output };
+    }
+    let errData = {};
+    try { errData = await res.json(); } catch { /* ignore */ }
+    return { error: errData.error || "Generation failed", code: errData.code || "GENERATION_FAILED" };
+  } catch (err) {
+    return { error: err.message, code: _networkErrorCode(err) };
+  }
+}
+
+// Ollama native URL — used by generateDirectOllama().
+// NEXIS-LOCAL serves over http://localhost:3000 (plain HTTP), so
+// browser → localhost:11434 is same-protocol and CORS is open by
+// default in Ollama v0.24.0+. No Companion required.
+export const OLLAMA_DIRECT_URL = "http://localhost:11434";
+
+/**
+ * Send a generation request directly to Ollama — no Companion needed.
+ * Uses Ollama's native POST /api/generate endpoint.
+ * Returns { output } on success.
+ * Returns { error, code } on failure. Never throws.
+ *
+ * Only suitable for NEXIS-LOCAL (HTTP localhost). Do not use from a
+ * hosted HTTPS origin — mixed-content rules will block the request.
+ */
+export async function generateDirectOllama(prompt, model, ollamaUrl = OLLAMA_DIRECT_URL) {
+  const base = ollamaUrl.replace(/\/$/, "");
+  try {
+    const res = await fetchWithTimeout(
+      `${base}/api/generate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          prompt,
+          stream: false,
+          options: { temperature: 0.2, top_p: 0.9 },
+        }),
+      },
+      GENERATE_TIMEOUT_MS
+    );
+    if (res.ok) {
+      const data = await res.json();
+      // Ollama returns { response: string, ... } — not "output"
+      const output = (data.response || "").trim();
       if (!output) return { error: "Generation returned an empty response.", code: "GENERATION_FAILED" };
       return { output };
     }

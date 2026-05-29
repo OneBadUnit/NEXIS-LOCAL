@@ -75,7 +75,7 @@ AI assistants and developers must not introduce any of the following without the
 | Telemetry | No usage data collection |
 | Analytics | No behavioral tracking |
 | Remote storage | Projects and outputs stay on the user's machine |
-| Direct browser-to-Ollama calls | CORS blocks this; companion is the required path |
+| Raw `fetch()` to `localhost:11434` outside `bridge.js` | All direct Ollama calls must go through `generateDirectOllama()` in `bridge.js` — keeps the call site centralized and auditable |
 | Hosted-mode assumptions | `NEXIS_HOSTED_MODE` is `False` and must stay `False` |
 
 ### 2.2 Secondary / Optional Features Must Remain Optional
@@ -176,7 +176,8 @@ The following systems must not be changed unless the user explicitly tasks a cha
 |---|---|
 | Auth flow | Email + password only. No magic links, no OAuth providers. |
 | Supabase integration | Client init, session check, profile fetch. Do not restructure. |
-| Bridge communication | All AI goes through `bridge.js` → companion. No direct Ollama. |
+| Bridge / generation | All AI generation goes through `bridge.js` → `generateDirectOllama()`. Do not add raw `fetch()` to Ollama outside `bridge.js`. |
+| Companion management | `getDiagnostics`, `startOllama`, `restartOllama`, `pullModel`, `subscribePullProgress`, `openTerminal` — do not remove without explicit instruction. |
 | localStorage adapter | `projectStorage.js` is the current persistence layer. Do not migrate. |
 | Database default | SQLite is the default. Do not add PostgreSQL migration. |
 | Feature flags | All default to `False`. Do not change defaults. |
@@ -315,29 +316,31 @@ NEXIS-LOCAL has three primary layers. They must remain separated.
 
 | Layer | Responsibility | Must Not |
 |---|---|---|
-| Frontend (React) | UI, state, user interaction | Call Ollama directly; own business logic |
+| Frontend (React) | UI, state, user interaction | Own business logic; add raw Ollama calls outside `bridge.js` |
 | Backend (FastAPI) | Ingestion, package generation, usage tracking | Assume hosted mode by default |
-| Companion (Go) | Local AI lifecycle management | Be bypassed for AI calls |
+| Companion (Go) | Ollama lifecycle management (start, restart, model downloads, diagnostics) | Be bypassed for management operations |
 
-### 7.2 Frontend AI Communication Must Use `bridge.js`
+### 7.2 Frontend AI Generation Must Use `bridge.js` → `generateDirectOllama()`
 
-Any frontend code that sends a prompt to a model **must** route through `bridge.js` → `generateViaBridge()`. This is not optional.
+Any frontend code that sends a prompt to a model **must** route through `bridge.js` → `generateDirectOllama()`. This keeps all Ollama call logic centralized and auditable.
 
 Forbidden patterns:
 ```js
-// FORBIDDEN — direct Ollama
+// FORBIDDEN — raw fetch outside bridge.js
 fetch("http://localhost:11434/api/generate", ...)
 
-// FORBIDDEN — direct Ollama via alternate port
+// FORBIDDEN — bypassing bridge.js entirely
 fetch("http://127.0.0.1:11434/api/generate", ...)
 ```
 
 Required pattern:
 ```js
-// CORRECT — routes through NEXIS Companion
-import { generateViaBridge } from "../lib/bridge.js";
-await generateViaBridge(prompt, modelConfig);
+// CORRECT — direct Ollama via bridge.js abstraction
+import { generateDirectOllama, OLLAMA_DIRECT_URL } from "../lib/bridge.js";
+await generateDirectOllama(prompt, model, OLLAMA_DIRECT_URL);
 ```
+
+> Note: `generateViaBridge()` still exists in `bridge.js` but has no callers. Do not use it for new code. It is a candidate for removal in Phase C cleanup.
 
 ### 7.3 Backend Must Not Assume Hosted Mode
 

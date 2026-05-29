@@ -354,7 +354,7 @@ export default function HelpOverlay({ onClose }) {
 
               {/* Flow diagram */}
               <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                {["NEXIS (browser)", ">", "NEXIS Companion", ">", "Ollama", ">", "AI Model"].map((item, i) => (
+                {["NEXIS (browser)", ">", "Ollama", ">", "AI Model"].map((item, i) => (
                   item === ">" ? (
                     <span key={i} style={{ color: "rgba(255,255,255,0.25)", fontSize: "1rem" }}>&#8250;</span>
                   ) : (
@@ -363,8 +363,8 @@ export default function HelpOverlay({ onClose }) {
                       borderRadius: 16,
                       fontSize: "0.78rem",
                       fontWeight: 600,
-                      background: i === 0 ? "rgba(255,255,255,0.06)" : i === 2 ? "rgba(var(--arc-accent-rgb,99,202,183),0.12)" : i === 4 ? "rgba(255,255,255,0.06)" : "rgba(var(--arc-accent-rgb,99,202,183),0.18)",
-                      color: (i === 2 || i === 6) ? "var(--arc-accent)" : "rgba(255,255,255,0.75)",
+                      background: i === 0 ? "rgba(255,255,255,0.06)" : i === 2 ? "rgba(255,255,255,0.06)" : "rgba(var(--arc-accent-rgb,99,202,183),0.18)",
+                      color: i === 4 ? "var(--arc-accent)" : "rgba(255,255,255,0.75)",
                       border: "1px solid rgba(255,255,255,0.08)",
                     }}>
                       {item}
@@ -373,17 +373,18 @@ export default function HelpOverlay({ onClose }) {
                 ))}
               </div>
               <p style={{ textAlign: "center", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", margin: "8px 0 0" }}>
-                You never need to understand the details - NEXIS manages this flow for you.
+                AI generation goes directly from NEXIS to Ollama. NEXIS Companion provides optional management tools (start Ollama, download models, diagnostics).
               </p>
             </div>
 
             {/* First-time setup */}
             <div style={{ marginBottom: 24 }}>
-              <SubTitle>First-time setup (two steps)</SubTitle>
-              <Step number="1" title="Download and run the NEXIS Local Companion">
+              <SubTitle>First-time setup</SubTitle>
+              <Step number="1" title="Download and run the NEXIS Local Companion (recommended)">
                 <p style={{ marginTop: 0, marginBottom: 10 }}>
+                  The Companion handles Ollama startup, model downloads, and diagnostics for you.
                   Download <strong>NEXIS Companion</strong> (Windows) or <strong>nexis-bridge-linux</strong> (Linux / WSL2)
-                  and double-click it. A small window will appear -- keep it open while using NEXIS.
+                  and double-click it. A small window will appear — keep it open while using NEXIS.
                 </p>
                 {(() => { const dl = getCompanionDownload(); return (
                   <div style={{ marginBottom: 10 }}>
@@ -418,7 +419,8 @@ export default function HelpOverlay({ onClose }) {
                   </div>
                 ); })()}
                 <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                  You only need to do this once. After that, start it whenever you want to use local AI.
+                  Experienced users with Ollama already running can skip this step — AI generation
+                  works without the Companion once Ollama is configured.
                 </p>
               </Step>
               <Step number="2" title='Open AI Model Settings and click "Recheck"'>
@@ -452,8 +454,8 @@ export default function HelpOverlay({ onClose }) {
               />
               <StateRow
                 state="NEXIS Companion is not running."
-                meaning="The Companion program is not open on your computer."
-                action="Download NEXIS Companion, then run it, then click Recheck."
+                meaning="Companion management tools are unavailable. AI generation still works if Ollama is running with a model."
+                action="Run NEXIS Companion to enable model management and diagnostics. Skip if Ollama is already set up."
               />
               <StateRow
                 state="Ollama is not installed."
@@ -492,8 +494,8 @@ export default function HelpOverlay({ onClose }) {
               />
               <StateRow
                 state="Models could not be checked right now."
-                meaning="You had a working setup before, but the Companion is not reachable at the moment."
-                action='Click "Recheck" or "Restart Ollama".'
+                meaning="The Companion is not running, so model detection via Companion is unavailable."
+                action='Start NEXIS Companion and click "Recheck". AI generation may still work if Ollama is running.'
               />
               <StateRow
                 state="Local AI is ready."
@@ -524,7 +526,6 @@ export default function HelpOverlay({ onClose }) {
             <Collapsible label="Things NEXIS cannot do for you (one-time only)">
               <ul style={{ margin: 0, paddingLeft: 20, lineHeight: "1.9", fontSize: "0.82rem", color: "rgba(255,255,255,0.55)" }}>
                 <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install Ollama</strong> - requires an installer that needs system permission. NEXIS provides the download link.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Start the NEXIS Companion itself</strong> - you must run it once per session. After the first time, it is quick.</li>
                 <li><strong style={{ color: "rgba(255,255,255,0.75)" }}>Install GPU drivers</strong> - install or update GPU drivers.</li>
               </ul>
             </Collapsible>
@@ -567,13 +568,15 @@ export default function HelpOverlay({ onClose }) {
               Follow these steps in order. Most issues resolve at step 1 or 2.
             </p>
 
-            <TroubleBlock title='1. "NEXIS Companion is not running."'>
+            <TroubleBlock title='1. "NEXIS Companion is not running." (management tools only)'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                Start the NEXIS Local Companion by double-clicking <strong>NEXIS Companion.exe</strong>
-                (Windows) or running <strong>./nexis-bridge-linux</strong> (Linux / WSL2).
+                The Companion is not required for AI generation — if Ollama is already running with a model,
+                Create and Refine will work. The Companion is needed for Ollama lifecycle management:
+                starting Ollama, downloading models, and running diagnostics.
               </p>
               <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                Keep the window open while you use NEXIS. You can minimise it.
+                To start it: double-click <strong>NEXIS Companion.exe</strong> (Windows) or
+                run <strong>./nexis-bridge-linux</strong> (Linux / WSL2). Keep the window open.
               </p>
             </TroubleBlock>
 
@@ -746,11 +749,11 @@ curl http://host.docker.internal:11434`}</pre>
             />
             <FAQ
               q="Do I need to use the terminal to set up local AI?"
-              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically using the NEXIS Companion."
+              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically using the NEXIS Companion (recommended for first-time setup). Experienced users can also configure Ollama manually."
             />
             <FAQ
               q="Can I use local AI without an internet connection?"
-              a="Yes. Once the NEXIS Companion is running and a model is downloaded, local AI works offline."
+              a="Yes. Once a model is downloaded and Ollama is running, local AI works fully offline."
             />
             <FAQ
               q="What model does NEXIS recommend?"
@@ -770,7 +773,7 @@ curl http://host.docker.internal:11434`}</pre>
             />
             <FAQ
               q="What is the NEXIS Companion and do I need it?"
-              a="The Companion is a small background program that lets the NEXIS website talk to Ollama on your machine. You need it for Local AI mode. Provider mode does not require it."
+              a="The Companion is an optional management tool that helps with Ollama startup, model downloads, and diagnostics. AI generation works without it as long as Ollama is running. It is recommended for first-time users. Provider mode does not require it."
             />
           </div>
 

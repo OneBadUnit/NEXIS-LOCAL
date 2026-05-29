@@ -24,8 +24,9 @@
 
 import {
   getModelConfigWithMigration,
-  generateViaBridge,
+  generateDirectOllama,
   BRIDGE_DEFAULT_URL,
+  OLLAMA_DIRECT_URL,
 } from "../lib/bridge.js";
 
 // Local dev detection — compares hostname only (not full URL).
@@ -98,8 +99,10 @@ export async function systemCheck() {
 // Read saved model config from localStorage, migrating any
 // legacy localhost:11434 endpoints to the bridge URL.
 // When type === "local", generation goes:
-//   browser → NEXIS Local Companion (port 8765) → Ollama
-// The browser NEVER calls localhost:11434 directly.
+//   browser → Ollama (port 11434) directly — no Companion needed.
+// NEXIS-LOCAL is served over http://localhost:3000 (plain HTTP),
+// so browser → localhost:11434 is same-protocol and Ollama's
+// default CORS (Access-Control-Allow-Origin: *) allows it.
 // ------------------------------------------------------------
 
 // Re-export so ModelConfig can import from one place if needed.
@@ -110,19 +113,16 @@ function getModelConfig() {
   return getModelConfigWithMigration();
 }
 
-// runViaBridge — replaces the old runLocalOllama direct-Ollama call.
-// Sends a prompt through the local companion bridge to Ollama.
-// Throws a user-facing Error on any failure.
-async function runViaBridge(prompt, modelConfig) {
-  const bridgeUrl = (modelConfig.endpoint || BRIDGE_DEFAULT_URL).replace(/\/$/, "");
+// runViaOllama — sends a prompt directly to Ollama on localhost:11434.
+// No Companion required. Throws a user-facing Error on any failure.
+async function runViaOllama(prompt, modelConfig) {
   const model = modelConfig.model;
-  console.log("[LOCAL MODE] → NEXIS Local Companion:", bridgeUrl, "| model:", model);
+  console.log("[LOCAL MODE] → Ollama direct:", OLLAMA_DIRECT_URL, "| model:", model);
 
-  const result = await generateViaBridge(prompt, model, bridgeUrl);
+  const result = await generateDirectOllama(prompt, model, OLLAMA_DIRECT_URL);
 
   if (result.error) {
-    // result.code is a structured bridge error code
-    console.error("[LOCAL MODE] bridge error:", result.code, result.error);
+    console.error("[LOCAL MODE] Ollama error:", result.code, result.error);
     throw new Error(result.error);
   }
 
@@ -132,16 +132,15 @@ async function runViaBridge(prompt, modelConfig) {
 
 // ------------------------------------------------------------
 // NEXIS - CONVERT
-// LOCAL:  browser → NEXIS Local Companion (bridge) → Ollama
+// LOCAL:  browser → Ollama direct (port 11434) — no Companion
 // HOSTED: browser → Render backend (provider/API-key mode)
 // ------------------------------------------------------------
 export async function nexisConvert(payload) {
   const modelConfig = getModelConfig();
 
-  // Local path: requires bridge + Ollama on user's machine.
-  // endpoint defaults to bridge URL if not set.
+  // Local path: calls Ollama directly on localhost:11434.
   if (modelConfig?.type === "local" && modelConfig?.model) {
-    console.log("[LOCAL MODE] routing through NEXIS Local Companion");
+    console.log("[LOCAL MODE] routing directly to Ollama");
     const { buildReconstructionPrompt } = await import("../lib/prompts.js");
     const prompt = buildReconstructionPrompt(
       payload.text,
@@ -149,7 +148,7 @@ export async function nexisConvert(payload) {
       payload.action,
       payload.option
     );
-    const output = await runViaBridge(prompt, modelConfig);
+    const output = await runViaOllama(prompt, modelConfig);
     return { output };
   }
 
@@ -172,17 +171,17 @@ export async function nexisUnderstand(payload) {
 
 // ------------------------------------------------------------
 // NEXIS - CREATE
-// LOCAL:  browser → NEXIS Local Companion (bridge) → Ollama
+// LOCAL:  browser → Ollama direct (port 11434) — no Companion
 // HOSTED: browser → Render backend (provider/API-key mode)
 // ------------------------------------------------------------
 export async function nexisCreate(payload) {
   const modelConfig = getModelConfig();
 
   if (modelConfig?.type === "local" && modelConfig?.model) {
-    console.log("[LOCAL MODE] routing through NEXIS Local Companion");
+    console.log("[LOCAL MODE] routing directly to Ollama");
     const { buildCreationPrompt } = await import("../lib/prompts.js");
     const prompt = buildCreationPrompt(payload.text, payload.mode, payload.option);
-    const output = await runViaBridge(prompt, modelConfig);
+    const output = await runViaOllama(prompt, modelConfig);
     return { output };
   }
 

@@ -32,7 +32,7 @@ const NEXIS_APP_VERSION = "1.0.0";
 
 function modeLabel(cfg) {
   if (!cfg?.type) return "Not configured";
-  if (cfg.type === "local") return "Local AI (NEXIS Companion + Ollama)";
+  if (cfg.type === "local") return "Local AI (Ollama)";
   if (cfg.type === "provider") {
     return `Provider / API${cfg.provider ? ` (${cfg.provider})` : ""}`;
   }
@@ -56,7 +56,32 @@ async function buildReport(advanced) {
     diag = null;
   }
 
-  // ── 1b. Fetch backend system check (OCR diagnostics) ──────
+  // ── 1b. Direct Ollama check (fallback when Companion is not running) ──────
+  // Phase A (2026-05-29): generation goes directly browser → Ollama.
+  // If Companion is unreachable, attempt GET /api/tags on Ollama directly
+  // so Local AI Ready can reflect actual generation capability.
+  let directOllamaReachable = false;
+  let directModels = [];
+  if (!companionReachable) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      try {
+        const res = await fetch("http://localhost:11434/api/tags", { signal: controller.signal });
+        if (res.ok) {
+          const data = await res.json();
+          directOllamaReachable = true;
+          directModels = (data.models || []).map(m => (typeof m === "string" ? m : m.name)).filter(Boolean);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch {
+      // Ollama not reachable directly — directOllamaReachable stays false
+    }
+  }
+
+  // ── 1c. Fetch backend system check (OCR diagnostics) ──────
   let sysCheck = null;
   try {
     sysCheck = await systemCheck();
@@ -112,10 +137,16 @@ async function buildReport(advanced) {
     "? OLLAMA",
   ];
 
-  if (!companionReachable) {
+  if (!companionReachable && !directOllamaReachable) {
     lines.push(
-      `  ${pad("Status")} Unknown ? Companion not reachable`,
-      `  ${pad("Note")} Start the NEXIS Companion to get full Ollama diagnostics.`
+      `  ${pad("Status")} Unknown — Companion and direct check both failed`,
+      `  ${pad("Note")} Start Ollama or NEXIS Companion to get Ollama diagnostics.`
+    );
+  } else if (!companionReachable && directOllamaReachable) {
+    const modelList = directModels.length ? directModels.join(", ") : "None";
+    lines.push(
+      `  ${pad("Status")} Running (direct check — Companion not running)`,
+      `  ${pad("Installed Models")} ${modelList}`
     );
   } else {
     const modelList =
@@ -131,18 +162,22 @@ async function buildReport(advanced) {
     );
   }
 
+  // Phase A: localReady is true if Companion+Ollama are connected OR if
+  // direct Ollama check succeeds (generation works without Companion).
   const localReady =
-    companionReachable &&
-    diag?.ollama_running &&
-    diag?.models?.length > 0;
+    (companionReachable && diag?.ollama_running && diag?.models?.length > 0) ||
+    (directOllamaReachable && directModels.length > 0);
 
   lines.push(
     "",
     "⬡ CONNECTION STATUS",
     `  ${pad("Companion Reachable")} ${companionReachable ? "Yes" : "No"}`,
-    `  ${pad("Local AI Ready")} ${
-      localReady ? "Yes" : (companionReachable ? "No" : "Unknown")
+    `  ${pad("Ollama Direct")}      ${
+      companionReachable
+        ? "N/A (reporting via Companion)"
+        : (directOllamaReachable ? "Yes" : "No")
     }`,
+    `  ${pad("Local AI Ready")}     ${localReady ? "Yes" : "No"}`,
     "",
     "⬡ OCR / IMAGE INPUT",
   );
