@@ -113,7 +113,7 @@ async def extract_pdf_text(data: bytes) -> dict:
 
                     # -------- OCR fallback (only when enabled) --------
                     if not settings.OCR_ENABLED:
-                        page_texts.append(f"[Page {i+1}: OCR not available in hosted beta mode]")
+                        page_texts.append(f"[Page {i+1}: OCR disabled — set OCR_ENABLED=True in .env to enable]")
                         continue
 
                     pix = page.get_pixmap(dpi=300)

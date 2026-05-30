@@ -3,8 +3,8 @@
 **Purpose:** Rebuild NEXIS-LOCAL from GitHub on a fresh Windows machine,
 or restore a working environment after losing AI assistant access.
 
-**Last verified:** 2026-05-29  
-**Stack:** FastAPI (Python 3.11) + React CRA (Node 24) + SQLite + Ollama 0.24 + NEXIS Companion
+**Last verified:** 2026-05-29 (Documentation Sync)  
+**Stack:** FastAPI (Python 3.11) + React CRA (Node 24) + SQLite + Ollama 0.24 + NEXIS Companion (optional)
 
 ---
 
@@ -33,14 +33,9 @@ The project root on the developer machine is:
 D:\ARC NEXUS LLC\NEXIS-LOCAL\
 ```
 
-This path is not hard-coded in application logic except for two defaults that
-are overridable via `.env`:
+This path is not hard-coded in any application logic. All binary paths (Tesseract, ffmpeg, ffprobe, yt-dlp) are resolved via `shutil.which()` at runtime. `SAFE_TMP` is resolved relative to the source file location. The startup BAT uses `%~dp0` relative paths.
 
-- `NEXIS_TESSERACT_PATH` in `backend/app/core/config.py` defaults to
-  `D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe`
-
-If cloning to a different path, override this variable in `backend/.env` (see
-Section 8).
+If `OCR_ENABLED=True`, set `NEXIS_TESSERACT_PATH` in `backend/.env` to the Tesseract binary path if Tesseract is not on your system PATH (see Section 8).
 
 ### Project structure (top level)
 
@@ -421,25 +416,27 @@ NEXIS_VISION_MODEL=llava:13b
 # Must match exactly what `ollama list` shows.
 # Only used when VISION_ENABLED=True.
 
-# ── Feature flags (all default False) ─────────────────────────
-WHISPER_ENABLED=False
-# Set True to enable audio/video transcription via faster-whisper.
+# ── Feature flags (recommended values for fully-capable local workstation) ────
+WHISPER_ENABLED=true
+# Enables audio/video transcription via faster-whisper. Requires faster-whisper installed.
 
-OCR_ENABLED=False
-# Set True to enable Tesseract OCR for images and scanned PDFs.
+OCR_ENABLED=true
+# Enables Tesseract OCR for images and scanned PDFs. Requires Tesseract CLI on PATH.
+# If Tesseract is not installed, OCR fails gracefully with a clear error — app stays up.
 
-VISION_ENABLED=False
-# Set True to enable image description via llava:13b.
+VISION_ENABLED=true
+# Enables image description via llava:13b (or NEXIS_VISION_MODEL). Requires model pulled.
 
-YOUTUBE_INGESTION_ENABLED=False
-# Set True to enable YouTube download via yt-dlp.
+YOUTUBE_INGESTION_ENABLED=true
+# Enables YouTube transcript/audio ingestion via yt-dlp. Requires yt-dlp on PATH.
 
-NEXIS_HOSTED_MODE=False
-# Keep False for local development. True restricts certain features.
+NEXIS_HOSTED_MODE=false
+# Keep false for local development. True restricts certain features to hosted-safe paths.
 
 # ── OCR path ──────────────────────────────────────────────────
-NEXIS_TESSERACT_PATH=D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe
-# Override if your Tesseract is installed elsewhere.
+NEXIS_TESSERACT_PATH=
+# Leave empty if Tesseract is on your system PATH — resolved via shutil.which("tesseract").
+# Set to the full binary path if Tesseract is installed but not on PATH.
 # Only needed when OCR_ENABLED=True.
 
 # ── Database (optional) ───────────────────────────────────────
@@ -466,36 +463,43 @@ An example file exists at `frontend/.env.example`. Copy it to `frontend/.env`
 and fill in real values.
 
 ```env
-# Backend API base URL
-REACT_APP_API_BASE_URL=https://your-backend.onrender.com
-
-# Supabase variables — no longer required for local operation (Phase 1 auth removal, 2026-05-29)
-# The Supabase auth gate has been replaced with LOCAL_USER/LOCAL_PROFILE in AppLayout.jsx v009.
-# These may be left blank for local use. NexusDashboard still imports supabase for
-# the app announcements panel — this call fails silently with a null fallback if the
-# values are absent. Phase 2 cleanup will remove this import.
-REACT_APP_SUPABASE_URL=
-REACT_APP_SUPABASE_ANON_KEY=
+# Backend API base URL — optional for local dev (CRA proxy routes to localhost:8000 automatically)
+REACT_APP_API_BASE_URL=
 ```
 
 **For local development:**
-`REACT_APP_API_BASE_URL` is optional in local dev — the CRA proxy setting
+`REACT_APP_API_BASE_URL` is not required in local dev — the CRA proxy setting
 in `package.json` routes API calls to `localhost:8000` automatically when
 running `npm start` on `localhost`.
 
-Supabase env vars may be left blank or omitted entirely. The app will compile
-and run without them.
+**Note:** Supabase env vars (`REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`) were
+removed in the Phase 2 cleanup (2026-05-29). `supabase.js` was deleted. No Supabase
+configuration is needed for local operation.
 
 **For production (Vercel):**
-`REACT_APP_API_BASE_URL` must be set to the Render backend URL in Vercel
+`REACT_APP_API_BASE_URL` must be set to the backend URL in Vercel
 project settings → Environment Variables.
 
 ---
 
 ## 9. Startup Procedure
 
-There is no bundled startup `.bat` in the repository root. The three
-processes must be started manually in three terminals. Start them in this order:
+### Option A — NEXIS-LOCAL.bat (Recommended)
+
+The project root contains `NEXIS-LOCAL.bat` — a portable Windows batch script that starts the backend and frontend automatically.
+
+1. Make sure Ollama is running (system tray icon, or `ollama serve`)
+2. Double-click `NEXIS-LOCAL.bat` in the project root
+3. Two terminal windows open: one for the backend, one for the frontend
+4. Wait for both to show startup messages, then open: `http://localhost:3000`
+
+The BAT uses `%~dp0` relative paths — it works at any clone location.
+
+---
+
+### Option B — Manual Startup (4 terminals)
+
+Start in this order:
 
 ### Terminal 1 — Ollama
 

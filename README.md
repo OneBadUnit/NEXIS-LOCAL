@@ -17,8 +17,8 @@ This repository contains the source-only version of NEXIS — no model weights, 
 ## Local-First AI Architecture
 
 • Designed primarily for local AI usage through Ollama
-• NEXIS Companion bridges the frontend to local AI safely
-• No browser-to-raw-Ollama communication
+• Generation goes browser → Ollama directly (localhost:11434) — no middleware required
+• NEXIS Companion is an optional management layer (Ollama lifecycle, model downloads, diagnostics)
 • Provider/API mode supported as a secondary option
 • Structured local model management and diagnostics
 

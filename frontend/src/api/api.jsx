@@ -4,22 +4,22 @@
 // Version: 005 (local-first, Ollama direct)
 // ============================================================
 //
-// LOCAL MODE: generation goes browser → Ollama direct (port 11434)
-//             → Ollama (port 11434). The browser NEVER calls
-//             localhost:11434 directly — CORS blocks it.
-// PROVIDER/HOSTED MODE: uses the Render backend (API_BASE).
+// LOCAL MODE: generation goes browser → Ollama direct (localhost:11434).
+//             Create / Refine bypass the backend entirely.
+//             API_BASE is only needed for Collect, usage, and system checks.
+// PROVIDER/HOSTED MODE: uses the backend at API_BASE for AI inference too.
 //
 // NOTE: This is a Create React App (CRA) project.
 // Environment variables must be prefixed REACT_APP_ and are
 // accessed via process.env.REACT_APP_* at build time.
 // Vite-style import.meta.env is NOT available here.
 //
-// Required env var:
-//   REACT_APP_API_BASE_URL=https://nexis-l8oc.onrender.com
+// Required env var (production / hosted mode only):
+//   REACT_APP_API_BASE_URL=https://your-backend.example.com
 //
 // Set this in:
 //   - Vercel project settings → Environment Variables (production)
-//   - .env.local for local development (git-ignored)
+//   - .env.local for local development (git-ignored, defaults to localhost:8000)
 // ------------------------------------------------------------
 
 import {

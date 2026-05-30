@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Institutional Memory / Decision Record  
-**Last Updated:** 2026-05-29  
+**Last Updated:** 2026-05-29 (Documentation Sync — D-036 through D-039 added)  
 **Audience:** AI assistants, engineers, future contributors  
 
 > This log records decisions that shaped NEXIS-LOCAL — why they were made, what alternatives were considered, and what tradeoffs were accepted. Before replacing logic, simplifying code, or removing complexity, read the relevant entries. The complexity may be solving a known historical problem.
@@ -284,6 +284,8 @@ Category:           Architecture
 
 **Title:** NEXIS Companion as Required Intermediary Between Frontend and Ollama
 
+> **Status update (2026-05-29):** This decision was the original architecture. It was superseded by D-036 (Phase A — Direct Ollama Generation), which removed the Companion from the generation path. The Companion architecture documented here remains accurate for management operations only. Read D-036 for the current generation path.
+
 **Problem:** Browser JavaScript cannot call `localhost:11434` (Ollama) directly. CORS blocks cross-origin requests from web pages. Additionally, managing Ollama's lifecycle (start, restart, model pulls, diagnostics) from a web page is not feasible.
 
 **Options Considered:**
@@ -304,20 +306,18 @@ Category:           Architecture
 - Updates to companion endpoints require binary redistribution
 - Two moving parts to manage instead of one
 
-**Implementation:**
+**Implementation (original):**
 - Companion listens on port `8765` (hardcoded constant `bridgePort`)
-- All frontend AI communication routes through `bridge.js` → `generateViaBridge()`
+- All frontend AI communication routed through `bridge.js` → `generateViaBridge()` (now removed — see D-036)
 - `bridge.js` explicitly migrates any stored `localhost:11434` URLs to the bridge URL
-- `bridge.js` error codes enumerate all failure modes clearly
 
 **Related Files:**
 - `bridge/nexis_bridge.go` — full companion implementation
-- `frontend/src/lib/bridge.js` — *"All communication with the NEXIS Local Companion goes through this module. Nothing else in the frontend talks to Ollama or localhost:11434 directly."*
-- `frontend/src/api/api.jsx` — *"browser NEVER calls localhost:11434 directly — CORS blocks it"*
+- `frontend/src/lib/bridge.js` — companion management functions (generation path removed in D-036)
 
 **Lessons Learned:** Legacy code that stored `localhost:11434` as the model endpoint required a migration path. `bridge.js` handles this via `getModelConfigWithMigration()`. This migration must be preserved.
 
-**Future Notes:** If companion endpoints are renamed or added, `bridge.js` call sites must be updated simultaneously.
+**Future Notes:** Companion management endpoints remain active. If endpoints are renamed or added, `bridge.js` call sites must be updated simultaneously.
 
 ---
 
@@ -381,9 +381,9 @@ Category:           Architecture
 
 **Related Files:**
 - `backend/app/core/db.py` — *"Defaults to a local SQLite file (nexis.db) when no DATABASE_URL is configured"*
-- `backend/app/models/project.py` — uses `JSONB` from PostgreSQL dialect
+- `backend/app/models/project.py` — deleted in Phase 2 cleanup (2026-05-29); `init_db()` now only imports `account.py`
 
-**Lessons Learned:** The `JSONB` import in `project.py` is a known portability concern. If JSONB querying is needed in SQLite mode, this must be verified explicitly.
+**Lessons Learned:** The `JSONB` import that existed in `project.py` was a known portability concern. The model has since been deleted; only `account.py` remains as an active ORM model.
 
 **Future Notes:** Future hosted NEXIS would use PostgreSQL. The `DATABASE_URL` env var is the migration path.
 
@@ -409,6 +409,8 @@ Category:           Architecture
 **Reason:** Fail-safe defaults. A missing Tesseract binary or uninstalled Whisper dependency should not crash the application — the feature should simply be unavailable.
 
 **Tradeoffs Accepted:** Users must know to set env vars to unlock features. Default install has limited capabilities.
+
+**Status update (2026-05-29 — Full Local Capability Audit):** All four feature flags (`WHISPER_ENABLED`, `OCR_ENABLED`, `VISION_ENABLED`, `YOUTUBE_INGESTION_ENABLED`) have been set to `True` in the workstation `.env`. Dependencies confirmed present (faster-whisper, yt-dlp, llava:13b, pytesseract). Tesseract CLI not on PATH — OCR fails gracefully with actionable error. `config.py` defaults remain `False` per this decision; the workstation `.env` overrides them.
 
 **Implementation:** `config.py`:
 ```python
@@ -819,11 +821,10 @@ Category:           Auth
 **Reason:** The backend never validated Supabase credentials. All tier limits are `99999` locally. The auth gate added a mandatory cloud dependency with no corresponding backend security or data protection benefit for a single-user local application.
 
 **Tradeoffs Accepted:**
-- `auth.js` and `supabase.js` remain as unused frontend code until Phase 2 cleanup
-- `NexusDashboard.jsx` still imports `supabase` for the app announcements fetch — call fails silently, caught by existing `try/catch`, `announcements` set to `null`, fallback renders
 - No Account overlay or sign-in/sign-out UI — appropriate for a local single-user application
-- `@supabase/supabase-js` remains as an unused package dependency until Phase 2
-- `AccountOverlay.jsx`, `SignedOutScreen.jsx`, `PasswordRecoveryOverlay.jsx`, `ResetPasswordOverlay.jsx` remain as dead code until Phase 2
+- `@supabase/supabase-js` remains in `package.json` as an unused package dependency
+
+**Phase 2 cleanup completed (2026-05-29):** `auth.js` and `supabase.js` deleted; `NexusDashboard.jsx` announcements fetch removed; `AccountOverlay.jsx`, `SignedOutScreen.jsx`, `PasswordRecoveryOverlay.jsx`, `ResetPasswordOverlay.jsx` deleted.
 
 **Implementation:**
 - `AppLayout.jsx` v009 (2026-05-29): removed imports of `SignedOutScreen`, `PasswordRecoveryOverlay`, `AccountOverlay`, `supabase`, `auth.js`, `clearAllProjectStorage`; added `LOCAL_USER` and `LOCAL_PROFILE` constants at module scope; removed both auth `useEffect` blocks, the debug `useEffect` block, `handleSignIn/SignUp/SignOut` functions, and `authLoading`/`showAccount`/`showPasswordRecovery` state; removed the `if (!user) return <SignedOutScreen>` gate; passes `user={null}` to `TopBar` (email/Account/Sign Out hidden by existing `{user && ...}` guard)
@@ -832,12 +833,10 @@ Category:           Auth
 **Related Files:**
 - `frontend/src/layout/AppLayout.jsx` — v009, primary change
 - `frontend/src/layout/TopBar.jsx` — unchanged; `{user && ...}` guard hides auth controls automatically when `user` is null
-- `frontend/src/lib/auth.js` — unchanged; Supabase auth functions remain, no longer imported by AppLayout
-- `frontend/src/lib/supabase.js` — unchanged; still imported by `NexusDashboard` for announcements fetch
+- `frontend/src/lib/auth.js` — deleted in Phase 2 cleanup (2026-05-29)
+- `frontend/src/lib/supabase.js` — deleted in Phase 2 cleanup (2026-05-29)
 
 **Lessons Learned:** A cloud auth gate is not appropriate for a local-first single-user tool. When the backend has no auth validation and uses `DEFAULT_USER_ID = "default"`, a frontend auth gate adds cloud friction without security. The gate was architecture for a future hosted product inadvertently deployed in a local one.
-
-**Future Notes:** Phase 2 cleanup — delete `auth.js`, `supabase.js`, remove `@supabase/supabase-js` from `package.json`, remove announcements fetch from `NexusDashboard.jsx`, remove Supabase env vars from `.env.example` and documentation. Phase 2 should be a deliberate tracked operation, not a side effect of another change.
 
 ---
 
@@ -853,14 +852,16 @@ Category:           Lessons
 
 **Title:** Direct Browser-to-Ollama Calls Are Blocked by CORS
 
-**Lesson:** Early implementation may have attempted to call `localhost:11434` directly from the browser. This fails because browsers enforce CORS on all cross-origin requests, including `localhost` to a different `localhost` port. Ollama does not serve `Access-Control-Allow-Origin` headers by default.
+> **Status update (2026-05-29):** This lesson documented the original constraint that drove the Companion architecture. Phase A (D-036, 2026-05-29) changed the architecture: `generateDirectOllama()` in `bridge.js` now calls `localhost:11434` directly from the browser. This works in the Electron wrapper (which relaxes CORS by design) and in browser contexts where Ollama is running with its default CORS allowances. The lesson below remains historically accurate for the context in which it was written.
 
-**Evidence:** `bridge.js` contains explicit legacy URL migration logic that detects stored `localhost:11434` endpoints and migrates them to the bridge URL. This migration code would not exist without a prior period where `localhost:11434` was used directly.
+**Lesson:** Early implementation may have attempted to call `localhost:11434` directly from the browser. This fails in strict browser/web-page contexts because browsers enforce CORS on all cross-origin requests, including `localhost` to a different `localhost` port. Ollama does not serve `Access-Control-Allow-Origin` headers by default in all configurations.
 
-**Resolution:** All AI calls route through the NEXIS Companion at `localhost:8765`, which does serve correct CORS headers.
+**Evidence:** `bridge.js` contains legacy URL migration logic that detects stored `localhost:11434` endpoints and migrates them. This migration code existed from a prior period where `localhost:11434` was stored as the model endpoint.
+
+**Current Resolution (Phase A):** `generateDirectOllama()` in `bridge.js` now calls `localhost:11434` directly. All Ollama generation calls are centralized in `bridge.js` to keep the call site auditable and to preserve the migration logic for legacy stored configs.
 
 **Related Files:**
-- `frontend/src/lib/bridge.js` — `RAW_OLLAMA_PATTERNS` array and migration logic
+- `frontend/src/lib/bridge.js` — `generateDirectOllama()`, `getModelConfigWithMigration()`
 
 ---
 
@@ -948,15 +949,20 @@ Category:           Lessons
 
 **Title:** Overlay Startup Timing Requires Careful Sequencing and Timer Cleanup
 
-**Lesson:** The startup overlay chain (LogoOverlay → OnboardingOverlay → AcknowledgmentModal) involves timers and visibility state. Race conditions between overlay transitions, missing timer cleanup on unmount, and localStorage access during startup have all caused fragile behavior.
+> **Status update (2026-05-29):** The LogoOverlay and OnboardingOverlay were removed from `ArcNexusApp.jsx` as part of the Startup Overlay Cleanup (see D-039, 2026-05-29). The `nexis_local_nexusOnboardingSkipped` localStorage key and the associated migration in `projectStorage.js` were intentionally preserved as harmless. Only the component render was removed. `AcknowledgmentModal` was not affected.
 
-**Resolution:** `OnboardingOverlay` mounts only after `LogoOverlay` completes (via callback). Timer cleanup is validated. localStorage access is wrapped. `ArcNexusApp.jsx` manages the sequence through state rather than timers alone.
+**Lesson:** The startup overlay chain (LogoOverlay → OnboardingOverlay → AcknowledgmentModal) involved timers and visibility state. Race conditions between overlay transitions, missing timer cleanup on unmount, and localStorage access during startup caused fragile behavior.
 
-**Evidence:** `KNOWN_ISSUES.md` — "Startup / Overlay Flow: Status: Active Review Area"
+**Resolution at time of writing:** `OnboardingOverlay` mounted only after `LogoOverlay` completed (via callback). Timer cleanup was validated. localStorage access was wrapped. `ArcNexusApp.jsx` managed the sequence through state rather than timers alone.
+
+**Final Resolution (2026-05-29):** Both `LogoOverlay` and `OnboardingOverlay` were removed entirely. `ArcNexusApp.jsx` v006 renders `AcknowledgmentModal` and `Layout` directly with no startup overlay chain.
+
+**Evidence:** `ArcNexusApp.jsx` v006 — imports and renders only `AcknowledgmentModal` and `Layout`.
 
 **Related Files:**
-- `frontend/src/ArcNexusApp.jsx`
-- `docs/ai/KNOWN_ISSUES.md`
+- `frontend/src/ArcNexusApp.jsx` (v006)
+- `frontend/src/components/LogoOverlay.jsx` (deleted in Phase 2 cleanup, 2026-05-29)
+- `frontend/src/components/OnboardingOverlay.jsx` (deleted in Phase 2 cleanup, 2026-05-29)
 
 ---
 
@@ -1077,6 +1083,159 @@ Category:           Architecture
 ---
 
 ## Section 7 — Open Questions
+
+---
+
+```
+Decision ID:        D-036
+Status:             Verified
+Category:           Architecture
+```
+
+**Title:** Phase A — Direct Ollama Generation Replacing Companion Proxy
+
+**Problem:** The NEXIS Companion at `localhost:8765` was the required generation path. This meant AI generation failed if the Companion binary was not running, even when Ollama itself was running and healthy. The Companion also became a single point of failure for the primary user-facing workflow.
+
+**Options Considered:**
+- Keep Companion as required generation proxy
+- Backend proxy (FastAPI → Ollama) for generation
+- Direct browser → Ollama for generation, Companion for management only
+
+**Decision:** Phase A — Direct browser-to-Ollama generation. `generateDirectOllama()` in `bridge.js` calls `POST http://localhost:11434/api/generate` directly. The Companion is repositioned as an optional management layer.
+
+**Reason:**
+1. Ollama runs locally on the user's machine; the browser can reach it directly at `localhost:11434`
+2. Removing the Companion from the generation path eliminates a required binary download for AI to work
+3. The Companion's management value (start/restart Ollama, pull models, diagnostics) is preserved as optional tooling
+4. The Electron wrapper context removes strict browser CORS enforcement; direct calls work
+
+**Tradeoffs Accepted:**
+- Users who do not run the Companion lose Ollama lifecycle management (start, restart, model pull UI)
+- DiagnosticsOverlay companion status check shows "not running" for users without the Companion — acceptable since generation still works
+- `generateViaBridge()` in `bridge.js` became dead code — removed in Final Cleanup (2026-05-29)
+
+**Implementation:**
+- `frontend/src/lib/bridge.js`: `generateDirectOllama()` added; calls `localhost:11434/api/generate` directly
+- `frontend/src/api/api.jsx`: `runViaOllama()` calls `generateDirectOllama()` — not `generateViaBridge()`
+- Companion management functions retained: `getDiagnostics`, `startOllama`, `restartOllama`, `pullModel`, `subscribePullProgress`, `openTerminal`
+- `generateViaBridge`, `checkBridge`, `findOllama`, `fetchBridgeModels`, `getBridgeSystem`, `classifyBridgeError` — all dead code, removed in Final Cleanup
+
+**Related Files:**
+- `frontend/src/lib/bridge.js` — `generateDirectOllama()`, `OLLAMA_DIRECT_URL`
+- `frontend/src/api/api.jsx` — `runViaOllama()`, `_isLocalDev`, `_localDevFallback`
+
+**Lessons Learned:** The Companion as a required generation proxy added friction without adding security for a single-user local app. Separating management (optional) from generation (direct) is the correct architecture for a local-first tool.
+
+---
+
+```
+Decision ID:        D-037
+Status:             Verified
+Category:           Architecture
+```
+
+**Title:** Machine Dependency Path Standardization (Audit Items 1–7)
+
+**Problem:** Seven files contained hardcoded machine-specific paths. These paths worked on the original development machine but would fail on any other machine, making the project non-portable.
+
+**Hardcoded paths removed:**
+1. `NEXIS-LOCAL.bat` — hardcoded `D:\ARC NEXUS LLC\NEXIS-LOCAL\backend` and `frontend` paths
+2. `ingestion/youtube_utils.py` — hardcoded `C:\Users\OneBadUnit\...\yt-dlp.exe`
+3. `ingestion/video_utils.py` — hardcoded `C:\ffmpeg\bin\ffmpeg.exe`
+4. `app/assimilation.py` — hardcoded `C:\ffmpeg\bin\ffprobe.exe`
+5. `app/core/config.py` — hardcoded `D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe` as default
+6. `ingestion/ocr_utils.py` — hardcoded fallback `D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe`
+7. `ingestion/video_utils.py` + `ingestion/file_router.py` — hardcoded `D:\NEXIS\tmp` for SAFE_TMP
+
+**Decision:** Replace all hardcoded paths with portable equivalents.
+
+**Implementation:**
+- `NEXIS-LOCAL.bat`: `cd /d "%~dp0backend"` and `cd /d "%~dp0frontend"` (relative to BAT location)
+- `yt-dlp`, `ffmpeg`, `ffprobe`: `shutil.which("yt-dlp") or "yt-dlp"` pattern — uses PATH, falls back to bare name
+- Tesseract default in `config.py`: empty string `""` — `ocr_utils.py` resolves via `shutil.which("tesseract")`
+- `SAFE_TMP`: `os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))` — relative to file location
+
+**Tradeoffs Accepted:**
+- If `yt-dlp` / `ffmpeg` / `ffprobe` / `tesseract` are not on PATH, the feature fails gracefully (guarded by feature flags)
+- SAFE_TMP now resolves to `backend/tmp/` relative to file location — consistent and portable
+
+**Related Files:**
+- `NEXIS-LOCAL.bat`
+- `backend/ingestion/youtube_utils.py`
+- `backend/ingestion/video_utils.py`
+- `backend/ingestion/file_router.py`
+- `backend/app/assimilation.py`
+- `backend/app/core/config.py`
+- `backend/ingestion/ocr_utils.py`
+
+---
+
+```
+Decision ID:        D-038
+Status:             Verified
+Category:           Development
+```
+
+**Title:** Portable Startup BAT — `NEXIS-LOCAL.bat`
+
+**Problem:** The project root contains `NEXIS-LOCAL.bat` to start the backend and frontend. The original version hardcoded absolute paths (`D:\ARC NEXUS LLC\NEXIS-LOCAL\backend`) which failed if the project was cloned to a different location.
+
+**Decision:** Replace hardcoded paths with `%~dp0` (directory of the BAT file, with trailing slash). This makes the BAT file portable to any clone location.
+
+**Implementation:**
+```bat
+cd /d "%~dp0backend"
+...
+cd /d "%~dp0frontend"
+```
+
+**Tradeoffs Accepted:** `%~dp0` includes the trailing backslash — concatenating it with `backend` or `frontend` produces a valid absolute path on Windows.
+
+**Related Files:**
+- `NEXIS-LOCAL.bat`
+
+**Lessons Learned:** `%~dp0` is the canonical Windows BAT idiom for "directory containing this script." Using it prevents the most common distribution failure mode for Windows batch scripts.
+
+---
+
+```
+Decision ID:        D-039
+Status:             Verified
+Category:           UX
+```
+
+**Title:** Startup Overlay Removal (LogoOverlay + OnboardingOverlay)
+
+**Problem:** On launch, NEXIS displayed a 3-second logo animation ("Loading ArcNexus…") followed by an onboarding modal ("Welcome to ArcNexus" / "Follow the steps to get started" / Skip button). These were designed for first-time user onboarding in a hosted/auth-gated context. After Supabase auth removal (D-035) and repositioning as a local tool, the overlays were:
+- No longer contextually appropriate (no sign-in, no first-time cloud account setup)
+- Showing stale "ArcNexus" branding from an earlier product iteration
+- Adding 3 seconds of delay before the workspace was usable
+
+**Options Considered:**
+- Update overlay content to reflect current product
+- Keep overlays but reduce delay
+- Remove overlays entirely; render workspace immediately
+
+**Decision:** Remove both overlays from `ArcNexusApp.jsx`. `LogoOverlay.jsx` and `OnboardingOverlay.jsx` component files were retained at the time of this decision, then deleted in Phase 2 cleanup (2026-05-29).
+
+**Reason:** The overlays added friction with no user benefit for a local single-user application where there is no onboarding flow, no account creation, and no sign-in. The workspace should be immediately accessible.
+
+**Tradeoffs Accepted:**
+- `nexis_local_nexusOnboardingSkipped` key in `projectStorage.js` migration remains — harmless orphan
+- `AcknowledgmentModal` is preserved — separate from onboarding, serves as a changelog acknowledgment mechanism
+
+**Phase 2 cleanup completed (2026-05-29):** `LogoOverlay.jsx` and `OnboardingOverlay.jsx` deleted.
+
+**Implementation:**
+- `ArcNexusApp.jsx` v006: removed `LogoOverlay` and `OnboardingOverlay` imports; removed `logoComplete` state and `handleLogoComplete` callback; removed `useCallback` import
+- App renders: `<ArcNProvider>` → `{showAck && <AcknowledgmentModal>}` → `<Layout />` directly
+
+**Related Files:**
+- `frontend/src/ArcNexusApp.jsx` (v006)
+- `frontend/src/components/LogoOverlay.jsx` (deleted in Phase 2 cleanup, 2026-05-29)
+- `frontend/src/components/OnboardingOverlay.jsx` (deleted in Phase 2 cleanup, 2026-05-29)
+
+---
 
 ---
 

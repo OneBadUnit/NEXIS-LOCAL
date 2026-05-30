@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** AI Handoff / Onboarding Reference  
-**Last Updated:** 2026-05-29  
+**Last Updated:** 2026-05-29 (Documentation Sync)  
 **Scope:** NEXIS-LOCAL only — the single-user, local-machine deployment  
 
 ---
@@ -44,8 +44,8 @@ Collect → Select → Create → Refine → Reuse
 | Backend | FastAPI (Python) | Runs locally, no public exposure required |
 | Database | SQLite (`nexis.db`) | Local file, auto-created on first run |
 | AI inference | Ollama (`localhost:11434`) | Local model server |
-| Bridge | NEXIS Companion (`localhost:8765`) | Local process managing Ollama safely |
-| OCR | Tesseract (local binary) | Bundled path override via env var |
+| Bridge | NEXIS Companion (`localhost:8765`) | **Optional** — lifecycle management (start/restart Ollama, model pulls, diagnostics) |
+| OCR | Tesseract (local binary) | Optional — enable via `OCR_ENABLED=True`; resolved via `shutil.which("tesseract")` |
 
 ---
 
@@ -79,7 +79,7 @@ NEXIS-LOCAL is in **MVP stabilization** as of the last known state.
 - Local-first flexibility — works offline, works without accounts where possible
 
 **What "done" looks like for MVP:**
-- A user can install NEXIS-LOCAL, run the companion, load a model in Ollama, and complete the full Collect → Create workflow without leaving their machine or creating any cloud accounts.
+- A user can install NEXIS-LOCAL, start Ollama with a model, run the backend and frontend, and complete the full Collect → Create workflow without leaving their machine or creating any cloud accounts.
 
 ---
 
@@ -176,14 +176,14 @@ These are the verified architectural facts as of this document's creation date. 
 
 ### Authentication
 
-> **Note:** Authentication uses Supabase, which is a cloud service.  
-> This is the one external cloud dependency present in the current architecture.  
-> See Section 8 for context on this design decision.
+> **Note (2026-05-29):** Supabase authentication was removed in Phase 1 (D-035). All Supabase files were deleted in Phase 2 cleanup (2026-05-29). NEXIS-LOCAL has no cloud authentication dependency.
 
-- Auth is handled via `supabase.js` and `auth.js`
-- Only email + password flows are supported (magic links and OTP are intentionally absent)
-- Password reset flow uses Supabase email relay
-- Profile data is stored in Supabase (cloud)
+- Auth gate in `AppLayout.jsx` replaced with `LOCAL_USER` and `LOCAL_PROFILE` constants
+- The app renders immediately with no session check, no loading state, no sign-in screen
+- `auth.js` and `supabase.js` have been deleted (Phase 2 cleanup, 2026-05-29)
+- No Supabase account or internet access is required for any part of the local workflow
+
+See Decision Log D-035 for full analysis and rationale.
 
 ---
 
@@ -225,15 +225,15 @@ Usage counting logic exists in `core/usage.py` and the usage API route. This was
 
 ### 7.3 Supabase Authentication
 
-Supabase was integrated as a managed auth service. It remains the current auth layer.
+Supabase was integrated as a managed auth service in the hosted-first AEGIS era.
 
-**In NEXIS-LOCAL:** This introduces the only required cloud dependency. The user must have a Supabase account and internet access to authenticate. This is a known design tension and is accepted for now.
+**In NEXIS-LOCAL (current, post-Phase 2 cleanup):** Supabase authentication was removed in D-035 (2026-05-29). `AppLayout.jsx` v009 replaced the auth gate with `LOCAL_USER` and `LOCAL_PROFILE` constants. `auth.js` and `supabase.js` were deleted in the Phase 2 cleanup (2026-05-29). There is no cloud auth dependency and no Supabase files remain in the codebase.
 
 ### 7.4 CORS Configuration
 
-`main.py` includes Vercel preview URLs in the `ALLOWED_ORIGINS` list. These were valid origins for the hosted frontend.
+`main.py` includes a Vercel production URL (`nexis-psi.vercel.app`) in the `ALLOWED_ORIGINS` list. A legacy Vercel preview URL containing a developer username was removed during Final Cleanup (2026-05-29).
 
-**In NEXIS-LOCAL:** Only `localhost:3000` and `127.0.0.1:3000` are the active origins. The Vercel entries are harmless remnants and should not be removed without explicit instruction.
+**In NEXIS-LOCAL:** Only `localhost:3000` and `127.0.0.1:3000` are the active local origins. The `nexis-psi.vercel.app` entry is a harmless remnant of a prior hosted frontend.
 
 ### 7.5 The Bridge / Companion Architecture
 
@@ -321,8 +321,7 @@ Do not infer architecture from filenames alone. Verify with direct file reads.
 - **Default scope is frontend unless the user explicitly expands it.**
 - Do not modify backend files unless the task clearly requires it.
 - Do not modify the database schema unless explicitly instructed.
-- Do not modify `tiers.py`, `usage.py`, or auth logic unless the task specifically targets those systems.
-- Treat Supabase auth as a stable external boundary — do not refactor it without explicit instruction.
+- Do not modify `tiers.py`, `usage.py`, or the local user constants in `AppLayout.jsx` unless the task specifically targets those systems.
 
 ### 10.3 Local-First Assumption
 
@@ -362,9 +361,9 @@ Never remove the Companion management functions (`getDiagnostics`, `startOllama`
 
 When working on AI generation features, route all Ollama calls through `generateDirectOllama()` in `bridge.js` — do not add raw `fetch()` calls to `localhost:11434` outside `bridge.js`.
 
-### 10.7 Auth Is a Cloud Dependency — Accept It
+### 10.7 No Cloud Auth Required
 
-Supabase auth is used. This means the user needs internet access and a Supabase account to log in. This is the current accepted design. Do not remove Supabase auth without explicit instruction. Do not add a second auth system in parallel.
+Supabase auth was removed in Phase 1 (D-035, 2026-05-29). All Supabase files (`auth.js`, `supabase.js`) were deleted in Phase 2 cleanup (2026-05-29). NEXIS-LOCAL has no cloud authentication dependency and no Supabase code remains. The app renders immediately with `LOCAL_USER` and `LOCAL_PROFILE` constants. Do not re-introduce an auth gate without explicit instruction. Do not add a second auth system.
 
 ### 10.8 SQLite Is the Target Database
 
@@ -397,11 +396,155 @@ If you cannot verify a file's contents, say so. Do not infer what a file probabl
 | `backend/app/core/db.py` | Database setup — SQLite default |
 | `backend/app/core/tiers.py` | Plan limits — all set to 99999 for local use |
 | `backend/app/main.py` | FastAPI entrypoint, CORS configuration |
-| `frontend/src/lib/bridge.js` | NEXIS Companion client — all AI communication |
-| `frontend/src/lib/auth.js` | Supabase auth flows |
-| `frontend/src/lib/supabase.js` | Supabase client initialization |
+| `frontend/src/lib/bridge.js` | NEXIS Companion client + direct Ollama generation |
 | `frontend/src/context/ArcNContext.jsx` | Primary React state context |
 
 ---
 
 *This document should be updated whenever a major architectural decision is made, a new system is added, or a previously-active concept is retired.*
+
+---
+
+## 11. Current NEXIS-LOCAL Architecture
+
+> Last verified: 2026-05-29
+
+This section documents the current verified runtime architecture. It reflects the state after Phase A (direct Ollama generation), Phase 1 auth removal, machine dependency standardization, and final cleanup.
+
+### 11.1 Runtime Components
+
+| Component | Technology | Port | Required | Notes |
+|---|---|---|---|---|
+| Frontend | React (CRA) | 3000 | Yes | Browser or Electron wrapper |
+| Backend | FastAPI (Python 3.11) | 8000 | Yes | Ingestion, package assembly, usage tracking |
+| Database | SQLite (`nexis.db`) | — | Yes (auto-created) | Local file; no database server needed |
+| AI inference | Ollama | 11434 | Yes | User installs and runs locally |
+| NEXIS Companion | Go binary | 8765 | **No (optional)** | Ollama lifecycle management + diagnostics |
+| OCR | Tesseract | — | **No (optional)** | Enable via `OCR_ENABLED=True` in `.env` |
+| YouTube ingestion | yt-dlp | — | **No (optional)** | Enable via `YOUTUBE_INGESTION_ENABLED=True` |
+| Audio/video transcription | faster-whisper | — | **No (optional)** | Enable via `WHISPER_ENABLED=True` |
+
+### 11.2 AI Generation Flow (Current)
+
+```
+USER (browser / Electron)
+│
+│  ProjectWorkspace.jsx → api.jsx → runViaOllama()
+│
+▼
+bridge.js — generateDirectOllama()
+│
+│  POST http://localhost:11434/api/generate
+│  { model: "qwen2.5:7b", prompt: "...", stream: false }
+│
+▼
+OLLAMA (localhost:11434)
+│
+│  Runs local model on user's hardware (CPU or CUDA GPU)
+│
+▼
+Generated text → returned to frontend → stored in localStorage
+```
+
+**No backend involvement in generation.** The FastAPI backend assembles prompts and calls the same Ollama instance for the backend-routed path (provider mode), but the primary Create/Refine path bypasses the backend entirely.
+
+### 11.3 Optional Companion Management Flow
+
+When the NEXIS Companion is running, the frontend uses it for Ollama lifecycle operations:
+
+```
+bridge.js management functions
+│
+│  getDiagnostics()        → GET  localhost:8765/diagnostics
+│  startOllama()           → POST localhost:8765/ollama/start
+│  restartOllama()         → POST localhost:8765/ollama/restart
+│  pullModel()             → POST localhost:8765/models/pull
+│  subscribePullProgress() → GET  localhost:8765/models/pull/progress?job=<id> (SSE)
+│  openTerminal()          → POST localhost:8765/diagnostics/open-terminal
+│
+▼
+NEXIS Companion (localhost:8765)
+│
+│  Detects Ollama binary, starts/restarts it, manages model pulls
+│  Reports full diagnostics including GPU info
+│
+▼
+OLLAMA (localhost:11434)
+```
+
+If the Companion is not running, these management operations are unavailable. AI generation is unaffected.
+
+### 11.4 Ingestion Flow
+
+```
+User uploads file / pastes URL / uploads image
+│
+▼
+Frontend → POST to FastAPI backend (api.jsx → collectSource / analyzeImage)
+│
+▼
+Backend routing:
+│  URL              → ingestion/url_utils.py (trafilatura → BS4 selectors → full-body fallback)
+│  PDF              → ingestion/pdf_utils.py
+│  DOCX             → ingestion/docx_utils.py
+│  TXT/MD           → direct decode
+│  Image            → ingestion/ocr_utils.py (Tesseract) + app/services/vision_service.py (llava)
+│  Audio/Video      → ingestion/audio_utils.py (faster-whisper) — requires WHISPER_ENABLED=True
+│  YouTube URL      → ingestion/youtube_utils.py (transcript API → yt-dlp fallback) — requires YOUTUBE_INGESTION_ENABLED=True
+│
+▼
+Extracted text + optional brief stored in localStorage (projectStorage.js)
+```
+
+### 11.5 Authentication (Current)
+
+No cloud authentication. `AppLayout.jsx` v009 (D-035, 2026-05-29) uses hardcoded local constants:
+
+```js
+const LOCAL_USER    = { id: "local-user", email: "local@nexis" };
+const LOCAL_PROFILE = { id: "local-user", tier: "free", ... };
+```
+
+No session check, no loading state, no sign-in screen. App renders immediately.
+
+### 11.6 Storage Split
+
+| Data | Location | File |
+|---|---|---|
+| Projects, raw items, outputs, model config | `localStorage` | `projectStorage.js` |
+| User account + usage counters | SQLite `nexis.db` | `account.py` |
+| UI navigation state | `localStorage` | `ArcNContext.jsx` |
+
+### 11.7 Feature Flags (Current Defaults in `.env`)
+
+| Flag | Default in `config.py` | Current in `.env` | Notes |
+|---|---|---|---|
+| `WHISPER_ENABLED` | `False` | `True` | Lazy-loaded; safe at startup |
+| `OCR_ENABLED` | `False` | `True` | Requires Tesseract CLI on PATH; fails gracefully if absent |
+| `VISION_ENABLED` | `False` | `True` | Requires `llava:13b` pulled; `llava:13b` confirmed present |
+| `YOUTUBE_INGESTION_ENABLED` | `False` | `True` | Requires yt-dlp on PATH; yt-dlp confirmed present |
+| `NEXIS_HOSTED_MODE` | `False` | `False` | Must stay `False` for local builds |
+
+### 11.8 Startup (Current)
+
+The project root contains `NEXIS-LOCAL.bat` — a portable Windows batch script that starts the backend and frontend. It uses `%~dp0` to resolve paths relative to its own location, making it work at any clone location.
+
+**Manual startup order (if not using the BAT):**
+
+1. Ensure Ollama is running with a model: `ollama pull qwen2.5:7b`
+2. (Optional) Start NEXIS Companion: double-click `NEXIS Companion.exe`
+3. Start backend: `cd backend && venv\Scripts\activate && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
+4. Start frontend: `cd frontend && npm start`
+5. Open: `http://localhost:3000`
+
+### 11.9 Dependency Resolution (Current)
+
+All previously hardcoded machine-specific binary paths have been replaced with portable resolution:
+
+| Binary | Resolution |
+|---|---|
+| `yt-dlp` | `shutil.which("yt-dlp") or "yt-dlp"` |
+| `ffmpeg` | `shutil.which("ffmpeg") or "ffmpeg"` |
+| `ffprobe` | `shutil.which("ffprobe") or "ffprobe"` |
+| `tesseract` | `shutil.which("tesseract") or "tesseract"` (via `ocr_utils.py`) |
+| `SAFE_TMP` | `os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))` |

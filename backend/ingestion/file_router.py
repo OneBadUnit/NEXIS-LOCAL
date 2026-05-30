@@ -65,13 +65,13 @@ async def process_uploaded_file(uploaded_file: UploadFile) -> str:
     if ext in AUDIO_EXT:
         from app.core.config import settings
         if not settings.WHISPER_ENABLED:
-            return "Audio/video transcription is not available in hosted beta mode."
+            return "Audio/video transcription is disabled. Set WHISPER_ENABLED=True in .env to enable."
         return await _transcribe_audio_bytes(data, ext)
 
     if ext in VIDEO_EXT:
         from app.core.config import settings
         if not settings.WHISPER_ENABLED:
-            return "Audio/video transcription is not available in hosted beta mode."
+            return "Audio/video transcription is disabled. Set WHISPER_ENABLED=True in .env to enable."
         return await _transcribe_video_bytes(data, ext)
 
     return "Unsupported file type."

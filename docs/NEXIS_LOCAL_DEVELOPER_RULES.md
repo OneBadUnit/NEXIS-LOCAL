@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Development Rules and Working Conventions  
-**Last Updated:** 2026-05-28  
+**Last Updated:** 2026-05-29 (Documentation Sync)  
 **Audience:** AI assistants, engineers, contributors  
 
 > This document tells you **how to work on NEXIS-LOCAL safely**. It is not architecture documentation. It is not user documentation. It is not a decision log. Read this before touching any code.
@@ -174,8 +174,7 @@ The following systems must not be changed unless the user explicitly tasks a cha
 
 | System | Protected Behavior |
 |---|---|
-| Auth flow | Email + password only. No magic links, no OAuth providers. |
-| Supabase integration | Client init, session check, profile fetch. Do not restructure. |
+| Local auth constants | `LOCAL_USER` and `LOCAL_PROFILE` in `AppLayout.jsx`. Do not re-introduce an auth gate or a second auth system. |
 | Bridge / generation | All AI generation goes through `bridge.js` → `generateDirectOllama()`. Do not add raw `fetch()` to Ollama outside `bridge.js`. |
 | Companion management | `getDiagnostics`, `startOllama`, `restartOllama`, `pullModel`, `subscribePullProgress`, `openTerminal` — do not remove without explicit instruction. |
 | localStorage adapter | `projectStorage.js` is the current persistence layer. Do not migrate. |
@@ -259,33 +258,32 @@ When diagnosing a problem in NEXIS-LOCAL, work through this checklist in order.
 - Is the model name in localStorage config an exact match to `ollama list` output?
 - Is Ollama consuming port 11434?
 
-### 6.4 Supabase / Auth
+### 6.4 Local Auth
 
-- Are `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` set?
-- In development, are they set in `.env.local`?
-- Does the Supabase project exist and have email auth enabled?
-- Is the user's email confirmed in Supabase?
+- NEXIS-LOCAL has no cloud auth. `AppLayout.jsx` uses `LOCAL_USER` and `LOCAL_PROFILE` constants.
+- Supabase files (`auth.js`, `supabase.js`) remain but are unused by the auth flow (Phase 2 cleanup deferred).
+- `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` may be absent — the app works without them.
 
 ### 6.5 Python / Backend
 
 - Is the virtual environment activated before running `uvicorn`?
 - Does `pip list` show `fastapi`, `sqlalchemy`, `pydantic-settings`, `pydantic`?
 - Is `nexis.db` present or will it be created on startup?
-- Is `NEXIS_TESSERACT_PATH` pointing to the correct binary (if OCR is used)?
-- Is `C:\ffmpeg\bin\ffprobe.exe` present (if audio/video ingestion is used)?
+- Is `NEXIS_TESSERACT_PATH` set in `.env` (if OCR is used and Tesseract is not on PATH)?
+- Is `ffprobe` on PATH (if audio/video ingestion is used)? (`shutil.which("ffprobe")` is used — no hardcoded path)
 
 ### 6.6 Frontend Environment Variables
 
 - Is `REACT_APP_API_BASE_URL` set for production?
-- In local dev, is the fallback to `https://nexis-l8oc.onrender.com` intentional?
+- In local dev, the CRA proxy routes API calls to `localhost:8000` automatically — `REACT_APP_API_BASE_URL` is not required
 - Are env vars prefixed with `REACT_APP_`? Vite-style `import.meta.env` does not work — this is a CRA project.
 
 ### 6.7 localStorage
 
 - Open DevTools → Application → Local Storage
 - Are the expected `nexis_local_*` keys present?
-- Is `nexis_local_nexis_model_config` set to a valid JSON object with correct `endpoint`, `model`, and `type`?
-- Is the endpoint in the model config pointing to the bridge (`localhost:8765`) and not directly to Ollama (`localhost:11434`)? `bridge.js` should migrate this, but verify if AI calls are failing.
+- Is `nexis_local_nexis_model_config` set to a valid JSON object with correct `model` and `type`?
+- For local mode, `type` should be `"local"` — generation calls `generateDirectOllama()` at `localhost:11434`
 
 ### 6.8 CORS
 
@@ -340,13 +338,11 @@ import { generateDirectOllama, OLLAMA_DIRECT_URL } from "../lib/bridge.js";
 await generateDirectOllama(prompt, model, OLLAMA_DIRECT_URL);
 ```
 
-> Note: `generateViaBridge()` still exists in `bridge.js` but has no callers. Do not use it for new code. It is a candidate for removal in Phase C cleanup.
-
 ### 7.3 Backend Must Not Assume Hosted Mode
 
 `NEXIS_HOSTED_MODE` is `False`. Do not add code that checks `if NEXIS_HOSTED_MODE` and changes core behavior for local users. Hosted-mode paths in the codebase are for future hosted builds only.
 
-`llm_service.py` returns HTTP 503 when `OLLAMA_URL` is not set — this is intentional. In local mode, generation goes through the companion, not the backend. Do not remove this behavior.
+`llm_service.py` returns HTTP 503 when `OLLAMA_URL` is not set — this is intentional. In local mode, generation goes directly from `bridge.js` → `generateDirectOllama()` → Ollama, bypassing the backend entirely. The backend's LLM service is used only when `OLLAMA_URL` is configured (e.g., provider mode or future hosted mode). Do not remove this behavior.
 
 ### 7.4 SQLite Is the Local Default
 
@@ -448,12 +444,13 @@ These files are high-risk. A mistake in any of them can break core functionality
 
 ### `frontend/src/lib/bridge.js`
 
-**Why sensitive:** All local AI communication routes through this module. It is the contract between the frontend and the companion.
+**Why sensitive:** All local AI generation routes through this module via `generateDirectOllama()`. It is also the Companion management contract.
 
 **What breaks if modified incorrectly:**
-- `BRIDGE_DEFAULT_URL` changed → all local AI generation breaks unless user has custom config
-- Legacy URL migration removed → users with old stored configs (`localhost:11434`) cannot generate
-- `generateViaBridge()` signature changed → all call sites in `api.jsx` break
+- `OLLAMA_DIRECT_URL` changed → `generateDirectOllama()` calls wrong endpoint; all AI generation breaks
+- `BRIDGE_DEFAULT_URL` changed → all Companion management calls fail unless user has custom config
+- Legacy URL migration removed → users with old stored configs cannot generate
+- `generateDirectOllama()` signature changed → `runViaOllama()` in `api.jsx` breaks
 - Error code constants changed → DiagnosticsOverlay shows wrong or missing error messages
 
 ---
@@ -484,13 +481,12 @@ These files are high-risk. A mistake in any of them can break core functionality
 
 ### `frontend/src/layout/AppLayout.jsx`
 
-**Why sensitive:** Auth gate. Controls what renders before and after authentication.
+**Why sensitive:** Top-level layout and local user identity. Owns `LOCAL_USER` and `LOCAL_PROFILE` constants (defined at module scope) that are passed to `NexusDashboard` and `TopBar` on every render. Controls which overlays are mounted (Help, Diagnostics) and the scroll-to-top behavior. Prior to v009 this was the Supabase auth gate — see Decision Log D-035 for history.
 
 **What breaks if modified incorrectly:**
-- `authLoading` guard removed → app flashes unauthenticated state before session resolves
-- Supabase session check removed → app renders without auth, security regression
-- `onAuthStateChange` removed → session changes (expiry, sign-out from another tab) not detected
-- `clearAllProjectStorage()` on sign-out removed → previous user's data visible to next user
+- `LOCAL_USER` or `LOCAL_PROFILE` constants removed or malformed → TopBar and NexusDashboard prop contracts break
+- `LOCAL_PROFILE.tier` changed → tier config resolves incorrectly (all limits are 99999 locally — intentional per D-027)
+- Help or Diagnostics overlay state removed → HelpOverlay / DiagnosticsOverlay cannot be opened
 
 ---
 

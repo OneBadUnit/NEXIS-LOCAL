@@ -48,26 +48,11 @@ Primary priorities:
 # KNOWN FRAGILE AREAS
 
 ## Startup / Overlay Flow
-Status: Active Review Area
+Status: Resolved (2026-05-29)
 
-Related systems:
-- LogoOverlay
-- OnboardingOverlay
-- startup transitions
-- onboarding visibility state
+`LogoOverlay` and `OnboardingOverlay` were removed from `ArcNexusApp.jsx` (v006) and their component files were deleted in Phase 2 cleanup. `ArcNexusApp.jsx` now renders directly to `AcknowledgmentModal` + `Layout` with no startup overlay chain. This area is no longer a fragile area.
 
-Known risks:
-- overlay sequencing
-- timer cleanup
-- visibility persistence
-- startup timing edge cases
-- localStorage dependency behavior
-
-Confirmed findings:
-- safer localStorage access was required
-- overlay timing required cleanup validation
-
-Approved improvements:
+Related decision: D-039, D-045.
 - localStorage try/catch protection
 - timer cleanup verification
 - bounded startup validation

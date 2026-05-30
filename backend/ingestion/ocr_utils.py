@@ -100,7 +100,7 @@ async def extract_text_from_image(file_bytes: bytes) -> str:
 
     # Hosted-mode gate: only block when explicitly deployed to cloud.
     if settings.NEXIS_HOSTED_MODE and not settings.OCR_ENABLED:
-        return "OCR is not available in hosted beta mode."
+        return "OCR is disabled in hosted mode. Set NEXIS_HOSTED_MODE=False to run locally."
 
     tess_path = resolve_tesseract_path()
 

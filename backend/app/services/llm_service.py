@@ -11,7 +11,6 @@
 # ============================================================
 
 import asyncio
-import os
 from functools import partial
 
 import requests
@@ -20,9 +19,7 @@ from fastapi import HTTPException
 
 # ------------------------------------------------------------
 # Ollama Configuration
-# LLM_URL is read from env. Empty string means "not configured".
 # ------------------------------------------------------------
-LLM_URL = os.environ.get("OLLAMA_URL", "")
 DEFAULT_MODEL = "qwen2.5:7b"
 
 
@@ -30,17 +27,15 @@ DEFAULT_MODEL = "qwen2.5:7b"
 # Sync Ollama Request
 # ------------------------------------------------------------
 def _run_llm_sync(prompt: str, model: str = DEFAULT_MODEL) -> str:
-    # Guard: no Ollama backend configured on this server.
-    # Ollama runs on the user's machine — local generation goes
-    # through the NEXIS Local Companion, not this endpoint.
-    if not LLM_URL:
+    # Read settings lazily so .env values are respected.
+    from app.core.config import settings
+    ollama_base = (settings.OLLAMA_URL or "").rstrip("/")
+    if not ollama_base:
         raise HTTPException(
             status_code=503,
-            detail=(
-                "No LLM backend configured on this server. "
-                "Configure a local model using the NEXIS Local Companion."
-            ),
+            detail="OLLAMA_URL is not configured. Set it in .env.",
         )
+    llm_url = f"{ollama_base}/api/generate"
 
     payload = {
         "model": model,
@@ -54,7 +49,7 @@ def _run_llm_sync(prompt: str, model: str = DEFAULT_MODEL) -> str:
 
     try:
         response = requests.post(
-            LLM_URL,
+            llm_url,
             json=payload,
             timeout=180,
         )

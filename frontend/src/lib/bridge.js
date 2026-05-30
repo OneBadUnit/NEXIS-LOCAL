@@ -1,20 +1,23 @@
 // ============================================================
-// NEXIS - LOCAL COMPANION CLIENT
+// NEXIS - BRIDGE / COMPANION CLIENT
 // File: src/lib/bridge.js
-// Version: 002 (user-first: start/restart Ollama, pull models)
+// Version: 003 (Companion optional; direct Ollama generation)
 //
-// All communication with the NEXIS Local Companion goes
-// through this module. Nothing else in the frontend talks
-// to Ollama or localhost:11434 directly.
+// Two responsibilities:
+//   1. GENERATION (direct, no Companion required):
+//      generateDirectOllama() → POST localhost:11434/api/generate
+//      Used for all Create / Refine operations.
 //
-// The companion runs on http://localhost:8765 on the user's
-// machine and manages Ollama on their behalf.
+//   2. OLLAMA MANAGEMENT (optional, via NEXIS Companion):
+//      getDiagnostics / startOllama / restartOllama / pullModel /
+//      subscribePullProgress / openTerminal → localhost:8765
+//      Companion is a convenience layer only.
 //
-// Error codes from the companion:
-//   COMPANION_NOT_RUNNING  companion process not found
+// Error codes returned by Companion-facing functions:
+//   COMPANION_NOT_RUNNING  companion process not found / unreachable
 //   OLLAMA_NOT_INSTALLED   ollama binary not found
 //   OLLAMA_NOT_RUNNING     ollama installed but not started
-//   NO_MODELS              ollama running but no models
+//   NO_MODELS              ollama running but no models pulled
 //   MODEL_NOT_AVAILABLE    requested model not in Ollama
 //   GENERATION_FAILED      LLM call errored or returned empty
 // ============================================================
@@ -24,11 +27,14 @@
 export const BRIDGE_DEFAULT_URL = "http://localhost:8765";
 export const RECOMMENDED_MODEL  = "qwen2.5:7b";
 
-// Release asset URLs ? update the tag here for each new release.
+// Release asset URLs — update COMPANION_RELEASE_TAG for each new release.
+// Update COMPANION_REPO if the repository is ever transferred or renamed.
 // Supported platforms: Windows and Linux (including WSL2).
+const COMPANION_REPO        = "ARC-NEXUS-LLC/NEXIS";
+const COMPANION_RELEASE_TAG = "companion-v0.1.0";
 export const COMPANION_DOWNLOAD_URLS = {
-  windows: "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/NEXIS.Companion.exe",
-  linux:   "https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/nexis-bridge-linux",
+  windows: `https://github.com/${COMPANION_REPO}/releases/download/${COMPANION_RELEASE_TAG}/NEXIS.Companion.exe`,
+  linux:   `https://github.com/${COMPANION_REPO}/releases/download/${COMPANION_RELEASE_TAG}/nexis-bridge-linux`,
 };
 
 // Returns { url, label, platform, supported } for the current user's OS.
@@ -138,44 +144,8 @@ export async function getDiagnostics(bridgeUrl = BRIDGE_DEFAULT_URL) {
   }
 }
 
-/**
- * Lightweight health check  returns { reachable, ollamaReachable, version }.
- * Never throws.
- */
-export async function checkBridge(bridgeUrl = BRIDGE_DEFAULT_URL) {
-  const base = bridgeUrl.replace(/\/$/, "");
-  try {
-    const res = await fetchWithTimeout(`${base}/health`, {}, DETECT_TIMEOUT_MS);
-    if (!res.ok) return { reachable: false, ollamaReachable: false, version: null };
-    const data = await res.json();
-    return {
-      reachable: true,
-      ollamaReachable: !!data.ollama_reachable,
-      ollamaInstalled: !!data.ollama_installed,
-      version: data.bridge_version || null,
-      recommendedModel: data.recommended_model || RECOMMENDED_MODEL,
-    };
-  } catch {
-    return { reachable: false, ollamaReachable: false, version: null };
-  }
-}
 
 // ?? Ollama management ???????????????????????????????????????????????????????
-
-/**
- * Ask the companion to find the Ollama installation path.
- * Returns { found, path, searchedPaths } or null on failure.
- */
-export async function findOllama(bridgeUrl = BRIDGE_DEFAULT_URL) {
-  const base = bridgeUrl.replace(/\/$/, "");
-  try {
-    const res = await fetchWithTimeout(`${base}/ollama/find`, {}, DETECT_TIMEOUT_MS);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Ask the companion to start Ollama.
@@ -211,30 +181,6 @@ export async function restartOllama(bridgeUrl = BRIDGE_DEFAULT_URL) {
 }
 
 // ?? Model management ????????????????????????????????????????????????????????
-
-/**
- * Fetch the list of available models.
- * Returns { models, recommendedModel } on success.
- * Returns { error, code } on failure. Never throws.
- */
-export async function fetchBridgeModels(bridgeUrl = BRIDGE_DEFAULT_URL) {
-  const base = bridgeUrl.replace(/\/$/, "");
-  try {
-    const res = await fetchWithTimeout(`${base}/models`, {}, DETECT_TIMEOUT_MS);
-    if (res.ok) {
-      const data = await res.json();
-      return {
-        models: Array.isArray(data.models) ? data.models : [],
-        recommendedModel: data.recommended_model || RECOMMENDED_MODEL,
-      };
-    }
-    let errData = {};
-    try { errData = await res.json(); } catch { /* ignore */ }
-    return { error: errData.error || "Could not fetch models", code: errData.code || "UNKNOWN" };
-  } catch (err) {
-    return { error: err.message, code: _networkErrorCode(err) };
-  }
-}
 
 /**
  * Start an async model pull job on the companion.
@@ -316,43 +262,6 @@ export function subscribePullProgress(jobId, bridgeUrl = BRIDGE_DEFAULT_URL, onP
   return () => controller.abort();
 }
 
-// ?? Generation ??????????????????????????????????????????????????????????????
-
-/**
- * Send a generation request through the companion to Ollama.
- * Returns { output } on success.
- * Returns { error, code } on failure. Never throws.
- *
- * NOTE: Used by ModelConfig and any code that explicitly routes
- * through the Companion. For NEXIS-LOCAL generation (Create/Refine)
- * use generateDirectOllama() below — no Companion required.
- */
-export async function generateViaBridge(prompt, model, bridgeUrl = BRIDGE_DEFAULT_URL) {
-  const base = bridgeUrl.replace(/\/$/, "");
-  try {
-    const res = await fetchWithTimeout(
-      `${base}/generate`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model, prompt }),
-      },
-      GENERATE_TIMEOUT_MS
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const output = (data.output || "").trim();
-      if (!output) return { error: "Generation returned an empty response.", code: "GENERATION_FAILED" };
-      return { output };
-    }
-    let errData = {};
-    try { errData = await res.json(); } catch { /* ignore */ }
-    return { error: errData.error || "Generation failed", code: errData.code || "GENERATION_FAILED" };
-  } catch (err) {
-    return { error: err.message, code: _networkErrorCode(err) };
-  }
-}
-
 // Ollama native URL — used by generateDirectOllama().
 // NEXIS-LOCAL serves over http://localhost:3000 (plain HTTP), so
 // browser → localhost:11434 is same-protocol and CORS is open by
@@ -400,22 +309,6 @@ export async function generateDirectOllama(prompt, model, ollamaUrl = OLLAMA_DIR
   }
 }
 
-// ?? System info ?????????????????????????????????????????????????????????????
-
-/**
- * Fetch basic system info (CPU, GPU, platform) from the companion.
- * Returns the parsed JSON or null. Never throws.
- */
-export async function getBridgeSystem(bridgeUrl = BRIDGE_DEFAULT_URL) {
-  const base = bridgeUrl.replace(/\/$/, "");
-  try {
-    const res = await fetchWithTimeout(`${base}/system`, {}, DETECT_TIMEOUT_MS);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
 
 // ?? Last-resort terminal ????????????????????????????????????????????????????
 
@@ -429,51 +322,4 @@ export async function openTerminal(bridgeUrl = BRIDGE_DEFAULT_URL) {
   const { data, error, code } = await postJSON(`${base}/diagnostics/open-terminal`, {});
   if (error) return { error, code };
   return { opened: !!data.opened, shell: data.shell || "" };
-}
-
-// ?? Error classification ????????????????????????????????????????????????????
-
-/**
- * Map a raw Error or bridge error-code into a user-facing plain-English message.
- * All messages avoid terminal jargon in primary text.
- */
-export function classifyBridgeError(errOrCode, model = "") {
-  if (
-    errOrCode instanceof TypeError ||
-    (errOrCode instanceof Error &&
-      (errOrCode.message.includes("Failed to fetch") ||
-        errOrCode.message.includes("NetworkError") ||
-        errOrCode.message.includes("ECONNREFUSED")))
-  ) {
-    return { code: "COMPANION_NOT_RUNNING", message: "NEXIS Companion is not running." };
-  }
-  if (errOrCode instanceof Error && errOrCode.name === "AbortError") {
-    return { code: "COMPANION_NOT_RUNNING", message: "NEXIS Companion did not respond." };
-  }
-
-  const code = typeof errOrCode === "string" ? errOrCode : (errOrCode?.code || "");
-  switch (code) {
-    case "COMPANION_NOT_RUNNING":
-      return { code, message: "NEXIS Companion is not running." };
-    case "OLLAMA_NOT_INSTALLED":
-      return { code, message: "Ollama is not installed on this computer." };
-    case "OLLAMA_NOT_RUNNING":
-      return { code, message: "Ollama is installed but not open." };
-    case "NO_MODELS":
-      return { code, message: "No AI model found." };
-    case "MODEL_NOT_AVAILABLE":
-      return {
-        code,
-        message: model
-          ? `The model "${model}" is not downloaded in Ollama.`
-          : "The selected model is not downloaded in Ollama.",
-      };
-    case "GENERATION_FAILED":
-      return { code, message: "Generation failed. Make sure Ollama is open and the model is downloaded." };
-    default:
-      return {
-        code: code || "UNKNOWN",
-        message: errOrCode?.message || "An unexpected error occurred.",
-      };
-  }
 }

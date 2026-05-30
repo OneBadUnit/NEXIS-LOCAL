@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Technical Architecture Reference  
-**Last Updated:** 2026-05-29  
+**Last Updated:** 2026-05-29 (Documentation Sync)  
 **Audience:** Engineers, AI assistants, technical contributors  
 
 > This is a technical reference document. It documents what exists in the codebase as verified by direct file inspection. Items that could not be verified are explicitly marked.
@@ -44,40 +44,25 @@ backend/
     ├── vision.py                Image collect router (OCR + Ollama vision)
     ├── api/
     │   └── routes/
-    │       ├── projects.py      CRUD for Project records
-    │       ├── sources.py       CRUD for Source records
-    │       ├── creation.py      Additional creation modes
     │       ├── usage.py         Usage counter endpoints
-    │       ├── system.py        System check + OCR diagnostics
-    │       └── health.py        Health check endpoint
+    │       └── system.py        System check + OCR diagnostics
     ├── core/
     │   ├── config.py            Settings model (pydantic-settings, .env backed)
     │   ├── db.py                SQLAlchemy engine + session factory
     │   ├── tiers.py             Plan definitions (all limits set to 99999 locally)
     │   └── usage.py             Usage enforcement logic + DEFAULT_USER_ID
     ├── models/
-    │   ├── account.py           UserAccount ORM model (tier + usage counters)
-    │   ├── project.py           Project ORM model
-    │   └── source.py            Source ORM model (with SourceType + SourceStatus enums)
-    ├── schemas/
-    │   ├── project.py           Pydantic schemas for Project API
-    │   ├── source.py            Pydantic schemas for Source API
-    │   └── reconstruction.py    ASSUMED — not inspected
+    │   └── account.py           UserAccount ORM model (tier + usage counters)
     ├── services/
     │   ├── llm_service.py       Ollama HTTP client for text generation
     │   ├── vision_service.py    Ollama vision model client (LLaVA)
     │   ├── doc_intel.py         Document collection brief generator
-    │   ├── assimilation.py      YouTube + Whisper transcription service
-    │   └── video_intel.py       ASSUMED — not inspected
+    │   └── video_intel.py       YouTube video brief generator
     ├── prompts/
     │   ├── summary_package_rules.txt   Rules prepended to Summary Package prompts
     │   └── creator_package_rules.txt   Rules prepended to Creator Package prompts
-    ├── pipeline/
-    │   └── transcription.py     ASSUMED — not inspected
-    ├── utils/
-    │   └── gpu_detection.py     Whisper device selection (CUDA vs CPU)
-    └── workers/
-        └── tasks.py             ASSUMED — not inspected
+    └── utils/
+        └── gpu_detection.py     Whisper device selection (CUDA vs CPU)
 ```
 
 **Critical note:** `backend/app/main.py` is the FastAPI entrypoint. All routers are registered there. CORS is configured before any router.
@@ -97,14 +82,11 @@ ingestion/
 ├── ocr_utils.py         Tesseract OCR wrapper + diagnostics
 ├── url_utils.py         URL fetch, article body extraction (trafilatura + BS4 selector fallback + contamination detection), YouTube routing
 ├── youtube_utils.py     YouTube transcript + yt-dlp fallback
-├── audio_utils.py       Audio processing utilities
-├── video_utils.py       Video processing utilities
-├── vision_utils.py      Vision preprocessing utilities
-├── vision_llava.py      LLaVA vision integration utilities
-└── (ffprobe dependency: C:\ffmpeg\bin\ffprobe.exe — hardcoded path in assimilation.py)
+├── audio_utils.py       Audio transcription (faster-whisper)
+└── video_utils.py       Video processing utilities
 ```
 
-**Temp directory:** `D:\NEXIS\tmp` — hardcoded in `file_router.py`. Created on startup via `os.makedirs(..., exist_ok=True)`.
+**Temp directory:** `backend/tmp/` — resolved portably via `os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))`. Created on startup via `os.makedirs(..., exist_ok=True)`.
 
 ---
 
@@ -144,7 +126,7 @@ frontend/
 │   └── robots.txt
 └── src/
     ├── index.js                 React entry point
-    ├── ArcNexusApp.jsx          Root app component (startup overlay chain)
+    ├── ArcNexusApp.jsx          Root app component (AcknowledgmentModal + Layout)
     ├── index.css
     ├── context/
     │   └── ArcNContext.jsx      Global React context provider
@@ -160,9 +142,7 @@ frontend/
     │   ├── api.jsx              FastAPI client + bridge routing
     │   └── system.jsx           System check API wrapper
     ├── lib/
-    │   ├── bridge.js            NEXIS Companion client
-    │   ├── auth.js              Supabase auth wrappers
-    │   ├── supabase.js          Supabase client initialization
+    │   ├── bridge.js            NEXIS Companion client + direct Ollama generation
     │   ├── tiers.js             Frontend tier config (mirrors backend tiers.py)
     │   └── prompts.js           ASSUMED — not inspected
     ├── utils/
@@ -209,8 +189,8 @@ BACKEND — app/assimilation.py  (text/URL/file)
 │                    .pdf           → ingestion/pdf_utils.py
 │                    .docx          → ingestion/docx_utils.py
 │                    .png/.jpg/etc  → ingestion/ocr_utils.py (Tesseract)
-│                    .mp3/.wav/etc  → services/assimilation.py (Whisper)
-│                    .mp4/.mov/etc  → services/assimilation.py (Whisper)
+│                    .mp3/.wav/etc  → ingestion/audio_utils.py (faster-whisper)
+│                    .mp4/.mov/etc  → ingestion/audio_utils.py (faster-whisper)
 │  Image path:     Tesseract OCR + Ollama vision model (llava:13b default)
 │  Document path:  services/doc_intel.py → Document Collection Brief via Ollama
 │
@@ -233,18 +213,16 @@ USER SELECTS SOURCES FOR GENERATION
 FRONTEND — api.jsx
 │  Determines model config from localStorage (nexis_local_nexis_model_config)
 │  If type === "local":
-│    Calls generateViaBridge() → NEXIS Companion (localhost:8765)
+│    Calls runViaOllama() → generateDirectOllama() in bridge.js
 │  If type === "provider":
 │    Calls FastAPI backend → llm_service.py → external provider
 │
 ▼
-AI GENERATION PATH (local mode):
+AI GENERATION PATH (local mode — Phase A, current):
 │
 │  FRONTEND
-│  └─ bridge.js → POST /generate to localhost:8765
-│
-│  NEXIS COMPANION (bridge)
-│  └─ forwards prompt → Ollama localhost:11434 → /api/generate
+│  └─ bridge.js → generateDirectOllama()
+│     └─ POST http://localhost:11434/api/generate
 │
 │  OLLAMA
 │  └─ runs local model (default: qwen2.5:7b)
@@ -298,12 +276,8 @@ SAVED OUTPUT
 | UI navigation state | `localStorage` | `ArcNContext.jsx` |
 | Assimilation / reconstruction session state | `localStorage` | `ArcNContext.jsx` |
 | User account + usage counters | SQLite (`nexis.db`) | `account.py` |
-| Project records (DB-side) | SQLite (`nexis.db`) | `project.py` |
-| Source records (DB-side) | SQLite (`nexis.db`) | `source.py` |
 | User auth session | Local constant (`LOCAL_USER`) in `AppLayout.jsx` | `AppLayout.jsx` v009 |
 | User profile | Local constant (`LOCAL_PROFILE`) in `AppLayout.jsx` | `AppLayout.jsx` v009 |
-
-**The frontend manages the primary project workflow through `localStorage`.** The SQLite database holds the usage/tier tracking account, and DB-side project/source records. `projectStorage.js` is explicitly commented as a temporary adapter: *"swap these functions for API calls when backend integration is ready."*
 
 ---
 
@@ -314,17 +288,11 @@ SAVED OUTPUT
 ```
 FRONTEND (browser / Electron)
 │
-│  bridge.js — all AI communication routes here
+│  bridge.js — all AI generation routes here
 │  getModelConfigWithMigration() reads localStorage for model + endpoint
 │
-│  type === "local":
-▼
-NEXIS COMPANION (Go binary, localhost:8765)
-│
-│  Receives:  POST /generate  { prompt, model }
-│  Manages:   Ollama process lifecycle
-│  Probes:    Ollama health at startup and on request
-│  Reports:   Full diagnostics to frontend via GET /diagnostics
+│  type === "local" (primary path):
+│  └─ generateDirectOllama() → POST localhost:11434/api/generate
 │
 ▼
 OLLAMA (localhost:11434)
@@ -338,15 +306,38 @@ LOCAL MODEL (e.g. qwen2.5:7b)
    Runs on user hardware (CPU or GPU via CUDA)
 ```
 
-### Why Direct Browser-to-Ollama Is Prohibited
+**Optional management path (NEXIS Companion):**
 
-This is verified in `bridge.js` comments and `api.jsx` comments:
+```
+FRONTEND bridge.js management functions
+│
+│  getDiagnostics(), startOllama(), restartOllama(), pullModel(), etc.
+│
+▼
+NEXIS COMPANION (localhost:8765)
+│
+│  Manages Ollama lifecycle — start, restart, model pulls, diagnostics
+│  Does NOT handle generation (Phase A, 2026-05-29)
+│
+▼
+OLLAMA (localhost:11434)
+```
 
-1. **CORS blocks it.** Browsers enforce CORS. Ollama does not serve `Access-Control-Allow-Origin` headers by default, so a browser cannot call `localhost:11434` directly from a web page.
+### Why All Ollama Generation Calls Route Through `bridge.js`
 
-2. **The companion is the health manager.** The bridge does more than proxy. It detects Ollama installation paths, starts Ollama if it is not running, restarts it if it crashes, manages model pulls, and surfaces diagnostics to the user. Bypassing the bridge bypasses all of this.
+All frontend code that sends a prompt to Ollama must go through `generateDirectOllama()` in `bridge.js`. Raw `fetch()` calls to `localhost:11434` are forbidden outside `bridge.js`.
 
-3. **Design contract.** `bridge.js` explicitly migrates any legacy `localhost:11434` URLs found in stored model config to the companion URL on startup.
+**Reasons:**
+
+1. **Centralized call site.** `bridge.js` is the single auditable location for all Ollama calls. Changes to URL, headers, timeout, or error handling apply everywhere automatically.
+
+2. **Legacy config migration.** `getModelConfigWithMigration()` in `bridge.js` migrates any stored model config that pointed at `localhost:8765` (old companion proxy) or other legacy endpoints. This migration must run before generation — not in scattered call sites.
+
+3. **Error handling contract.** `bridge.js` normalizes Ollama errors into the `GENERATION_FAILED` and companion-related error codes used by `DiagnosticsOverlay`. Scattered raw fetch calls would bypass this normalization.
+
+**Prior constraint (pre-Phase A):** Direct browser-to-Ollama was blocked by CORS in strict web contexts. Ollama does not serve `Access-Control-Allow-Origin` headers by default for all callers. In the Electron wrapper and current Ollama versions, direct calls work. `bridge.js` abstracts this — if CORS behavior changes, the fix is in one place.
+
+See Decision Log D-036 (Phase A), D-020 (original Companion decision), D-040 (CORS lesson).
 
 ### Companion Endpoints (verified in `nexis_bridge.go`)
 
@@ -422,31 +413,6 @@ Defined in `app/models/account.py`.
 
 **Single-user note:** `DEFAULT_USER_ID = "default"` is hardcoded in `core/usage.py`. All usage operations use this key. There is no per-user isolation at this layer.
 
-#### `projects`
-
-Defined in `app/models/project.py`.
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID (PK) | Auto-generated |
-| `name` | String | Required |
-| `settings` | JSONB | Optional |
-| `created_at` | DateTime | Auto-set |
-
-> **IMPORTANT:** The `projects` table uses `JSONB` (a PostgreSQL type) imported from `sqlalchemy.dialects.postgresql`. When running on SQLite, SQLAlchemy may fall back to a JSON string column. Behavior under SQLite with JSONB columns should be **VERIFIED IN CODE** before relying on it.
-
-#### `sources`
-
-Defined in `app/models/source.py`.
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID (PK) | Auto-generated |
-| `project_id` | UUID (FK → projects.id) | Nullable |
-| `type` | Enum (SourceType) | `url`, `file`, `text` |
-| `status` | Enum (SourceStatus) | `queued`, `processing`, `done`, `error` |
-| `raw_location` | String | Original reference (URL, filename, etc.) |
-
 ---
 
 ### Usage Enforcement Rules (verified in `core/usage.py`)
@@ -497,12 +463,7 @@ These constants are passed directly to `NexusDashboard` and `TopBar` on every re
 
 **Sign-in/sign-out UI:** Removed from TopBar. `user={null}` is passed to `TopBar`; the existing `{user && ...}` guard means the email display, Account button, and Sign Out button are all hidden automatically.
 
-**Supabase files still present (Phase 2 cleanup deferred):**
-- `frontend/src/lib/auth.js` — no longer imported by `AppLayout.jsx`; still contains all Supabase auth functions
-- `frontend/src/lib/supabase.js` — still imported by `NexusDashboard.jsx` for the app announcements fetch; if Supabase is unreachable (no valid env vars), the call fails silently and `announcements` is set to `null` via try/catch, and a fallback renders
-- `@supabase/supabase-js` — still in `package.json` and `node_modules`
-
-These files are harmless. Phase 2 cleanup will remove them deliberately.
+**Supabase files:** `auth.js` and `supabase.js` were deleted in the Phase 2 cleanup (2026-05-29). No Supabase files remain in the codebase. `@supabase/supabase-js` remains in `package.json` as an unused package dependency.
 
 **Prior auth architecture (v008 — no longer active):**
 - Email + password sign-up and sign-in via `supabase.auth.signInWithPassword`
@@ -512,10 +473,6 @@ These files are harmless. Phase 2 cleanup will remove them deliberately.
 - Hard gate: `if (!user) return <SignedOutScreen>` — no bypass
 
 See Decision Log D-035 for full analysis and rationale.
-
-**Env vars:**
-- `REACT_APP_SUPABASE_URL` — no longer required for local operation; may be left empty
-- `REACT_APP_SUPABASE_ANON_KEY` — no longer required for local operation; may be left empty
 
 ---
 
@@ -537,19 +494,19 @@ See Decision Log D-035 for full analysis and rationale.
 
 ### Startup Sequence
 
-Verified in `ArcNexusApp.jsx`:
+Verified in `ArcNexusApp.jsx` v006 (2026-05-29):
 
 ```
 App mounts
 │
-├─ LogoOverlay renders (animation)
 ├─ AcknowledgmentModal checks localStorage for version key
 │    Key: nexis_local_arcn_ack_version
 │    Shows modal if stored version ≠ CURRENT_VERSION (1.0.7)
-├─ OnboardingOverlay mounts after LogoOverlay completes
 └─ AppLayout mounts — renders immediately with LOCAL_USER / LOCAL_PROFILE constants
      └─ Renders NexusDashboard directly (no auth check, no loading state)
 ```
+
+> Note: LogoOverlay and OnboardingOverlay were removed from `ArcNexusApp.jsx` in D-039 (2026-05-29). The component files remain but are not imported. `nexis_local_nexusOnboardingSkipped` localStorage key in `projectStorage.js` migration is a harmless orphan.
 
 ### Context Provider
 
@@ -593,7 +550,7 @@ All NEXIS-LOCAL localStorage keys use the `nexis_local_` prefix.
 
 **File:** `src/api/api.jsx`
 
-- `API_BASE` = value of `REACT_APP_API_BASE_URL` env var, with fallback to `https://nexis-l8oc.onrender.com` on localhost
+- `API_BASE` = value of `REACT_APP_API_BASE_URL` env var; in local dev, CRA proxy routes API calls to `localhost:8000` automatically; `_localDevFallback` is `"http://localhost:8000"`
 - All FastAPI calls go through the `request()` helper which parses FastAPI `{ detail: "..." }` error shapes
 - AI generation calls route through `bridge.js` in local mode, not through `API_BASE`
 
@@ -611,11 +568,14 @@ All NEXIS-LOCAL localStorage keys use the `nexis_local_` prefix.
 
 **File:** `src/lib/bridge.js`
 
-- `BRIDGE_DEFAULT_URL = "http://localhost:8765"`
+- `BRIDGE_DEFAULT_URL = "http://localhost:8765"` — Companion management URL
+- `OLLAMA_DIRECT_URL = "http://localhost:11434"` — direct Ollama generation URL
 - `RECOMMENDED_MODEL = "qwen2.5:7b"`
-- `getModelConfigWithMigration()` — reads model config from localStorage, migrates legacy Ollama URLs
-- `generateViaBridge()` — sends prompt to companion `/generate` endpoint
+- `getModelConfigWithMigration()` — reads model config from localStorage, migrates legacy endpoint URLs
+- `generateDirectOllama()` — sends prompt directly to Ollama at `localhost:11434` (Phase A, current generation path)
 - `getCompanionDownload()` — returns platform-appropriate binary download URL
+
+**Active companion management exports:** `getDiagnostics`, `startOllama`, `restartOllama`, `pullModel`, `subscribePullProgress`, `openTerminal`
 
 **Timeouts (verified):**
 - Detection: 6000ms
@@ -647,11 +607,8 @@ Wraps the React app in an Electron window. Polls `localhost:3000` until the Reac
 **Active CORS origins (verified):**
 - `http://localhost:3000`
 - `http://127.0.0.1:3000`
-- `https://nexis-td1ezngfa-onebadunits-projects.vercel.app` (legacy Vercel)
-- `https://nexis-psi.vercel.app` (legacy Vercel)
+- `https://nexis-psi.vercel.app` (legacy Vercel — harmless remnant)
 - Additional origin via `FRONTEND_URL` env var
-
-The Vercel URLs are remnants of a prior hosted deployment. They are harmless in local operation.
 
 ### Router Registration (verified in `main.py`)
 
@@ -670,7 +627,7 @@ The Vercel URLs are remnants of a prior hosted deployment. They are harmless in 
 
 - Accepts: URL string, uploaded file
 - Routes files by extension via `ingestion/file_router.py`
-- Audio/video: duration checked via `ffprobe` (hardcoded path: `C:\ffmpeg\bin\ffprobe.exe`)
+- Audio/video: duration checked via `ffprobe` (resolved via `shutil.which("ffprobe")` — no hardcoded path)
 - Documents: `doc_intel.py` generates a DOCUMENT COLLECTION BRIEF via Ollama
 - Returns extracted text + optional brief + optional `warning` field as JSON
 
@@ -744,11 +701,11 @@ Vision model config: reads `NEXIS_VISION_MODEL` from settings, falls back to `VI
 
 ### Purpose
 
-The NEXIS Companion is a standalone Go binary that acts as the local AI health manager. It exists because:
+The NEXIS Companion is a standalone Go binary that acts as the local AI health manager. It is **optional** for AI generation (Phase A, 2026-05-29 — generation goes direct to Ollama). It exists because:
 
-1. Browsers cannot call Ollama directly (CORS)
-2. Users should not need a terminal to manage Ollama
-3. The companion handles the full Ollama lifecycle: detection, startup, restart, model pulls, diagnostics
+1. Users should not need a terminal to manage Ollama (start, restart, check status)
+2. The companion handles the full Ollama lifecycle: detection, startup, restart, model pulls, diagnostics
+3. DiagnosticsOverlay provides a GUI interface to Companion operations
 
 ### Runtime
 

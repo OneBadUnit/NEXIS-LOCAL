@@ -115,7 +115,7 @@ async def analyze_image(file: UploadFile = File(...), db: Session = Depends(get_
     if settings.NEXIS_HOSTED_MODE:
         raise HTTPException(
             status_code=503,
-            detail="Image analysis is not available in hosted beta mode.",
+            detail="Image analysis requires NEXIS_HOSTED_MODE=False.",
         )
 
     # ── Step 1: OCR (Tesseract, always attempted) ─────────────

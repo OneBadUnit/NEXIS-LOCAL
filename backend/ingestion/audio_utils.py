@@ -70,7 +70,7 @@ async def transcribe_audio_file(path: str) -> str:
 
     from app.core.config import settings
     if not settings.WHISPER_ENABLED:
-        return "Audio/video transcription is not available in hosted beta mode."
+        return "Audio/video transcription is disabled. Set WHISPER_ENABLED=True in .env to enable."
 
     loop = asyncio.get_event_loop()
 

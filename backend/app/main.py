@@ -39,13 +39,10 @@ ALLOWED_ORIGINS = [
     # Local development
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    # Hosted frontend (Vercel)
-    "https://nexis-td1ezngfa-onebadunits-projects.vercel.app",
-    "https://nexis-psi.vercel.app",
 ]
 
-# Allow an additional origin via env var (e.g. a new Vercel preview URL).
-# Set FRONTEND_URL on Render if the production domain ever changes.
+# Add hosted/production frontend origin via env var.
+# Set FRONTEND_URL in the environment for any non-localhost deployment.
 _extra_origin = os.getenv("FRONTEND_URL", "").strip()
 if _extra_origin and _extra_origin not in ALLOWED_ORIGINS:
     ALLOWED_ORIGINS.append(_extra_origin)

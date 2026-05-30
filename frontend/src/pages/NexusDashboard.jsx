@@ -17,9 +17,6 @@ import {
   removeProjectUsage,
 } from "../api/api.jsx";
 import { getTierConfig } from "../lib/tiers";
-import { supabase } from "../lib/supabase";
-import ViewPlansOverlay from "../components/ViewPlansOverlay";
-import UpgradeOverlay from "../components/UpgradeOverlay";
 
 
 // ------------------------------------------------------------
@@ -77,42 +74,8 @@ const NexusDashboard = ({ user, profile }) => {
 
   // Usage / tier state
   const [usage, setUsage] = useState(null);
-  const [showViewPlans, setShowViewPlans] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
 
-  // Announcements — null = not yet loaded or failed (shows fallback)
-  const [announcements, setAnnouncements] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchAnnouncements() {
-      try {
-        const { data, error } = await supabase
-          .from("app_announcements")
-          .select("id, section, tag, title, body")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
-
-        if (cancelled) return;
-        if (error) throw error;
-
-        const news = (data || []).filter((r) => r.section === "news");
-        const updates = (data || []).filter((r) => r.section === "updates");
-        console.log("[DASHBOARD] loaded announcements:", data);
-        console.log("[DASHBOARD] news count:", news.length);
-        console.log("[DASHBOARD] updates count:", updates.length);
-        setAnnouncements({ news, updates });
-      } catch (err) {
-        console.warn("[DASHBOARD] announcements fetch failed — using fallback", err);
-        // Leave announcements as null so fallback renders
-      }
-    }
-    fetchAnnouncements();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Tier resolved from Supabase profile — source of truth for display and limits.
-  // Falls back to "free" if profile is missing or tier is unrecognized.
+  // Tier resolved from profile — falls back to "free" if profile is missing or unrecognized.
   const profileTier = profile?.tier || "free";
   const tierConfig = getTierConfig(profileTier);
   const bonusActions = profile?.bonus_actions || 0;
@@ -299,35 +262,7 @@ const NexusDashboard = ({ user, profile }) => {
 
         {/* TOP RIGHT — ACCOUNT STATUS */}
         <div className="panel">
-          {/* Header row: title + View Plans link */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              marginBottom: 18,
-              paddingBottom: 12,
-              borderBottom: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            <h3 style={{ margin: 0, padding: 0, border: "none" }}>ACCOUNT STATUS</h3>
-            <button
-              onClick={() => setShowViewPlans(true)}
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                fontSize: "0.75rem",
-                color: "rgba(255,255,255,0.35)",
-                transition: "color 0.15s",
-                whiteSpace: "nowrap",
-                marginTop: 2,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#7dd3fc")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-            >
-              View Plans →
-            </button>
-          </div>
+          <h3>ACCOUNT STATUS</h3>
 
           {/* Plan label and limits come from frontend tier config (profile.tier).
               Counters come from backend (usage.current.*). */}
@@ -385,109 +320,22 @@ const NexusDashboard = ({ user, profile }) => {
             <p className="subtle" style={{ fontSize: "0.85rem" }}>Loading usage…</p>
           )}
 
-          {/* Upgrade link — separated at bottom */}
-          <div
-            style={{
-              marginTop: 20,
-              paddingTop: 14,
-              borderTop: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
-            <button
-              onClick={() => setShowUpgrade(true)}
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                color: "rgba(255,255,255,0.35)",
-                transition: "color 0.15s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#7dd3fc")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-            >
-              Upgrade Plan →
-            </button>
-          </div>
         </div>
 
         {/* BOTTOM LEFT — NEWS */}
         <div className="panel">
           <h3>NEWS</h3>
-          {announcements === null ? (
-            // Fallback: fetch not yet complete or failed
-            <p className="subtle">
-              NEXIS is evolving into a project-based workspace for collecting,
-              converting, and refining raw information.
-            </p>
-          ) : announcements.news.length === 0 ? (
-            <p className="subtle">No news at this time.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {announcements.news.map((item) => (
-                <div key={item.id}>
-                  {item.tag && (
-                    <span
-                      style={{
-                        display: "inline-block",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "var(--arc-accent, #38bdf8)",
-                        marginBottom: 4,
-                      }}
-                    >
-                      [{item.tag}]
-                    </span>
-                  )}
-                  {item.title && (
-                    <p style={{ fontWeight: 600, margin: "0 0 4px" }}>{item.title}</p>
-                  )}
-                  <p className="subtle" style={{ margin: 0 }}>{item.body}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="subtle">
+            NEXIS is evolving into a project-based workspace for collecting,
+            converting, and refining raw information.
+          </p>
         </div>
 
         {/* BOTTOM RIGHT — UPDATES */}
         <div className="panel">
           <h3>UPDATES</h3>
-          {announcements === null ? (
-            // Fallback: fetch not yet complete or failed
-            <>
-              <p className="subtle">Latest: Project workspace implemented.</p>
-              <p className="subtle">Coming next: output history per project.</p>
-            </>
-          ) : announcements.updates.length === 0 ? (
-            <p className="subtle">No updates at this time.</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {announcements.updates.map((item) => (
-                <div key={item.id}>
-                  {item.tag && (
-                    <span
-                      style={{
-                        display: "inline-block",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "var(--arc-accent, #38bdf8)",
-                        marginBottom: 4,
-                      }}
-                    >
-                      [{item.tag}]
-                    </span>
-                  )}
-                  {item.title && (
-                    <p style={{ fontWeight: 600, margin: "0 0 4px" }}>{item.title}</p>
-                  )}
-                  <p className="subtle" style={{ margin: 0 }}>{item.body}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <p className="subtle">Latest: Project workspace implemented.</p>
+          <p className="subtle">Coming next: output history per project.</p>
         </div>
       </div>
 
@@ -529,17 +377,6 @@ const NexusDashboard = ({ user, profile }) => {
             </div>
           </div>
         </div>
-      )}
-
-      {showViewPlans && (
-        <ViewPlansOverlay
-          onClose={() => setShowViewPlans(false)}
-          currentTier={profileTier}
-        />
-      )}
-
-      {showUpgrade && (
-        <UpgradeOverlay onClose={() => setShowUpgrade(false)} />
       )}
 
       {/* DELETE CONFIRMATION MODAL */}

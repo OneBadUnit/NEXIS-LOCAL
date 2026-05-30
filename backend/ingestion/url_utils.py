@@ -284,7 +284,7 @@ def safe_get(url: str):
 async def extract_audio_with_ytdlp(url: str) -> str:
     from app.core.config import settings
     if not settings.YOUTUBE_INGESTION_ENABLED:
-        return "YouTube/video ingestion is not available in hosted beta mode."
+        return "YouTube ingestion is disabled. Set YOUTUBE_INGESTION_ENABLED=True in .env to enable."
 
     print(">>> YT: Falling back to yt-dlp audio extraction")
 
@@ -377,12 +377,12 @@ def _fetch_yt_transcript_with_timestamps(url: str):
         if not video_id:
             return None, ""
 
-        segments = YouTubeTranscriptApi.get_transcript(
-            video_id, languages=["en", "en-US", "en-GB"]
-        )
+        api = YouTubeTranscriptApi()
+        transcript = api.fetch(video_id)
+        segments = list(transcript)
 
         # Full transcript text
-        text = " ".join(seg.get("text", "").strip() for seg in segments).strip()
+        text = " ".join(seg.text.strip() for seg in segments).strip()
         if not text:
             return None, ""
 
@@ -390,9 +390,9 @@ def _fetch_yt_transcript_with_timestamps(url: str):
         step = max(1, len(segments) // 10)
         ts_lines = []
         for seg in segments[::step]:
-            t = int(seg.get("start", 0))
+            t = int(getattr(seg, 'start', 0))
             mins, secs = divmod(t, 60)
-            excerpt = seg.get("text", "").strip()[:70]
+            excerpt = getattr(seg, 'text', '').strip()[:70]
             ts_lines.append(f"[{mins:02d}:{secs:02d}] {excerpt}")
 
         return text, "\n".join(ts_lines)
@@ -424,7 +424,7 @@ async def process_url_or_youtube(url: str) -> dict:
         print(">>> YT BRANCH HIT")
 
         if not settings.YOUTUBE_INGESTION_ENABLED:
-            return _make("YouTube/video ingestion is not available in hosted beta mode.", "youtube")
+            return _make("YouTube ingestion is disabled. Set YOUTUBE_INGESTION_ENABLED=True in .env to enable.", "youtube")
 
         # ── Step 1: metadata ─────────────────────────────────
         title = _fetch_yt_title(url)
@@ -491,7 +491,7 @@ async def process_url_or_youtube(url: str) -> dict:
             print(">>> MEDIA BRANCH HIT:", ext)
 
             if not settings.WHISPER_ENABLED:
-                return _make("Audio/video transcription is not available in hosted beta mode.", "media")
+                return _make("Audio/video transcription is disabled. Set WHISPER_ENABLED=True in .env to enable.", "media")
 
             try:
                 resp = safe_get(url)

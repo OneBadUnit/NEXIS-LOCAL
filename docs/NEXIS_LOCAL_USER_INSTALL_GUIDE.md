@@ -2,7 +2,7 @@
 
 **For:** Anyone setting up NEXIS-LOCAL on a Windows PC  
 **Assumes:** No programming experience required  
-**Last verified:** 2026-05-29
+**Last verified:** 2026-05-29 (Documentation Sync)
 
 ---
 
@@ -245,26 +245,20 @@ You do not need to interact with it. Just keep it running.
 With Ollama installed, a model downloaded, and NEXIS Companion running, you
 are ready to open NEXIS.
 
-### Starting the backend
+### Starting the backend and frontend
 
-NEXIS-LOCAL has a backend (the part that does the actual work) and a frontend
-(the visual interface in your browser). Both need to be running.
+NEXIS-LOCAL includes a startup file that opens both the backend and frontend for you.
 
-**Starting the backend:**
+**Using NEXIS-LOCAL.bat (recommended):**
 
 1. Open the NEXIS-LOCAL folder you downloaded in Step 3
-2. Open the `backend` folder
-3. Look for a file called `start.bat` or follow the setup instructions in
-   [NEXIS_LOCAL_RECOVERY_AND_SETUP.md](NEXIS_LOCAL_RECOVERY_AND_SETUP.md)
-   if you have developer access
+2. Double-click the file named `NEXIS-LOCAL.bat`
+3. Two windows open — one for the backend (port 8000) and one for the frontend (port 3000)
+4. Wait for both to show a ready message
 
-The backend runs on **http://localhost:8000**. You should see a message saying
-`Application startup complete.`
+If you need manual setup instructions, see [NEXIS_LOCAL_RECOVERY_AND_SETUP.md](NEXIS_LOCAL_RECOVERY_AND_SETUP.md).
 
-### Starting the frontend
-
-1. Open the `frontend` folder
-2. The frontend runs on **http://localhost:3000**
+The backend runs on **http://localhost:8000**. The frontend runs on **http://localhost:3000**.
 
 ### Opening NEXIS
 
@@ -274,15 +268,12 @@ Open your browser (Chrome, Edge, or Firefox) and go to:
 http://localhost:3000
 ```
 
-You should see the NEXIS interface with a logo animation, then the main workspace.
+You should see the NEXIS workspace open directly.
 
 ### What you see on first open
 
-- A logo animation plays for a few seconds
-- A welcome screen may appear — click **Skip** or **Start** to continue
-- You will see the main NEXIS workspace
-
-**No sign-in required.** NEXIS-LOCAL opens directly to the workspace. There is no account creation step and no login screen.
+- The NEXIS workspace opens directly
+- **No sign-in required.** NEXIS-LOCAL opens directly to the workspace. There is no account creation step and no login screen.
 
 ---
 
