@@ -6,6 +6,7 @@
 
 import os
 import json
+import shutil
 import subprocess
 import tempfile
 
@@ -30,7 +31,9 @@ router = APIRouter(tags=["nexis-ingestion"])
 # Uses ffprobe (bundled with ffmpeg) to read duration from a
 # file on disk.  Returns None if duration cannot be determined.
 # ------------------------------------------------------------
-_FFPROBE = r"C:\ffmpeg\bin\ffprobe.exe"
+# Resolve ffprobe from PATH; os.path.exists("ffprobe") returns False when
+# not found, so the non-fatal early-return below still triggers correctly.
+_FFPROBE = shutil.which("ffprobe") or "ffprobe"
 
 _AUDIO_EXT = {".mp3", ".wav", ".m4a", ".ogg"}
 _VIDEO_EXT = {".mp4", ".mov", ".mkv", ".avi"}

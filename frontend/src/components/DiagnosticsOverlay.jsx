@@ -4,7 +4,7 @@
 // Version: 002 (OCR diagnostics section)
 // ============================================================
 // User-controlled diagnostic report for troubleshooting
-// NEXIS Companion / Local AI issues.
+// Local AI / Ollama issues.
 //
 // PRIVACY GUARANTEES (enforced in code):
 //   - No prompts, file contents, auth tokens, API keys,
@@ -22,6 +22,7 @@ import {
   getDiagnostics,
   getModelConfigWithMigration,
   BRIDGE_DEFAULT_URL,
+  OLLAMA_DIRECT_URL,
 } from "../lib/bridge.js";
 import { systemCheck } from "../api/system.jsx";
 
@@ -67,7 +68,7 @@ async function buildReport(advanced) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
       try {
-        const res = await fetch("http://localhost:11434/api/tags", { signal: controller.signal });
+        const res = await fetch(`${OLLAMA_DIRECT_URL}/api/tags`, { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           directOllamaReachable = true;
@@ -346,7 +347,7 @@ export default function DiagnosticsOverlay({ onClose }) {
           Local AI diagnostic report
         </p>
         <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.52)", lineHeight: 1.6 }}>
-          NEXIS can generate a diagnostic report to help troubleshoot NEXIS Companion
+          NEXIS can generate a diagnostic report to help troubleshoot local AI
           or Ollama issues. The report is shown to you before you copy it.
           NEXIS will not upload it automatically ? you decide whether to copy or share it.
         </p>

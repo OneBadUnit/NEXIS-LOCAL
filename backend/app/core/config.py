@@ -45,9 +45,9 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # TESSERACT OCR PATH
     # Override via NEXIS_TESSERACT_PATH env var.
-    # Falls back to the bundled install for NEXIS-LOCAL.
+    # Empty default → ocr_utils.py resolves via shutil.which("tesseract").
     # --------------------------------------------------------
-    NEXIS_TESSERACT_PATH: str = r"D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe"
+    NEXIS_TESSERACT_PATH: str = ""
 
     # --------------------------------------------------------
     # LOCAL VISION MODEL (Ollama)

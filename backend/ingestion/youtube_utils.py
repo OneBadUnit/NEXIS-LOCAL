@@ -6,6 +6,7 @@
 # ============================================================
 
 import os
+import shutil
 import tempfile
 import subprocess
 
@@ -14,8 +15,9 @@ from .audio_utils import transcribe_audio_file
 
 # ------------------------------------------------------------
 # CONFIG
+# Resolve yt-dlp from PATH at startup so any install location works.
 # ------------------------------------------------------------
-YT_DLP_PATH = r"C:\Users\OneBadUnit\AppData\Local\Programs\Python\Python311\Scripts\yt-dlp.exe"
+YT_DLP_PATH = shutil.which("yt-dlp") or "yt-dlp"
 
 
 # ------------------------------------------------------------

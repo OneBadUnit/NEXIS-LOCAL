@@ -1,10 +1,10 @@
 // ============================================================
 // ARC-NEXUS - API CLIENT
 // File: src/api/api.jsx
-// Version: 004 (local-first via NEXIS Local Companion bridge)
+// Version: 005 (local-first, Ollama direct)
 // ============================================================
 //
-// LOCAL MODE: generation goes browser → nexis-bridge (port 8765)
+// LOCAL MODE: generation goes browser → Ollama direct (port 11434)
 //             → Ollama (port 11434). The browser NEVER calls
 //             localhost:11434 directly — CORS blocks it.
 // PROVIDER/HOSTED MODE: uses the Render backend (API_BASE).
@@ -30,16 +30,15 @@ import {
 } from "../lib/bridge.js";
 
 // Local dev detection — compares hostname only (not full URL).
-// "https://nexis-l8oc.onrender.com" is a full URL string, not a hostname,
-// so it was previously always false and never matched in a browser.
-// Fixed: compare against the bare hostname "nexis-l8oc.onrender.com".
+// Both "localhost" and "127.0.0.1" are treated as local dev — navigating
+// to 127.0.0.1:3000 would otherwise produce API_BASE = null and silent failures.
 const _isLocalDev =
   window.location.hostname === "localhost" ||
-  window.location.hostname === "nexis-l8oc.onrender.com";
+  window.location.hostname === "127.0.0.1";
 
 // Local dev fallback — only applies when running on localhost.
 // In production (Vercel) REACT_APP_API_BASE_URL must be set explicitly.
-const _localDevFallback = _isLocalDev ? "https://nexis-l8oc.onrender.com" : null;
+const _localDevFallback = _isLocalDev ? "http://localhost:8000" : null;
 
 export const API_BASE = process.env.REACT_APP_API_BASE_URL || _localDevFallback;
 

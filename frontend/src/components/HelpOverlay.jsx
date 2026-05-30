@@ -449,7 +449,7 @@ export default function HelpOverlay({ onClose }) {
 
               <StateRow
                 state="Checking your local AI..."
-                meaning="NEXIS is detecting the Companion, Ollama, and available models."
+                meaning="NEXIS is detecting Ollama and available models."
                 action="Wait - this takes a few seconds."
               />
               <StateRow
@@ -494,8 +494,8 @@ export default function HelpOverlay({ onClose }) {
               />
               <StateRow
                 state="Models could not be checked right now."
-                meaning="The Companion is not running, so model detection via Companion is unavailable."
-                action='Start NEXIS Companion and click "Recheck". AI generation may still work if Ollama is running.'
+                meaning="Could not connect to Ollama. Companion management tools may also be unavailable."
+                action='Make sure Ollama is running, then click "Recheck". AI generation works if Ollama is running.'
               />
               <StateRow
                 state="Local AI is ready."
@@ -626,7 +626,7 @@ export default function HelpOverlay({ onClose }) {
                 Try this sequence:
               </p>
               <ol style={{ margin: "0 0 8px", paddingLeft: 20, lineHeight: "1.9", fontSize: "0.85rem" }}>
-                <li>Close the NEXIS Companion window and reopen it.</li>
+                <li>Restart Ollama: open a terminal and run <strong>ollama serve</strong>, or use NEXIS Companion if installed.</li>
                 <li>In AI Model Settings, click <strong>Recheck</strong>.</li>
                 <li>If Ollama shows as stuck, click <strong>Restart Ollama</strong>.</li>
                 <li>If the problem persists, restart your computer and try again.</li>
@@ -749,7 +749,7 @@ curl http://host.docker.internal:11434`}</pre>
             />
             <FAQ
               q="Do I need to use the terminal to set up local AI?"
-              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically using the NEXIS Companion (recommended for first-time setup). Experienced users can also configure Ollama manually."
+              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically. NEXIS Companion is recommended for first-time setup and makes this fully automated. Experienced users can also configure Ollama manually without the Companion."
             />
             <FAQ
               q="Can I use local AI without an internet connection?"

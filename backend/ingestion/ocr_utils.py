@@ -14,24 +14,25 @@
 import os
 import io
 import asyncio
+import shutil
 
 
 # ------------------------------------------------------------
 # TESSERACT PATH RESOLUTION
-# Priority: NEXIS_TESSERACT_PATH (env/config) → known local install
+# Priority: NEXIS_TESSERACT_PATH (env/config) → PATH resolution
 # ------------------------------------------------------------
-_FALLBACK_TESSERACT = r"D:\ARC NEXUS LLC\NEXIS\Tesseract-OCR\tesseract.exe"
-
 
 def resolve_tesseract_path() -> str:
     """Return the effective Tesseract executable path.
 
-    Reads NEXIS_TESSERACT_PATH from settings; falls back to the
-    known NEXIS-LOCAL install location if the setting is empty.
+    Reads NEXIS_TESSERACT_PATH from settings; falls back to
+    shutil.which("tesseract") so any standard Tesseract install works.
     """
     from app.core.config import settings
     configured = (settings.NEXIS_TESSERACT_PATH or "").strip()
-    return configured if configured else _FALLBACK_TESSERACT
+    if configured:
+        return configured
+    return shutil.which("tesseract") or "tesseract"
 
 
 def get_ocr_diagnostics() -> dict:

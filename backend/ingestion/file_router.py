@@ -15,8 +15,9 @@ from fastapi import UploadFile
 
 # ------------------------------------------------------------
 # TEMP DIRECTORY (SAFE)
+# Relative to backend/tmp/ — works on any machine.
 # ------------------------------------------------------------
-SAFE_TMP = r"D:\NEXIS\tmp"
+SAFE_TMP = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))
 os.makedirs(SAFE_TMP, exist_ok=True)
 
 

@@ -1,24 +1,24 @@
 // ============================================================
 // ARC-NEXUS - MODEL CONFIG
 // File: src/components/ModelConfig/ModelConfig.jsx
-// Version: 004 (appliance-style: Companion -> Tested Models -> Edit Model)
+// Version: 005 (Ollama-first; Companion is optional management tool)
 //
 // Design principles:
 //   - MODEL section answers "Is my Local AI system ready?" at a glance
-//   - NEXIS Companion is the primary control (Running / Start / Configure)
-//   - Tested Models is second
-//   - Edit Model (full AI settings modal) is last
+//   - Ollama is the required service; generation goes directly browser → Ollama
+//   - NEXIS Companion is optional (lifecycle management, model downloads, diagnostics)
+//   - Tested Models and Edit Model are primary controls in the workspace row
 //   - Normal users never see "localhost", "port", or terminal commands
 //   - Terminal access buried under Advanced > Troubleshooting only
 //
-// Companion status states (companionStatus):
+// Companion status states (companionStatus) — used by optional CompanionOverlay:
 //   "checking"   ?? currently pinging the bridge
 //   "running"    ?? bridge reachable (green)
 //   "start"      ?? saved exe path exists but bridge not reachable (yellow)
 //   "configure"  ?? no saved exe path and bridge not reachable (red)
 //
 // AI uiState (inside Edit Model modal):
-//   COMPANION_NOT_RUNNING, CHECKING, OLLAMA_NOT_INSTALLED,
+//   COMPANION_NOT_RUNNING (= Ollama unreachable), CHECKING, OLLAMA_NOT_INSTALLED,
 //   OLLAMA_NOT_RUNNING, OLLAMA_STARTING, OLLAMA_HUNG,
 //   NO_MODELS, PULLING_MODEL, PULL_FAILED, MODEL_READY,
 //   CHECK_FAILED_TEMP
@@ -37,6 +37,7 @@ import {
   subscribePullProgress,
   openTerminal,
   BRIDGE_DEFAULT_URL,
+  OLLAMA_DIRECT_URL,
   RECOMMENDED_MODEL,
   getCompanionDownload,
   isLegacyOllamaEndpoint,
@@ -273,12 +274,12 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontWeight: 700, fontSize: "0.88rem", margin: "0 0 6px" }}>What is the NEXIS Companion?</p>
           <p style={{ margin: "0 0 10px", fontSize: "0.83rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-            NEXIS Companion is a small program that runs on your computer and lets NEXIS
-            communicate with your local AI. Without it, NEXIS cannot use any local AI model.
+            NEXIS Companion is an optional management tool that handles Ollama startup, model
+            downloads, and diagnostics. AI generation works directly through Ollama without it.
           </p>
           <p style={{ margin: 0, fontSize: "0.83rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
-            You download it once, keep it open while using NEXIS, and it works silently in
-            the background. No internet connection is needed once a model is downloaded.
+            You download it once and keep it open while using NEXIS for automatic Ollama management.
+            Experienced users can run Ollama manually and skip the Companion entirely.
           </p>
         </div>
 
@@ -431,39 +432,6 @@ function CompanionOverlay({ onClose, companionStatus, savedPath, onPathSaved, on
   );
 }
 
-// ???? Companion status pill ??????????????????????????????????????????????????????????????????????????????????????????????????
-
-function CompanionPill({ status, onClick }) {
-  const colors = {
-    running:   { bg: "rgba(34,197,94,0.12)", border: "rgba(34,197,94,0.35)", dot: "#22c55e",  text: "Running" },
-    start:     { bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.35)", dot: "#f59e0b", text: "Companion Setup" },
-    configure: { bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.35)",  dot: "rgba(239,68,68,0.8)", text: "Configure" },
-    checking:  { bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", dot: "rgba(255,255,255,0.25)", text: "Checking..." },
-  };
-  const c = colors[status] || colors.checking;
-
-  return (
-    <button
-      onClick={onClick}
-      disabled={status === "checking"}
-      style={{
-        all: "unset",
-        display: "inline-flex", alignItems: "center", gap: 6,
-        padding: "3px 10px", borderRadius: 20,
-        background: c.bg, border: `1px solid ${c.border}`,
-        cursor: status === "checking" ? "default" : "pointer",
-        fontSize: "0.78rem", fontWeight: 600,
-        color: c.dot,
-        transition: "opacity 0.15s",
-        userSelect: "none",
-      }}
-    >
-      <span style={{ fontSize: "0.6rem" }}>&#x25CF;</span>
-      {c.text}
-    </button>
-  );
-}
-
 // ???? Pull progress bar ??????????????????????????????????????????????????????????????????????????????????????????????????????????
 
 function PullProgressBar({ percent, status }) {
@@ -512,7 +480,6 @@ function SystemBadge({ diag }) {
 // ???? Main component ????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 
 export default function ModelConfig({ config, onConfigChange }) {
-  const companionDl = getCompanionDownload();
 
   // ???? Companion status (workspace-level) ??????????????????????????????????????????????????????????????????????
   const [companionStatus, setCompanionStatus] = useState("checking"); // checking|running|start|configure
@@ -558,56 +525,6 @@ export default function ModelConfig({ config, onConfigChange }) {
   // Check on mount
   useEffect(() => { checkCompanionStatus(); }, [checkCompanionStatus]);
 
-  // ???? Companion pill click ????????????????????????????????????????????????????????????????????????????????????????????????????
-  const handleCompanionPillClick = () => {
-    // "start" = saved path exists but bridge not reachable.
-    // In Electron we can launch the executable directly.
-    // In a plain browser we cannot spawn processes, so fall through to the overlay.
-    if (companionStatus === "start" && savedCompanionPath) {
-      const isElectron = !!(
-        typeof window !== "undefined" &&
-        window.process &&
-        window.process.versions &&
-        window.process.versions.electron
-      );
-
-      if (isElectron) {
-        try {
-          const fs    = window.require("fs");
-          const child = window.require("child_process");
-
-          if (!fs.existsSync(savedCompanionPath)) {
-            // Saved path no longer valid — reset and open setup
-            clearCompanionPath();
-            setSavedCompanionPath("");
-            checkCompanionStatus();
-            setCompanionOverlayOpen(true);
-            return;
-          }
-
-          // Launch the companion detached so it outlives the renderer
-          const proc = child.spawn(savedCompanionPath, [], {
-            detached: true,
-            stdio: "ignore",
-          });
-          proc.unref();
-
-          // Re-check status after a short delay to update the pill automatically
-          setTimeout(() => checkCompanionStatus(), 3000);
-          return; // do NOT open the overlay — companion is being launched
-        } catch (err) {
-          // Launch attempt failed — fall through to overlay so user can troubleshoot
-          console.error("[Companion] launch failed:", err);
-          setCompanionOverlayOpen(true);
-          return;
-        }
-      }
-      // Browser: cannot launch; open overlay (existing behaviour)
-    }
-
-    setCompanionOverlayOpen(true);
-  };
-
   // ???? Edit Model: open modal ??????????????????????????????????????????????????????????????????????????????????????????????????
 
   const handleOpen = async () => {
@@ -644,14 +561,41 @@ export default function ModelConfig({ config, onConfigChange }) {
     const diag = await getDiagnostics(base);
 
     if (!diag) {
-      if (config?.type === "local" && config?.model) {
+      // Companion not reachable — try direct Ollama (Phase A: generation works without Companion)
+      let directModels = [];
+      let ollamaDirectOk = false;
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 3000);
+        try {
+          const res = await fetch(`${OLLAMA_DIRECT_URL}/api/tags`, { signal: ctrl.signal });
+          if (res.ok) {
+            const data = await res.json();
+            ollamaDirectOk = true;
+            directModels = (data.models || []).map(m => (typeof m === "string" ? m : m.name)).filter(Boolean);
+          }
+        } finally {
+          clearTimeout(tid);
+        }
+      } catch { /* Ollama not reachable directly */ }
+
+      if (ollamaDirectOk && directModels.length > 0) {
+        setAvailableModels(directModels);
+        let chosen = currentModel;
+        if (chosen && !directModels.includes(chosen)) chosen = directModels[0];
+        if (!chosen) chosen = directModels[0];
+        setSelectedModel(chosen);
+        setUiState("MODEL_READY");
+        setStatusMsg("");
+        checkCompanionStatus();
+        return;
+      } else if (config?.type === "local" && config?.model) {
         setUiState("CHECK_FAILED_TEMP");
-        setStatusMsg("Could not reach the NEXIS Companion right now.");
+        setStatusMsg("Could not connect to Ollama. Make sure Ollama is running.");
       } else {
         setUiState("COMPANION_NOT_RUNNING");
-        setStatusMsg("Start the NEXIS Companion to use local AI.");
+        setStatusMsg("Start Ollama to use local AI.");
       }
-      // Also refresh companion pill status
       checkCompanionStatus();
       return;
     }
@@ -795,21 +739,12 @@ export default function ModelConfig({ config, onConfigChange }) {
     <>
       {/* ??????????????????????????????????????????????????????????????????????????????????????????????????????
           WORKSPACE STATUS ROW
-          Priority: 1. NEXIS Companion  2. Tested Models  3. Edit Model
+          Ollama is the required service. Companion is optional (accessible via Advanced).
+          Priority: 1. Tested Models  2. Edit Model
           ?????????????????????????????????????????????????????????????????????????????????????????????????????? */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 
-        {/* 1 ?? NEXIS Companion */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
-            Companion
-          </span>
-          <CompanionPill status={companionStatus} onClick={handleCompanionPillClick} />
-        </div>
-
-        <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "0.9rem" }}>|</span>
-
-        {/* 2 ?? Tested Models */}
+        {/* 1 ?? Tested Models */}
         <button
           className="btn"
           style={{ padding: "3px 12px", fontSize: "0.8rem" }}
@@ -818,7 +753,7 @@ export default function ModelConfig({ config, onConfigChange }) {
           Tested Models
         </button>
 
-        {/* 3 ?? Edit Model (with optional model name) */}
+        {/* 2 ?? Edit Model (with optional model name) */}
         <button
           className="btn"
           style={{ padding: "3px 12px", fontSize: "0.8rem" }}
@@ -905,28 +840,32 @@ export default function ModelConfig({ config, onConfigChange }) {
                 {uiState === "COMPANION_NOT_RUNNING" && (
                   <div>
                     <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.85)", margin: "0 0 8px", fontWeight: 500 }}>
-                      NEXIS Companion is not running.
+                      Cannot connect to Ollama.
                     </p>
                     <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.5)", margin: "0 0 16px" }}>
-                      The NEXIS Companion is a small program that enables local AI on your computer.
-                      Download and run it once, then come back here.
+                      Start Ollama on your computer to use local AI. If Ollama is not installed,
+                      download it from ollama.com. NEXIS Companion can manage Ollama for you automatically,
+                      but is not required if you prefer to run Ollama manually.
                     </p>
                     <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-                      <button
+                      <a
+                        href="https://ollama.com/download"
+                        target="_blank"
+                        rel="noreferrer"
                         className="btn primary"
-                        style={{ padding: "6px 14px", fontSize: "0.85rem" }}
-                        onClick={() => { setModalOpen(false); setCompanionOverlayOpen(true); }}
+                        style={{ textDecoration: "none", padding: "6px 14px", fontSize: "0.85rem" }}
                       >
-                        Open Companion Setup
-                      </button>
+                        Install Ollama
+                      </a>
                       <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
                         onClick={() => runDetection(localEndpoint, selectedModel)}>
                         Recheck
                       </button>
+                      <button className="btn" style={{ padding: "6px 14px", fontSize: "0.85rem" }}
+                        onClick={() => { setModalOpen(false); setCompanionOverlayOpen(true); }}>
+                        Companion Tools
+                      </button>
                     </div>
-                    <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-                      {companionDl.supported ? `Detected platform: ${companionDl.platform}` : "Unsupported platform"}
-                    </p>
                   </div>
                 )}
 
@@ -1094,7 +1033,7 @@ export default function ModelConfig({ config, onConfigChange }) {
                   {showAdvanced && (
                     <div style={{ marginTop: 10 }}>
                       <label style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: 5 }}>
-                        NEXIS Companion URL
+                        Companion endpoint URL (optional)
                       </label>
                       <input
                         value={localEndpoint}
@@ -1108,12 +1047,18 @@ export default function ModelConfig({ config, onConfigChange }) {
                         style={{ marginBottom: 6, fontSize: "0.82rem" }}
                       />
                       <p className="subtle" style={{ fontSize: "0.75rem", margin: "0 0 10px" }}>
-                        Default: {BRIDGE_DEFAULT_URL}. Change only if you run the companion on a custom port.
+                        Default: {BRIDGE_DEFAULT_URL}. Only needed if you run NEXIS Companion on a custom port.
                       </p>
-                      <button className="btn" style={{ padding: "4px 12px", fontSize: "0.8rem" }}
-                        onClick={() => runDetection(localEndpoint, selectedModel)} disabled={isBusy}>
-                        Recheck with this URL
-                      </button>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button className="btn" style={{ padding: "4px 12px", fontSize: "0.8rem" }}
+                          onClick={() => runDetection(localEndpoint, selectedModel)} disabled={isBusy}>
+                          Recheck with this URL
+                        </button>
+                        <button className="btn" style={{ padding: "4px 12px", fontSize: "0.8rem" }}
+                          onClick={() => { setModalOpen(false); setCompanionOverlayOpen(true); }}>
+                          Companion Tools
+                        </button>
+                      </div>
 
                       <div style={{ marginTop: 14 }}>
                         <button

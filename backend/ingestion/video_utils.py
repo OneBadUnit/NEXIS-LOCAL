@@ -9,6 +9,7 @@ print(">>> VIDEO_UTILS LOADED FROM ingestion/video_utils.py")
 
 import asyncio
 import os
+import shutil
 import tempfile
 
 from .audio_utils import transcribe_audio_file
@@ -16,10 +17,13 @@ from .audio_utils import transcribe_audio_file
 
 # ------------------------------------------------------------
 # CONFIG
+# Resolve ffmpeg from PATH; fall back to bare name so the OS error
+# message names the missing tool rather than a stale absolute path.
+# SAFE_TMP is relative to backend/tmp/ so it works on any machine.
 # ------------------------------------------------------------
-FFMPEG_PATH = r"C:\ffmpeg\bin\ffmpeg.exe"
+FFMPEG_PATH = shutil.which("ffmpeg") or "ffmpeg"
 
-SAFE_TMP = r"D:\NEXIS\tmp"
+SAFE_TMP = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))
 os.makedirs(SAFE_TMP, exist_ok=True)
 
 
