@@ -45,7 +45,9 @@ class Settings(BaseSettings):
     # --------------------------------------------------------
     # TESSERACT OCR PATH
     # Override via NEXIS_TESSERACT_PATH env var.
-    # Empty default → ocr_utils.py resolves via shutil.which("tesseract").
+    # Recommended Windows setting:
+    # NEXIS_TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe
+    # If empty, ocr_utils.py resolves via shutil.which("tesseract")
     # --------------------------------------------------------
     NEXIS_TESSERACT_PATH: str = ""
 

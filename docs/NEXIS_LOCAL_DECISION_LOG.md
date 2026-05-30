@@ -489,7 +489,7 @@ Category:           Architecture
 
 **Implementation:**
 - `vision.py`: *"Version: 007 (Dual-artifact: raw_content=ocr_text, brief=image analysis)"*
-- If Tesseract missing: `raw_content` = `"[OCR UNAVAILABLE]"` message, no crash
+- If Tesseract missing or fails: `raw_content` = `""` (empty — OCR status note in brief only), no crash
 - If vision model absent: `brief` contains `"unavailable"` note, no crash
 
 **Related Files:**

@@ -520,7 +520,7 @@ No session check, no loading state, no sign-in screen. App renders immediately.
 | Flag | Default in `config.py` | Current in `.env` | Notes |
 |---|---|---|---|
 | `WHISPER_ENABLED` | `False` | `True` | Lazy-loaded; safe at startup |
-| `OCR_ENABLED` | `False` | `True` | Requires Tesseract CLI on PATH; fails gracefully if absent |
+| `OCR_ENABLED` | `False` | `True` | Requires Tesseract installed. Set `NEXIS_TESSERACT_PATH` in `backend/.env` to the full binary path if Tesseract is not on system PATH; fails gracefully if Tesseract cannot be located |
 | `VISION_ENABLED` | `False` | `True` | Requires `llava:13b` pulled; `llava:13b` confirmed present |
 | `YOUTUBE_INGESTION_ENABLED` | `False` | `True` | Requires yt-dlp on PATH; yt-dlp confirmed present |
 | `NEXIS_HOSTED_MODE` | `False` | `False` | Must stay `False` for local builds |
@@ -546,5 +546,5 @@ All previously hardcoded machine-specific binary paths have been replaced with p
 | `yt-dlp` | `shutil.which("yt-dlp") or "yt-dlp"` |
 | `ffmpeg` | `shutil.which("ffmpeg") or "ffmpeg"` |
 | `ffprobe` | `shutil.which("ffprobe") or "ffprobe"` |
-| `tesseract` | `shutil.which("tesseract") or "tesseract"` (via `ocr_utils.py`) |
+| `tesseract` | `NEXIS_TESSERACT_PATH` (env) → `shutil.which("tesseract")` → literal `"tesseract"` (via `ocr_utils.resolve_tesseract_path()`) |
 | `SAFE_TMP` | `os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tmp"))` |

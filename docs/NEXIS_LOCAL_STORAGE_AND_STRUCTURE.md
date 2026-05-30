@@ -698,7 +698,7 @@ Two-artifact output:
 - `brief`: visual description from Ollama vision model (AI analysis layer)
 
 Graceful fallbacks:
-- Tesseract missing → `[OCR UNAVAILABLE]` message, does not crash
+- Tesseract missing or fails → `raw_content` = `""` (empty); OCR status note surfaced in `brief` only, does not crash
 - Vision model missing or Ollama offline → `"unavailable"` note, does not crash
 - Hosted mode (`NEXIS_HOSTED_MODE=True`) → HTTP 503 blocks all image analysis
 

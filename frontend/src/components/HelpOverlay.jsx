@@ -707,9 +707,12 @@ curl http://host.docker.internal:11434`}</pre>
 
             <TroubleBlock title="NEXIS can't reach local Ollama backend">
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                If NEXIS can't reach your local AI backend, run the following to verify reachability and path issues:
+                Test whether Ollama is reachable from the command line. Open a terminal and run:
               </p>
-              <pre style={codeStyle}>npx @nexis/cli-diagnostic --check localhost</pre>
+              <pre style={codeStyle}>curl http://127.0.0.1:11434/api/tags</pre>
+              <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
+                A JSON response means Ollama is running and reachable. If the command fails, start Ollama and try again.
+              </p>
             </TroubleBlock>
           </div>
 

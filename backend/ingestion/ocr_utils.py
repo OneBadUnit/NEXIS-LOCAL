@@ -109,12 +109,11 @@ async def extract_text_from_image(file_bytes: bytes) -> str:
             import pytesseract
             from PIL import Image
 
-            if not os.path.isfile(tess_path):
-                return (
-                    f"[OCR UNAVAILABLE] Tesseract not found at: {tess_path}\n"
-                    f"Set NEXIS_TESSERACT_PATH in your .env to point to tesseract.exe."
-                )
-
+            # Always set the resolved path, matching pdf_utils.py behaviour.
+            # resolve_tesseract_path() returns NEXIS_TESSERACT_PATH when
+            # configured, shutil.which("tesseract") when on PATH, or the
+            # literal "tesseract" as a last resort.  Setting it unconditionally
+            # ensures IMAGE and PDF/FILE ingestion use the exact same executable.
             pytesseract.pytesseract.tesseract_cmd = tess_path
 
             pil_img = Image.open(io.BytesIO(file_bytes))
@@ -124,7 +123,10 @@ async def extract_text_from_image(file_bytes: bytes) -> str:
             return text if text else "No text detected in image."
 
         except Exception as e:
-            return f"[OCR ERROR] {str(e)}"
+            err = str(e)
+            # Return a clean sentinel so callers can detect failure without
+            # storing the exception message as document content.
+            return f"[OCR ERROR] {err}"
 
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _work)
