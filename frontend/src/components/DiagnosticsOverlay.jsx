@@ -19,9 +19,7 @@
 import React, { useState } from "react";
 import PageOverlay from "./PageOverlay";
 import {
-  getDiagnostics,
   getModelConfigWithMigration,
-  BRIDGE_DEFAULT_URL,
   OLLAMA_DIRECT_URL,
 } from "../lib/bridge.js";
 import { systemCheck } from "../api/system.jsx";
@@ -41,48 +39,31 @@ function modeLabel(cfg) {
 }
 
 async function buildReport(advanced) {
-  // ?? 1. Fetch companion diagnostics ??????????????????????
-  // getDiagnostics never throws ? returns null when companion unreachable.
+  // ── 1. Fetch Ollama status directly ──────────────────────
+  // NEXIS communicates directly with Ollama (browser → Ollama).
+  // No bridge/companion required.
   const modelConfig = getModelConfigWithMigration();
-  const bridgeUrl = (modelConfig?.endpoint || BRIDGE_DEFAULT_URL).replace(/\/$/, "");
 
-  let diag = null;
-  let companionReachable = false;
-  try {
-    diag = await getDiagnostics(bridgeUrl);
-    companionReachable = diag !== null;
-  } catch {
-    // Defensive — getDiagnostics should never throw, but guard anyway.
-    companionReachable = false;
-    diag = null;
-  }
-
-  // ── 1b. Direct Ollama check (fallback when Companion is not running) ──────
-  // Phase A (2026-05-29): generation goes directly browser → Ollama.
-  // If Companion is unreachable, attempt GET /api/tags on Ollama directly
-  // so Local AI Ready can reflect actual generation capability.
   let directOllamaReachable = false;
   let directModels = [];
-  if (!companionReachable) {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      try {
-        const res = await fetch(`${OLLAMA_DIRECT_URL}/api/tags`, { signal: controller.signal });
-        if (res.ok) {
-          const data = await res.json();
-          directOllamaReachable = true;
-          directModels = (data.models || []).map(m => (typeof m === "string" ? m : m.name)).filter(Boolean);
-        }
-      } finally {
-        clearTimeout(timeoutId);
+      const res = await fetch(`${OLLAMA_DIRECT_URL}/api/tags`, { signal: controller.signal });
+      if (res.ok) {
+        const data = await res.json();
+        directOllamaReachable = true;
+        directModels = (data.models || []).map(m => (typeof m === "string" ? m : m.name)).filter(Boolean);
       }
-    } catch {
-      // Ollama not reachable directly — directOllamaReachable stays false
+    } finally {
+      clearTimeout(timeoutId);
     }
+  } catch {
+    // Ollama not reachable
   }
 
-  // ── 1c. Fetch backend system check (OCR diagnostics) ──────
+  // ── 2. Backend system check (OCR diagnostics) ──────
   let sysCheck = null;
   try {
     sysCheck = await systemCheck();
@@ -98,10 +79,9 @@ async function buildReport(advanced) {
       : "Unknown (not exposed by this browser)";
 
   const cpuCores =
-    diag?.cpu_count
-    || (typeof navigator.hardwareConcurrency !== "undefined"
+    typeof navigator.hardwareConcurrency !== "undefined"
       ? String(navigator.hardwareConcurrency)
-      : "Unknown");
+      : "Unknown";
 
   // ?? 3. Assemble report lines ????????????????????????????
   const sep = "?".repeat(52);
@@ -114,70 +94,38 @@ async function buildReport(advanced) {
     `Generated : ${timestamp}`,
     sep,
     "",
-    "? NEXIS",
+    "⬡ NEXIS",
     `  ${pad("App Version")} ${NEXIS_APP_VERSION}`,
     `  ${pad("AI Mode")} ${modeLabel(modelConfig)}`,
     `  ${pad("Selected Model")} ${modelConfig?.model || "None"}`,
     "",
-    "? NEXIS COMPANION",
-    `  ${pad("Status")} ${companionReachable ? "Connected" : "Not reachable"}`,
-    `  ${pad("Version")} ${
-      diag?.bridge_version || (companionReachable ? "Unknown" : "?")
-    }`,
-    "",
-    "? SYSTEM",
-    `  ${pad("Platform")} ${diag?.platform || navigator.platform || "Unknown"}`,
+    "⬡ SYSTEM",
+    `  ${pad("Platform")} ${navigator.platform || "Unknown"}`,
     `  ${pad("CPU Cores")} ${cpuCores}`,
-    `  ${pad("GPU (NVIDIA)")} ${
-      diag
-        ? (diag.has_nvidia_gpu ? "Detected" : "Not detected")
-        : "Unknown"
-    }`,
     `  ${pad("RAM")} ${ramValue}`,
     "",
-    "? OLLAMA",
+    "⬡ OLLAMA",
   ];
 
-  if (!companionReachable && !directOllamaReachable) {
+  if (!directOllamaReachable) {
     lines.push(
-      `  ${pad("Status")} Unknown — Companion and direct check both failed`,
-      `  ${pad("Note")} Start Ollama or NEXIS Companion to get Ollama diagnostics.`
-    );
-  } else if (!companionReachable && directOllamaReachable) {
-    const modelList = directModels.length ? directModels.join(", ") : "None";
-    lines.push(
-      `  ${pad("Status")} Running (direct check — Companion not running)`,
-      `  ${pad("Installed Models")} ${modelList}`
+      `  ${pad("Status")} Not reachable`,
+      `  ${pad("Note")} Start Ollama, then re-generate this report.`
     );
   } else {
-    const modelList =
-      diag.models?.length ? diag.models.join(", ") : "None";
+    const modelList = directModels.length ? directModels.join(", ") : "None";
     lines.push(
-      `  ${pad("Installed")} ${diag.ollama_installed ? "Yes" : "No"}`,
-      `  ${pad("Running")} ${diag.ollama_running ? "Yes" : "No"}`,
-      `  ${pad("Version")} ${
-        diag.ollama_version
-          || (diag.ollama_installed ? "Installed (version unknown)" : "?")
-      }`,
+      `  ${pad("Status")} Running`,
       `  ${pad("Installed Models")} ${modelList}`
     );
   }
 
-  // Phase A: localReady is true if Companion+Ollama are connected OR if
-  // direct Ollama check succeeds (generation works without Companion).
-  const localReady =
-    (companionReachable && diag?.ollama_running && diag?.models?.length > 0) ||
-    (directOllamaReachable && directModels.length > 0);
+  const localReady = directOllamaReachable && directModels.length > 0;
 
   lines.push(
     "",
     "⬡ CONNECTION STATUS",
-    `  ${pad("Companion Reachable")} ${companionReachable ? "Yes" : "No"}`,
-    `  ${pad("Ollama Direct")}      ${
-      companionReachable
-        ? "N/A (reporting via Companion)"
-        : (directOllamaReachable ? "Yes" : "No")
-    }`,
+    `  ${pad("Ollama Reachable")}    ${directOllamaReachable ? "Yes" : "No"}`,
     `  ${pad("Local AI Ready")}     ${localReady ? "Yes" : "No"}`,
     "",
     "⬡ OCR / IMAGE INPUT",
@@ -208,17 +156,17 @@ async function buildReport(advanced) {
 
     if (advanced.ollamaPath) {
       lines.push(
-        `  ${pad("Ollama Install Path")} ${diag?.ollama_path || "Unknown"}`
+        `  ${pad("Ollama Install Path")} Unknown (not available via direct check)`
       );
     }
     if (advanced.modelStorage) {
       lines.push(
-        `  ${pad("Model Storage Path")} ${diag?.model_storage || "Unknown"}`
+        `  ${pad("Model Storage Path")} Unknown (not available via direct check)`
       );
     }
     if (advanced.endpointUrls) {
-      const ep = modelConfig?.endpoint || BRIDGE_DEFAULT_URL;
-      lines.push(`  ${pad("Companion Endpoint")} ${ep}`);
+      const ep = modelConfig?.endpoint || OLLAMA_DIRECT_URL;
+      lines.push(`  ${pad("Ollama Endpoint")} ${ep}`);
     }
     if (advanced.hostname) {
       // Browser cannot expose device hostname ? report app origin instead.
@@ -362,15 +310,12 @@ export default function DiagnosticsOverlay({ onClose }) {
           <ul style={{ margin: 0, paddingLeft: 18 }}>
             {[
               "NEXIS app version",
-              "NEXIS Companion version",
               "Operating system",
               "CPU core count",
-              "GPU detection (NVIDIA)",
               "RAM (approximate)",
-              "Ollama status and version",
+              "Ollama status",
               "Installed AI models",
               "Selected model",
-              "Companion connection status",
               "Local AI readiness status",
               "AI mode: Local or Provider",
               "Recent session error codes",

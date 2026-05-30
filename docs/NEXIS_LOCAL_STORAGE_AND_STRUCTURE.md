@@ -3,7 +3,7 @@
 **Project:** NEXIS-LOCAL  
 **Organization:** ARC NEXUS LLC  
 **Document Type:** Technical Architecture Reference  
-**Last Updated:** 2026-05-29 (Documentation Sync)  
+**Last Updated:** 2026-05-30 (Companion removed from user path; AEGIS panel + Wikipedia cards added to dashboard)  
 **Audience:** Engineers, AI assistants, technical contributors  
 
 > This is a technical reference document. It documents what exists in the codebase as verified by direct file inspection. Items that could not be verified are explicitly marked.
@@ -135,11 +135,15 @@ frontend/
     │   ├── TopBar.jsx           Navigation bar
     │   └── layout.css
     ├── pages/
-    │   ├── NexusDashboard.jsx   Project list + usage display
+    │   ├── NexusDashboard.jsx   Dashboard: Projects launcher + AEGIS panel + Wikipedia signal cards
     │   └── ProjectWorkspace.jsx Full project workflow (collect/create/refine)
     ├── components/              UI overlay components
+    │   │                        Includes: AegisPanel.jsx, AegisConsensusCluster.jsx,
+    │   │                        WikipediaSignalCard.jsx (4 exports), HelpOverlay.jsx,
+    │   │                        DiagnosticsOverlay.jsx, and others
     ├── api/
     │   ├── api.jsx              FastAPI client + bridge routing
+    │   ├── aegis.js             AEGIS API client (port 8002)
     │   └── system.jsx           System check API wrapper
     ├── lib/
     │   ├── bridge.js            NEXIS Companion client + direct Ollama generation
@@ -306,22 +310,10 @@ LOCAL MODEL (e.g. qwen2.5:7b)
    Runs on user hardware (CPU or GPU via CUDA)
 ```
 
-**Optional management path (NEXIS Companion):**
-
-```
-FRONTEND bridge.js management functions
-│
-│  getDiagnostics(), startOllama(), restartOllama(), pullModel(), etc.
-│
-▼
-NEXIS COMPANION (localhost:8765)
-│
-│  Manages Ollama lifecycle — start, restart, model pulls, diagnostics
-│  Does NOT handle generation (Phase A, 2026-05-29)
-│
-▼
-OLLAMA (localhost:11434)
-```
+> NEXIS Companion (`localhost:8765`) was previously used for Ollama lifecycle
+> management (start, restart, diagnostics, model pulls). As of 2026-05-30,
+> it is no longer part of the user-facing setup. AI generation goes directly
+> browser → Ollama. Companion source code remains in `bridge/` for reference.
 
 ### Why All Ollama Generation Calls Route Through `bridge.js`
 
@@ -339,7 +331,32 @@ All frontend code that sends a prompt to Ollama must go through `generateDirectO
 
 See Decision Log D-036 (Phase A), D-020 (original Companion decision), D-040 (CORS lesson).
 
-### Companion Endpoints (verified in `nexis_bridge.go`)
+### AEGIS Integration
+
+AEGIS is a **separate standalone program** — not part of the NEXIS-LOCAL codebase. It runs at `http://127.0.0.1:8002`.
+
+**NEXIS-LOCAL integration points:**
+- `frontend/src/api/aegis.js` — AEGIS API client (7s timeout, config in `localStorage["aegis_config"]`)
+- `frontend/src/components/AegisPanel.jsx` — displays latest Front Page consensus scan; polls for scan status
+- `frontend/src/components/AegisConsensusCluster.jsx` — renders a single cluster card (topic, tiers, orientation pills, headlines)
+- `frontend/src/components/WikipediaSignalCard.jsx` — `WikipediaAegisTopics` export cross-references AEGIS cluster topics against Wikimedia pageview data
+
+**AEGIS API endpoints used by NEXIS-LOCAL:**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/health` | GET | AEGIS reachability check |
+| `/api/radar/consensus` | GET | Latest Front Page scan (clusters) |
+| `/api/radar/consensus-status` | GET | Current scan run state |
+| `/api/radar/consensus-scan` | POST | Trigger a new scan |
+
+**AEGIS CORS:** Allows `localhost:3000` and `127.0.0.1:3000`. No changes needed to AEGIS for NEXIS-LOCAL to connect.
+
+**AEGIS start:** `Launch AEGIS.vbs` in the AEGIS folder. If not running, all AEGIS-dependent UI degrades gracefully (panel shows Retry; Wikipedia AEGIS Topics card shows "AEGIS unavailable").
+
+---
+
+### Companion Endpoints (historical reference — no longer user-facing)
 
 | Endpoint | Method | Purpose |
 |---|---|---|

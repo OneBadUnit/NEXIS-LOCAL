@@ -4,64 +4,21 @@
 // Version: 008 (Tier limits + usage tracking)
 // ============================================================
 
-import React, { memo, useState, useEffect, useCallback } from "react";
+import React, { memo, useState, useEffect } from "react";
 import ProjectWorkspace from "./ProjectWorkspace";
+import AegisPanel from "../components/AegisPanel";
+import { WikipediaMostViewed, WikipediaWatchlist, WikipediaCurrentEvents, WikipediaAegisTopics } from "../components/WikipediaSignalCard";
 import {
   loadProjects,
   saveProjects,
   deleteProjectData,
 } from "../utils/projectStorage";
 import {
-  syncUsage,
   addProjectUsage,
   removeProjectUsage,
 } from "../api/api.jsx";
 import { getTierConfig } from "../lib/tiers";
 
-
-// ------------------------------------------------------------
-// UsageLine — a single "label: used / limit" row with a bar
-// ------------------------------------------------------------
-function UsageLine({ label, used, limit }) {
-  const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-  const atCap = used >= limit;
-  const barColor = atCap ? "#ef4444" : pct >= 75 ? "#f59e0b" : "var(--arc-accent, #38bdf8)";
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-        <span className="subtle" style={{ fontSize: "0.82rem" }}>{label}</span>
-        <span
-          style={{
-            fontSize: "0.82rem",
-            fontWeight: 600,
-            color: atCap ? "#ef4444" : "var(--arc-text)",
-          }}
-        >
-          {used} / {limit}
-        </span>
-      </div>
-      <div
-        style={{
-          height: 4,
-          borderRadius: 4,
-          background: "rgba(255,255,255,0.08)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${pct}%`,
-            background: barColor,
-            borderRadius: 4,
-            transition: "width 0.3s ease",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
 
 const NexusDashboard = ({ user, profile }) => {
   // Load projects from localStorage on first render
@@ -72,32 +29,9 @@ const NexusDashboard = ({ user, profile }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeProject, setActiveProject] = useState(null);
 
-  // Usage / tier state
-  const [usage, setUsage] = useState(null);
-
   // Tier resolved from profile — falls back to "free" if profile is missing or unrecognized.
   const profileTier = profile?.tier || "free";
   const tierConfig = getTierConfig(profileTier);
-  const bonusActions = profile?.bonus_actions || 0;
-  const monthlyActionAllowance = tierConfig.monthly_actions + bonusActions;
-  console.log("[Tier] profile tier:", profileTier, "| config:", tierConfig);
-
-  const refreshUsage = useCallback(async () => {
-    try {
-      // Sync storage count and profile tier to backend so enforcement
-      // matches the Supabase profile tier.
-      const data = await syncUsage({ projects: projects.length, tier: profileTier });
-      console.log("[Usage] sync response:", data);
-      setUsage(data);
-    } catch {
-      // Backend may not be running; silently ignore
-    }
-  }, [projects.length, profileTier]);
-
-  // On mount: fetch usage from backend (backend is source of truth)
-  useEffect(() => {
-    refreshUsage();
-  }, [refreshUsage]);
 
   // Persist projects whenever they change
   useEffect(() => {
@@ -131,7 +65,6 @@ const NexusDashboard = ({ user, profile }) => {
     setProjects((prev) => [newProject, ...prev]);
     setNewProjectName("");
     setShowNewModal(false);
-    refreshUsage();
   };
 
   const confirmDelete = (e, project) => {
@@ -146,7 +79,6 @@ const NexusDashboard = ({ user, profile }) => {
     setDeleteTarget(null);
     // Tell backend a project slot was freed (fire-and-forget)
     removeProjectUsage().catch(() => {});
-    refreshUsage();
   };
 
   if (activeProject) {
@@ -155,7 +87,6 @@ const NexusDashboard = ({ user, profile }) => {
         project={activeProject}
         onClose={() => {
           setActiveProject(null);
-          refreshUsage();
         }}
         onRename={(title) => {
           const updated = { ...activeProject, title, updatedAt: Date.now() };
@@ -170,15 +101,17 @@ const NexusDashboard = ({ user, profile }) => {
 
   return (
     <div className="module-container">
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "2fr 1fr",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 2fr)",
           gap: "24px",
+          alignItems: "start",
         }}
       >
-        {/* TOP LEFT — PROJECTS */}
-        <div className="panel">
+      {/* LEFT — PROJECTS */}
+      <div className="panel">
           <h3>PROJECTS</h3>
 
           <button
@@ -201,7 +134,7 @@ const NexusDashboard = ({ user, profile }) => {
             </p>
           )}
 
-          <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", maxHeight: "240px" }}>
             {projects.length === 0 && (
               <p className="subtle">No projects yet.</p>
             )}
@@ -227,7 +160,7 @@ const NexusDashboard = ({ user, profile }) => {
                   (e.currentTarget.style.border = "1px solid rgba(255,255,255,0.08)")
                 }
               >
-                <div style={{ fontWeight: "600" }}>{project.title}</div>
+                <div style={{ fontWeight: "600", wordBreak: "break-word" }}>{project.title}</div>
                 <div className="subtle" style={{ fontSize: "0.8rem" }}>
                   Created: {new Date(project.createdAt).toLocaleDateString()}
                 </div>
@@ -258,86 +191,28 @@ const NexusDashboard = ({ user, profile }) => {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* TOP RIGHT — ACCOUNT STATUS */}
-        <div className="panel">
-          <h3>ACCOUNT STATUS</h3>
-
-          {/* Plan label and limits come from frontend tier config (profile.tier).
-              Counters come from backend (usage.current.*). */}
-          <p className="subtle" style={{ marginBottom: 6 }}>
-            {profile?.email || user?.email || "—"}
-          </p>
-          <p className="subtle" style={{ marginBottom: 14 }}>
-            Plan: <strong style={{ color: "var(--arc-text)" }}>{tierConfig.label}</strong>
-          </p>
-
-          {usage ? (
-            <>
-              {/* Storage */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-                <UsageLine
-                  label="Projects"
-                  used={projects.length}
-                  limit={tierConfig.max_projects}
-                />
-                <UsageLine
-                  label="Saved Raw Inputs"
-                  used={usage.current.raw_inputs}
-                  limit={tierConfig.max_saved_raw_inputs}
-                />
-                <UsageLine
-                  label="Saved Outputs"
-                  used={usage.current.outputs}
-                  limit={tierConfig.max_saved_outputs}
-                />
-              </div>
-
-              {/* Monthly */}
-              <p className="subtle" style={{ fontSize: "0.78rem", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                This Month
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <UsageLine
-                  label="Raw Inputs Added"
-                  used={usage.current.raw_inputs_this_month}
-                  limit={tierConfig.monthly_raw_inputs}
-                />
-                <UsageLine
-                  label="Actions Used"
-                  used={usage.current.actions_this_month}
-                  limit={monthlyActionAllowance}
-                />
-                {bonusActions > 0 && (
-                  <p style={{ margin: "2px 0 0", fontSize: "0.78rem", color: "#4ade80" }}>
-                    Bonus Actions: +{bonusActions}
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            <p className="subtle" style={{ fontSize: "0.85rem" }}>Loading usage…</p>
-          )}
-
-        </div>
-
-        {/* BOTTOM LEFT — NEWS */}
-        <div className="panel">
-          <h3>NEWS</h3>
-          <p className="subtle">
-            NEXIS is evolving into a project-based workspace for collecting,
-            converting, and refining raw information.
-          </p>
-        </div>
-
-        {/* BOTTOM RIGHT — UPDATES */}
-        <div className="panel">
-          <h3>UPDATES</h3>
-          <p className="subtle">Latest: Project workspace implemented.</p>
-          <p className="subtle">Coming next: output history per project.</p>
-        </div>
       </div>
+
+      {/* RIGHT — AEGIS */}
+      <AegisPanel />
+
+      </div>{/* end top row */}
+
+      {/* BOTTOM ROW — Wikipedia Signal Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+          gap: "24px",
+        }}
+      >
+        <WikipediaMostViewed />
+        <WikipediaWatchlist />
+        <WikipediaCurrentEvents />
+        <WikipediaAegisTopics />
+      </div>
+
+      </div>{/* end flex column */}
 
       {/* NEW PROJECT MODAL */}
       {showNewModal && (

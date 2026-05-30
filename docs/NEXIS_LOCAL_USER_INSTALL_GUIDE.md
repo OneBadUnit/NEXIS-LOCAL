@@ -2,7 +2,7 @@
 
 **For:** Anyone setting up NEXIS-LOCAL on a Windows PC  
 **Assumes:** No programming experience required  
-**Last verified:** 2026-05-29 (Documentation Sync)
+**Last verified:** 2026-05-30 (Documentation Sync — Companion removed, AEGIS panel added)
 
 ---
 
@@ -13,10 +13,9 @@
 | Step | What you do | Time |
 |---|---|---|
 | 1 | Install Ollama | ~2 min |
-| 2 | Download and run NEXIS Companion | ~1 min |
-| 3 | Open NEXIS in your browser | ~30 sec |
-| 4 | Pull the AI model | ~10–15 min (download) |
-| 5 | Create your first project | ~1 min |
+| 2 | Open NEXIS in your browser | ~30 sec |
+| 3 | Pull the AI model | ~10–15 min (download) |
+| 4 | Create your first project | ~1 min |
 
 **Detailed instructions for each step are below.**
 
@@ -29,9 +28,9 @@
 3. [Downloading the Project](#3-downloading-the-project)
 4. [Installing Ollama](#4-installing-ollama)
 5. [Installing Required Models](#5-installing-required-models)
-6. [Installing NEXIS Companion](#6-installing-nexis-companion)
-7. [First Startup](#7-first-startup)
-8. [Choosing an AI Model](#8-choosing-an-ai-model)
+6. [First Startup](#6-first-startup)
+7. [Choosing an AI Model](#7-choosing-an-ai-model)
+8. [Dashboard Overview](#8-dashboard-overview)
 9. [Verifying Everything Works](#9-verifying-everything-works)
 10. [Common Problems and Fixes](#10-common-problems-and-fixes)
 11. [If Something Breaks](#11-if-something-breaks)
@@ -196,54 +195,9 @@ Size: approximately 8 GB. This is optional — NEXIS works without it.
 
 ---
 
-## 6. Installing NEXIS Companion
+## 6. First Startup
 
-NEXIS Companion is an optional management tool that helps with first-time
-Ollama setup, model downloads, and diagnostics. It can start Ollama for you,
-download AI models with progress tracking, and report system status.
-
-> **New in current version:** AI generation (Create / Refine) works directly
-> from NEXIS to Ollama without the Companion. The Companion is **recommended
-> for first-time users** — it makes setup easier. Experienced users who already
-> have Ollama running with a model can skip this section.
-
-**You do not install it. You just download it and double-click it.**
-
-### Step 1 — Download NEXIS Companion
-
-Download it from the GitHub releases page:
-
-```
-https://github.com/OneBadUnit/NEXIS/releases/download/companion-v0.1.0/NEXIS.Companion.exe
-```
-
-Save it somewhere easy to find — your Desktop or a `NEXIS` folder works well.
-
-### Step 2 — Run NEXIS Companion
-
-Double-click `NEXIS Companion.exe`.
-
-A small console window will open showing status messages. This is normal —
-it means the Companion is running.
-
-**Keep this window open while you use NEXIS.** You can minimise it, but do
-not close it.
-
-### What the Companion does
-
-- Checks whether Ollama is installed and running
-- Can start Ollama automatically if it is not running
-- Can download AI models on your behalf
-- Provides NEXIS with a safe local connection to your AI
-
-You do not need to interact with it. Just keep it running.
-
----
-
-## 7. First Startup
-
-With Ollama installed, a model downloaded, and NEXIS Companion running, you
-are ready to open NEXIS.
+With Ollama installed and a model downloaded, you are ready to open NEXIS.
 
 ### Starting the backend and frontend
 
@@ -277,10 +231,10 @@ You should see the NEXIS workspace open directly.
 
 ---
 
-## 8. Choosing an AI Model
+## 7. Choosing an AI Model
 
-When NEXIS starts, it uses the **NEXIS Local Companion** to detect which AI
-model is available on your computer.
+When NEXIS starts, it uses **AI Model Settings** to detect which AI model
+is available on your computer.
 
 ### Default model
 
@@ -306,6 +260,41 @@ settings if you prefer a different one.
 
 ---
 
+## 8. Dashboard Overview
+
+The NEXIS dashboard has three areas visible when you open the app.
+
+### Projects
+
+Your local project workspaces. Click a project to open it. Projects are stored
+entirely on your machine.
+
+### AEGIS Panel
+
+AEGIS is a standalone front page signal scanner — a separate program from NEXIS.
+When AEGIS is running on your machine (default port 8002), its panel shows live
+Front Page consensus cluster data: topic summaries, orientation signals, and
+headlines from across the web.
+
+If AEGIS is not running, the panel shows a Retry button. NEXIS continues to
+work normally without AEGIS.
+
+Start AEGIS using `Launch AEGIS.vbs` from the AEGIS folder.
+
+### Wikipedia Signal Cards
+
+Four cards using public Wikimedia APIs appear below the main panels:
+
+- **Most Viewed** — yesterday's most viewed English Wikipedia pages
+- **Watchlist** — daily view counts for a fixed set of globally tracked topics
+- **Current Events** — link to the Wikipedia Current Events portal
+- **AEGIS Topics** — when AEGIS is running, shows Wikipedia attention data
+  cross-referenced against the latest AEGIS cluster topics
+
+These cards require no setup, no API key, and no login.
+
+---
+
 ## 9. Verifying Everything Works
 
 Use the built-in Diagnostics tool to confirm all parts are connected.
@@ -319,7 +308,6 @@ from the top bar or a help/settings area). Click it.
 
 | Item | Expected status | What it means |
 |---|---|---|
-| NEXIS Companion | Connected | The Companion program is running |
 | Ollama | Running | Ollama is active and reachable |
 | `qwen2.5:7b` | Available | The AI model is installed and ready |
 
@@ -350,15 +338,11 @@ If the AI produces a summary, everything is working end-to-end.
 1. Look for the Ollama icon in the system tray (bottom-right near the clock) —
    make sure it is running. Or open Command Prompt and type: `ollama serve`
 2. Make sure `qwen2.5:7b` is downloaded (`ollama list` to check)
-3. If NEXIS Companion is running, click **Recheck** in AI Model Settings
-
-> **Note:** NEXIS Companion not running does not block AI generation as long
-> as Ollama is running with a model. The Companion is used for management
-> features (start Ollama, download models, diagnostics).
+3. Click **Recheck** in AI Model Settings
 
 ---
 
-### "Ollama is not installed" or Companion shows Ollama not found
+### "Ollama is not installed" or Ollama not found
 
 **Cause:** Ollama was not installed, or was installed but is not running.
 
@@ -395,15 +379,6 @@ Wait for the download to complete. This is a one-time download (~4.7 GB).
 
 ---
 
-### Port 8765 already in use
-
-**Cause:** Another copy of NEXIS Companion is already running.
-
-**Fix:** Check the taskbar or system tray for an existing Companion window.
-Close the duplicate and use the one that is already running.
-
----
-
 ### The browser shows a blank page or cannot connect to localhost:3000
 
 **Cause:** The NEXIS frontend is not running.
@@ -437,18 +412,6 @@ on your CPU which is slower.
   sure your graphics drivers are up to date
 - The first response after starting is always slower — subsequent responses
   in the same session are faster
-
----
-
-### Windows Defender or antivirus warns about NEXIS Companion
-
-**Cause:** `NEXIS Companion.exe` is not signed with a commercial code-signing
-certificate. Windows Defender SmartScreen may show a warning for unsigned
-executables.
-
-**Fix:** Click **More info** → **Run anyway** to allow it. The binary is safe —
-it is open source and the source code is available at
-`https://github.com/OneBadUnit/NEXIS/tree/main/bridge`.
 
 ---
 

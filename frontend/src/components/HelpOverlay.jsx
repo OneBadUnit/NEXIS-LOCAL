@@ -12,12 +12,12 @@
 
 import React, { useState, useEffect } from "react";
 import PageOverlay from "./PageOverlay";
-import { getCompanionDownload } from "../lib/bridge.js";
 
 // ?? Navigation items ????????????????????????????????????????
 
 const NAV = [
   { id: "help-overview",        label: "Overview" },
+  { id: "help-dashboard",       label: "Dashboard" },
   { id: "help-collect",         label: "Collect" },
   { id: "help-review",          label: "Review & Select" },
   { id: "help-create",          label: "Create Package" },
@@ -255,6 +255,36 @@ export default function HelpOverlay({ onClose }) {
           </div>
 
           {/* ???? COLLECT ???? */}
+          <SectionAnchor id="help-dashboard" />
+          <div className="panel">
+            <SectionTitle>Dashboard</SectionTitle>
+            <p style={{ marginTop: 0 }}>
+              The NEXIS dashboard shows three areas: Projects, AEGIS, and Wikipedia signal cards.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+              <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Projects</p>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                  Your local project workspaces. Click a project to open it. Projects are stored locally on this machine.
+                </p>
+              </div>
+              <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem", color: "var(--arc-accent)" }}>AEGIS</p>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                  Front page signal scanner. AEGIS is a standalone program — it must be running at{" "}
+                  <code style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>127.0.0.1:8002</code>{" "}
+                  for live data to appear. Start it with <strong>Launch AEGIS.vbs</strong>. If it is not running, the panel shows a Retry button.
+                </p>
+              </div>
+              <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", gridColumn: "1 / -1" }}>
+                <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Wikipedia Signal Cards</p>
+                <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
+                  Four cards using public Wikimedia APIs (no key, no setup): most viewed pages, a watchlist of globally tracked topics, a link to the Current Events portal, and a future card linking AEGIS cluster topics to Wikipedia attention data. Cards load automatically on dashboard open.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <SectionAnchor id="help-collect" />
           <div className="panel">
             <SectionTitle>Collect</SectionTitle>
@@ -332,22 +362,22 @@ export default function HelpOverlay({ onClose }) {
               </p>
             </div>
 
-            {/* Two programs explained */}
+            {/* What you need */}
             <div style={{ marginBottom: 24 }}>
-              <SubTitle>The two programs you need</SubTitle>
+              <SubTitle>What you need</SubTitle>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem", color: "var(--arc-accent)" }}>NEXIS Local Companion</p>
+                  <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem", color: "var(--arc-accent)" }}>Ollama</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
-                    A small program you download once. It runs quietly in the background and lets NEXIS
-                    communicate with your local AI. You only need to start it ? NEXIS handles the rest.
+                    A free, open-source program that runs AI models on your computer. NEXIS communicates
+                    directly with Ollama — no additional software required.
                   </p>
                 </div>
                 <div style={{ padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>Ollama</p>
+                  <p style={{ fontWeight: 700, margin: "0 0 6px", fontSize: "0.88rem" }}>An AI Model</p>
                   <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>
-                    A free, open-source program that runs AI models on your computer. NEXIS can open
-                    Ollama and download models for you automatically - no terminal needed.
+                    NEXIS recommends Qwen2.5:7b and will offer to download it for you from inside
+                    AI Model Settings — no terminal needed.
                   </p>
                 </div>
               </div>
@@ -373,54 +403,20 @@ export default function HelpOverlay({ onClose }) {
                 ))}
               </div>
               <p style={{ textAlign: "center", fontSize: "0.74rem", color: "rgba(255,255,255,0.28)", margin: "8px 0 0" }}>
-                AI generation goes directly from NEXIS to Ollama. NEXIS Companion provides optional management tools (start Ollama, download models, diagnostics).
+                AI generation goes directly from NEXIS to Ollama.
               </p>
             </div>
 
             {/* First-time setup */}
             <div style={{ marginBottom: 24 }}>
               <SubTitle>First-time setup</SubTitle>
-              <Step number="1" title="Download and run the NEXIS Local Companion (recommended)">
-                <p style={{ marginTop: 0, marginBottom: 10 }}>
-                  The Companion handles Ollama startup, model downloads, and diagnostics for you.
-                  Download <strong>NEXIS Companion</strong> (Windows) or <strong>nexis-bridge-linux</strong> (Linux / WSL2)
-                  and double-click it. A small window will appear — keep it open while using NEXIS.
-                </p>
-                {(() => { const dl = getCompanionDownload(); return (
-                  <div style={{ marginBottom: 10 }}>
-                    {dl.supported ? (
-                      <>
-                        <a
-                          href={dl.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "5px 14px",
-                            background: "var(--arc-accent)",
-                            color: "#fff",
-                            borderRadius: 6,
-                            textDecoration: "none",
-                            fontSize: "0.82rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {dl.label}
-                        </a>
-                        <span style={{ marginLeft: 10, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
-                          Detected: {dl.platform}
-                        </span>
-                      </>
-                    ) : (
-                      <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                        NEXIS Local Companion currently supports Windows and Linux/WSL2.
-                      </p>
-                    )}
-                  </div>
-                ); })()}
-                <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                  Experienced users with Ollama already running can skip this step — AI generation
-                  works without the Companion once Ollama is configured.
+              <Step number="1" title="Install and start Ollama">
+                <p style={{ marginTop: 0, marginBottom: 0 }}>
+                  Download Ollama from{" "}
+                  <a href="https://ollama.com" target="_blank" rel="noreferrer"
+                    style={{ color: "var(--arc-accent)", textDecoration: "none" }}>ollama.com</a>{" "}
+                  and install it. Once installed, NEXIS will detect it automatically.
+                  If Ollama is installed but not open, NEXIS will offer to start it for you.
                 </p>
               </Step>
               <Step number="2" title='Open AI Model Settings and click "Recheck"'>
@@ -451,11 +447,6 @@ export default function HelpOverlay({ onClose }) {
                 state="Checking your local AI..."
                 meaning="NEXIS is detecting Ollama and available models."
                 action="Wait - this takes a few seconds."
-              />
-              <StateRow
-                state="NEXIS Companion is not running."
-                meaning="Companion management tools are unavailable. AI generation still works if Ollama is running with a model."
-                action="Run NEXIS Companion to enable model management and diagnostics. Skip if Ollama is already set up."
               />
               <StateRow
                 state="Ollama is not installed."
@@ -494,7 +485,7 @@ export default function HelpOverlay({ onClose }) {
               />
               <StateRow
                 state="Models could not be checked right now."
-                meaning="Could not connect to Ollama. Companion management tools may also be unavailable."
+                meaning="Could not connect to Ollama. Make sure Ollama is running."
                 action='Make sure Ollama is running, then click "Recheck". AI generation works if Ollama is running.'
               />
               <StateRow
@@ -557,7 +548,7 @@ export default function HelpOverlay({ onClose }) {
               <li>Package Outputs</li>
               <li>Refined Outputs</li>
             </ul>
-            <p style={{ marginBottom: 0 }}>Your account level may limit the number of active projects available.</p>
+            <p style={{ marginBottom: 0 }}>A project limit is enforced locally. Delete unused projects to make room for new ones.</p>
           </div>
 
           {/* ???? TROUBLESHOOTING ???? */}
@@ -568,19 +559,7 @@ export default function HelpOverlay({ onClose }) {
               Follow these steps in order. Most issues resolve at step 1 or 2.
             </p>
 
-            <TroubleBlock title='1. "NEXIS Companion is not running." (management tools only)'>
-              <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
-                The Companion is not required for AI generation — if Ollama is already running with a model,
-                Create and Refine will work. The Companion is needed for Ollama lifecycle management:
-                starting Ollama, downloading models, and running diagnostics.
-              </p>
-              <p style={{ margin: 0, fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>
-                To start it: double-click <strong>NEXIS Companion.exe</strong> (Windows) or
-                run <strong>./nexis-bridge-linux</strong> (Linux / WSL2). Keep the window open.
-              </p>
-            </TroubleBlock>
-
-            <TroubleBlock title='2. "Ollama is not installed."'>
+            <TroubleBlock title='1. "Ollama is not installed."'>
               <p style={{ margin: "0 0 6px", fontSize: "0.85rem" }}>
                 Click <strong>Install Ollama</strong> in AI Model Settings. This opens
                 the official Ollama download page. Install it, then click Recheck.
@@ -626,7 +605,7 @@ export default function HelpOverlay({ onClose }) {
                 Try this sequence:
               </p>
               <ol style={{ margin: "0 0 8px", paddingLeft: 20, lineHeight: "1.9", fontSize: "0.85rem" }}>
-                <li>Restart Ollama: open a terminal and run <strong>ollama serve</strong>, or use NEXIS Companion if installed.</li>
+                <li>Restart Ollama: open a terminal and run <strong>ollama serve</strong>.</li>
                 <li>In AI Model Settings, click <strong>Recheck</strong>.</li>
                 <li>If Ollama shows as stuck, click <strong>Restart Ollama</strong>.</li>
                 <li>If the problem persists, restart your computer and try again.</li>
@@ -749,7 +728,7 @@ curl http://host.docker.internal:11434`}</pre>
             />
             <FAQ
               q="Do I need to use the terminal to set up local AI?"
-              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically. NEXIS Companion is recommended for first-time setup and makes this fully automated. Experienced users can also configure Ollama manually without the Companion."
+              a="No. NEXIS handles Ollama detection, startup, and model downloads automatically. For most users, no terminal interaction is needed."
             />
             <FAQ
               q="Can I use local AI without an internet connection?"
@@ -772,8 +751,12 @@ curl http://host.docker.internal:11434`}</pre>
               a="No. Refined work is saved as a new output."
             />
             <FAQ
-              q="What is the NEXIS Companion and do I need it?"
-              a="The Companion is an optional management tool that helps with Ollama startup, model downloads, and diagnostics. AI generation works without it as long as Ollama is running. It is recommended for first-time users. Provider mode does not require it."
+              q="What is AEGIS and does it need to be running?"
+              a="AEGIS is a standalone front page signal scanner — a separate program, not a module inside NEXIS. It must be running on your machine (port 8002) for the AEGIS dashboard panel to show live data. Start it with Launch AEGIS.vbs. If AEGIS is not running, the panel shows a Retry button and NEXIS continues to work normally."
+            />
+            <FAQ
+              q="Do the Wikipedia dashboard cards need any setup?"
+              a="No. The Wikipedia signal cards use public Wikimedia APIs that require no key, no login, and no configuration. They load automatically on dashboard open."
             />
           </div>
 
